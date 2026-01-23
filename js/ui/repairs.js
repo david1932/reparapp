@@ -21,7 +21,9 @@ class RepairsUI {
             e.preventDefault();
             e.stopPropagation();
             // Cerrar teclado si estuviera abierto
-            if (document.activeElement) document.activeElement.blur();
+            if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+                document.activeElement.blur();
+            }
             this.openModal();
         });
 
@@ -333,13 +335,13 @@ class RepairsUI {
             const form = document.getElementById('form-reparacion');
             const selectCliente = document.getElementById('reparacion-cliente');
 
-            // 1. Show modal immediately (with slight delay for mobile keyboard dismiss)
-            setTimeout(() => {
-                modal.classList.add('active');
-            }, 100);
+            // Force Blur Logic
+            if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+                document.activeElement.blur();
+            }
 
-            // 2. Prevent keyboard by temporary readonly
-            const cleanupReadonly = this.setInputsReadonly(form);
+            // Show modal immediately
+            modal.classList.add('active');
 
             form.reset();
             document.getElementById('reparacion-id').value = '';
@@ -347,7 +349,7 @@ class RepairsUI {
             // Show loading state in select
             selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
 
-            // 3. Load Data Asynchronously
+            // Load Data Asynchronously
             try {
                 const clientes = await db.getAllClientes();
                 selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
@@ -375,55 +377,16 @@ class RepairsUI {
                 } else {
                     title.textContent = 'Nueva Reparación';
                 }
-
-                // Restore inputs after small delay ensuring modal is fully visible and stable
-                setTimeout(() => {
-                    cleanupReadonly();
-                }, 400);
-
             } catch (dataError) {
                 console.error('Error loading data for modal:', dataError);
                 selectCliente.innerHTML = '<option value="">Error cargando clientes</option>';
-                app.showToast('Error cargando datos: ' + dataError.message, 'error');
-                cleanupReadonly();
             }
 
         } catch (error) {
             console.error('Error opening repair modal:', error);
-            // Critical error, ensure modal is closed if it failed completely
             document.getElementById('modal-reparacion').classList.remove('active');
             alert('Error crítico al abrir modal: ' + error.message);
         }
-    }
-
-    /**
-     * Helper to set inputs to readonly temporarily
-     */
-    setInputsReadonly(formContainer) {
-        if (!formContainer) return () => { };
-
-        // Blur active element first
-        if (document.activeElement) document.activeElement.blur();
-
-        const inputs = formContainer.querySelectorAll('input, select, textarea');
-        const originalState = new Map();
-
-        inputs.forEach(input => {
-            originalState.set(input, input.hasAttribute('readonly'));
-            input.setAttribute('readonly', 'true');
-            // For selects, readonly doesn't always work as expected on mobile, so we disable
-            if (input.tagName === 'SELECT') input.disabled = true;
-        });
-
-        // Return cleanup function
-        return () => {
-            inputs.forEach(input => {
-                if (!originalState.get(input)) {
-                    input.removeAttribute('readonly');
-                }
-                if (input.tagName === 'SELECT') input.disabled = false;
-            });
-        };
     }
 
     /**

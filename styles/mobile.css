@@ -234,20 +234,37 @@
 .modal-overlay {
     z-index: 20000 !important;
     /* Superar navbar (9999) */
-    align-items: center !important;
+    align-items: flex-start !important;
+    /* Changed from center to flex-start for keyboard safety */
     justify-content: center !important;
     padding: 16px !important;
+    transition: none !important;
+    /* Disable transition to prevent freeze */
+    opacity: 1 !important;
+    /* Force visible if active class present logic handles display */
+    visibility: visible !important;
+    display: none !important;
+    /* Default hidden */
+}
+
+.modal-overlay.active {
+    display: flex !important;
+    /* Show when active */
 }
 
 .modal {
     width: 100% !important;
     max-width: 100% !important;
-    margin: 0 !important;
+    margin: 40px 0 0 0 !important;
+    /* Top margin safely */
     max-height: 85vh !important;
     overflow-y: auto !important;
     border-radius: 16px !important;
     position: relative !important;
     z-index: 20001 !important;
+    transform: none !important;
+    /* Disable transform transition */
+    transition: none !important;
 }
 
 /* Auth y Lock Screen */

@@ -20,7 +20,9 @@ class InvoicesUI {
             e.preventDefault();
             e.stopPropagation();
             // Cerrar teclado si estuviera abierto
-            if (document.activeElement) document.activeElement.blur();
+            if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+                document.activeElement.blur();
+            }
             this.openModal();
         });
 
@@ -558,18 +560,18 @@ class InvoicesUI {
             const selectCliente = document.getElementById('factura-cliente');
             const lineasContainer = document.getElementById('factura-lineas');
 
-            // 1. Show modal immediately (with slight delay)
-            setTimeout(() => {
-                modal.classList.add('active');
-            }, 100);
-
-            // 2. Blur any active input
-            if (document.activeElement) document.activeElement.blur();
+            // Force Blur
+            if (document.activeElement && document.activeElement.tagName !== 'BODY') {
+                document.activeElement.blur();
+            }
 
             form.reset();
             document.getElementById('factura-id').value = '';
             document.getElementById('factura-cliente-info').style.display = 'none';
             lineasContainer.innerHTML = '';
+
+            // Show modal immediately
+            modal.classList.add('active');
 
             // Show loading state
             selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
@@ -581,7 +583,7 @@ class InvoicesUI {
             dateInput.removeAttribute('readonly');
             dateInput.removeAttribute('disabled');
 
-            // 3. Load Data Asynchronously
+            // Load Data
             try {
                 // Cargar clientes
                 const clientes = await db.getAllClientes();
@@ -622,54 +624,17 @@ class InvoicesUI {
                     this.addLinea();
                 }
 
-                // Restore inputs after small delay ensuring modal is fully visible and stable
-                setTimeout(() => {
-                    cleanupReadonly();
-                    this.updateTotales();
-                }, 400);
-
+                this.updateTotales();
             } catch (dataError) {
                 console.error('Error loading data for invoice modal:', dataError);
                 selectCliente.innerHTML = '<option value="">Error cargando datos</option>';
-                app.showToast('Error cargando datos: ' + dataError.message, 'error');
-                cleanupReadonly();
             }
 
         } catch (error) {
             console.error('Error opening invoice modal:', error);
-            // Critical error, ensure modal is closed
             document.getElementById('modal-factura').classList.remove('active');
             alert('Error crítico al abrir modal: ' + error.message);
         }
-    }
-
-    /**
-     * Helper to set inputs to readonly temporarily
-     */
-    setInputsReadonly(formContainer) {
-        if (!formContainer) return () => { };
-
-        // Blur active element first
-        if (document.activeElement) document.activeElement.blur();
-
-        const inputs = formContainer.querySelectorAll('input, select, textarea');
-        const originalState = new Map();
-
-        inputs.forEach(input => {
-            originalState.set(input, input.hasAttribute('readonly'));
-            input.setAttribute('readonly', 'true');
-            if (input.tagName === 'SELECT') input.disabled = true;
-        });
-
-        // Return cleanup function
-        return () => {
-            inputs.forEach(input => {
-                if (!originalState.get(input)) {
-                    input.removeAttribute('readonly');
-                }
-                if (input.tagName === 'SELECT') input.disabled = false;
-            });
-        };
     }
 
     /**
