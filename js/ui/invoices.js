@@ -622,11 +622,17 @@ class InvoicesUI {
                     this.addLinea();
                 }
 
-                this.updateTotales();
+                // Restore inputs after small delay ensuring modal is fully visible and stable
+                setTimeout(() => {
+                    cleanupReadonly();
+                    this.updateTotales();
+                }, 400);
+
             } catch (dataError) {
                 console.error('Error loading data for invoice modal:', dataError);
                 selectCliente.innerHTML = '<option value="">Error cargando datos</option>';
                 app.showToast('Error cargando datos: ' + dataError.message, 'error');
+                cleanupReadonly();
             }
 
         } catch (error) {
@@ -635,6 +641,35 @@ class InvoicesUI {
             document.getElementById('modal-factura').classList.remove('active');
             alert('Error crítico al abrir modal: ' + error.message);
         }
+    }
+
+    /**
+     * Helper to set inputs to readonly temporarily
+     */
+    setInputsReadonly(formContainer) {
+        if (!formContainer) return () => { };
+
+        // Blur active element first
+        if (document.activeElement) document.activeElement.blur();
+
+        const inputs = formContainer.querySelectorAll('input, select, textarea');
+        const originalState = new Map();
+
+        inputs.forEach(input => {
+            originalState.set(input, input.hasAttribute('readonly'));
+            input.setAttribute('readonly', 'true');
+            if (input.tagName === 'SELECT') input.disabled = true;
+        });
+
+        // Return cleanup function
+        return () => {
+            inputs.forEach(input => {
+                if (!originalState.get(input)) {
+                    input.removeAttribute('readonly');
+                }
+                if (input.tagName === 'SELECT') input.disabled = false;
+            });
+        };
     }
 
     /**
