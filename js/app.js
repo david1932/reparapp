@@ -177,7 +177,7 @@ class App {
      * Inicializa listeners globales
      */
     initGlobalListeners() {
-        // Botón de sincronización
+        // Botón de sincronización (Desktop)
         document.getElementById('btn-sync')?.addEventListener('click', async () => {
             if (!syncManager.isAvailable()) {
                 this.showConfigModal();
@@ -185,6 +185,24 @@ class App {
             }
             const result = await syncManager.sync();
             this.showToast(result.message, result.success ? 'success' : 'error');
+
+            // Refrescar vista actual
+            navigation.refreshView(navigation.getCurrentView());
+        });
+
+        // Botón de sincronización (Mobile)
+        document.getElementById('btn-sync-mobile')?.addEventListener('click', async () => {
+            if (!syncManager.isAvailable()) {
+                this.showConfigModal();
+                return;
+            }
+            const btn = document.getElementById('btn-sync-mobile');
+            btn.classList.add('syncing'); // Add rotation class if exists
+
+            const result = await syncManager.sync();
+            this.showToast(result.message, result.success ? 'success' : 'error');
+
+            btn.classList.remove('syncing');
 
             // Refrescar vista actual
             navigation.refreshView(navigation.getCurrentView());
