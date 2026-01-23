@@ -19,7 +19,8 @@
         "topbar"
         "content"
         "navbar" !important;
-    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh;
     width: 100vw !important;
     overflow: hidden !important;
 }

@@ -333,8 +333,10 @@ class RepairsUI {
             const form = document.getElementById('form-reparacion');
             const selectCliente = document.getElementById('reparacion-cliente');
 
-            // 1. Show modal immediately to provide feedback
-            modal.classList.add('active');
+            // 1. Show modal immediately (with slight delay for mobile keyboard dismiss)
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 100);
 
             // 2. Clear previous focus to prevent keyboard
             if (document.activeElement) document.activeElement.blur();

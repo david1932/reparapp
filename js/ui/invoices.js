@@ -558,8 +558,10 @@ class InvoicesUI {
             const selectCliente = document.getElementById('factura-cliente');
             const lineasContainer = document.getElementById('factura-lineas');
 
-            // 1. Show modal immediately
-            modal.classList.add('active');
+            // 1. Show modal immediately (with slight delay)
+            setTimeout(() => {
+                modal.classList.add('active');
+            }, 100);
 
             // 2. Blur any active input
             if (document.activeElement) document.activeElement.blur();
