@@ -754,40 +754,36 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
                         <div class="form-group">
-                            <label class="form-label">Dirección</label>
-                            <input type="text" class="form-input" id="cliente-direccion"
-                                placeholder="Dirección del cliente">
+                            <label class="form-label">DNI / NIF</label>
+                            <input type="text" class="form-input" id="cliente-dni" placeholder="12345678A">
                         </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
-                            <div class="form-group">
-                                <label class="form-label">DNI / NIF</label>
-                                <input type="text" class="form-input" id="cliente-dni" placeholder="12345678A">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Teléfono *</label>
-                                <input type="tel" class="form-input" id="cliente-telefono" required
-                                    placeholder="Número de teléfono">
-                            </div>
-                        </div>
-
                         <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-input" id="cliente-email" placeholder="correo@ejemplo.com">
+                            <label class="form-label">Teléfono *</label>
+                            <input type="tel" class="form-input" id="cliente-telefono" required
+                                placeholder="Número de teléfono">
                         </div>
+                    </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" id="cliente-email" placeholder="correo@ejemplo.com">
+                    </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" class="form-input" id="cliente-direccion"
+                            placeholder="Dirección del cliente">
+                    </div>
 
-                        <!-- Sección: Notas -->
-                        <h4
-                            style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                            Notas Adicionales</h4>
+                    <!-- Sección: Notas -->
+                    <h4
+                        style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Notas Adicionales</h4>
 
-                        <div class="form-group">
-                            <label class="form-label">Notas</label>
-                            <textarea class="form-textarea" id="cliente-notas"
-                                placeholder="Observaciones, contraseñas, información adicional..."></textarea>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-textarea" id="cliente-notas"
+                            placeholder="Observaciones, contraseñas, información adicional..."></textarea>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary"
