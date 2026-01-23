@@ -284,7 +284,8 @@
 /* Ensure header actions are clickable */
 .header-actions {
     position: relative !important;
-    z-index: 50 !important;
+    z-index: 1000 !important;
+    pointer-events: auto !important;
 }
 
 /* Auth y Lock Screen */

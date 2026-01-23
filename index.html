@@ -307,7 +307,8 @@
                                 </svg>
                             </button>
                         </div>
-                        <button class="btn btn-primary" id="btn-add-reparacion">
+                        <button class="btn btn-primary" id="btn-add-reparacion"
+                            onclick="if(window.repairsUI) window.repairsUI.openModal(); else console.error('RepairsUI not ready');">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -376,7 +377,8 @@
                                 </svg>
                             </button>
                         </div>
-                        <button class="btn btn-primary" id="btn-add-factura">
+                        <button class="btn btn-primary" id="btn-add-factura"
+                            onclick="if(window.invoicesUI) window.invoicesUI.openModal(); else console.error('InvoicesUI not ready');">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
