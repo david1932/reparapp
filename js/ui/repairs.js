@@ -17,7 +17,11 @@ class RepairsUI {
      */
     init() {
         // Botón nueva reparación
-        document.getElementById('btn-add-reparacion')?.addEventListener('click', () => {
+        document.getElementById('btn-add-reparacion')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Cerrar teclado si estuviera abierto
+            if (document.activeElement) document.activeElement.blur();
             this.openModal();
         });
 
@@ -329,41 +333,57 @@ class RepairsUI {
             const form = document.getElementById('form-reparacion');
             const selectCliente = document.getElementById('reparacion-cliente');
 
+            // 1. Show modal immediately to provide feedback
+            modal.classList.add('active');
+
+            // 2. Clear previous focus to prevent keyboard
+            if (document.activeElement) document.activeElement.blur();
+
             form.reset();
             document.getElementById('reparacion-id').value = '';
 
-            // Cargar clientes en el select
-            const clientes = await db.getAllClientes();
-            selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
-                clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
+            // Show loading state in select
+            selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
 
-            if (id) {
-                // Modo edición
-                title.textContent = 'Editar Reparación';
-                const reparacion = await db.getReparacion(id);
-                if (reparacion) {
-                    document.getElementById('reparacion-id').value = reparacion.id;
-                    document.getElementById('reparacion-cliente').value = reparacion.cliente_id;
-                    document.getElementById('reparacion-dispositivo').value = reparacion.dispositivo || '';
-                    document.getElementById('reparacion-marca').value = reparacion.marca || '';
-                    document.getElementById('reparacion-modelo').value = reparacion.modelo || '';
-                    document.getElementById('reparacion-problema').value = reparacion.problema || reparacion.descripcion || '';
-                    document.getElementById('reparacion-solucion').value = reparacion.solucion || '';
-                    document.getElementById('reparacion-estado').value = reparacion.estado;
-                    document.getElementById('reparacion-precio').value = reparacion.precio || '';
-                    document.getElementById('reparacion-precio-final').value = reparacion.precio_final || '';
-                    document.getElementById('reparacion-fecha-entrega').value = reparacion.fecha_entrega ? new Date(reparacion.fecha_entrega).toISOString().split('T')[0] : '';
-                    document.getElementById('reparacion-pin').value = reparacion.pin || '';
-                    document.getElementById('reparacion-notas').value = reparacion.notas || '';
+            // 3. Load Data Asynchronously
+            try {
+                const clientes = await db.getAllClientes();
+                selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+                    clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
+
+                if (id) {
+                    // Modo edición
+                    title.textContent = 'Editar Reparación';
+                    const reparacion = await db.getReparacion(id);
+                    if (reparacion) {
+                        document.getElementById('reparacion-id').value = reparacion.id;
+                        document.getElementById('reparacion-cliente').value = reparacion.cliente_id;
+                        document.getElementById('reparacion-dispositivo').value = reparacion.dispositivo || '';
+                        document.getElementById('reparacion-marca').value = reparacion.marca || '';
+                        document.getElementById('reparacion-modelo').value = reparacion.modelo || '';
+                        document.getElementById('reparacion-problema').value = reparacion.problema || reparacion.descripcion || '';
+                        document.getElementById('reparacion-solucion').value = reparacion.solucion || '';
+                        document.getElementById('reparacion-estado').value = reparacion.estado;
+                        document.getElementById('reparacion-precio').value = reparacion.precio || '';
+                        document.getElementById('reparacion-precio-final').value = reparacion.precio_final || '';
+                        document.getElementById('reparacion-fecha-entrega').value = reparacion.fecha_entrega ? new Date(reparacion.fecha_entrega).toISOString().split('T')[0] : '';
+                        document.getElementById('reparacion-pin').value = reparacion.pin || '';
+                        document.getElementById('reparacion-notas').value = reparacion.notas || '';
+                    }
+                } else {
+                    title.textContent = 'Nueva Reparación';
                 }
-            } else {
-                title.textContent = 'Nueva Reparación';
+            } catch (dataError) {
+                console.error('Error loading data for modal:', dataError);
+                selectCliente.innerHTML = '<option value="">Error cargando clientes</option>';
+                app.showToast('Error cargando datos: ' + dataError.message, 'error');
             }
 
-            modal.classList.add('active');
         } catch (error) {
             console.error('Error opening repair modal:', error);
-            app.showToast('Error al abrir modal: ' + error.message, 'error');
+            // Critical error, ensure modal is closed if it failed completely
+            document.getElementById('modal-reparacion').classList.remove('active');
+            alert('Error crítico al abrir modal: ' + error.message);
         }
     }
 

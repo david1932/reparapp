@@ -16,7 +16,11 @@ class InvoicesUI {
      */
     init() {
         // Botón nueva factura
-        document.getElementById('btn-add-factura')?.addEventListener('click', () => {
+        document.getElementById('btn-add-factura')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Cerrar teclado si estuviera abierto
+            if (document.activeElement) document.activeElement.blur();
             this.openModal();
         });
 
@@ -554,57 +558,80 @@ class InvoicesUI {
             const selectCliente = document.getElementById('factura-cliente');
             const lineasContainer = document.getElementById('factura-lineas');
 
+            // 1. Show modal immediately
+            modal.classList.add('active');
+
+            // 2. Blur any active input
+            if (document.activeElement) document.activeElement.blur();
+
             form.reset();
             document.getElementById('factura-id').value = '';
             document.getElementById('factura-cliente-info').style.display = 'none';
             lineasContainer.innerHTML = '';
 
-            // Cargar clientes
-            const clientes = await db.getAllClientes();
-            selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
-                clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
+            // Show loading state
+            selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
 
-            // Fecha actual
+            // Fecha actual por defecto
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById('factura-fecha');
             dateInput.value = today;
             dateInput.removeAttribute('readonly');
             dateInput.removeAttribute('disabled');
 
-            if (id) {
-                // Modo edición
-                title.textContent = 'Editar Factura';
-                const factura = await db.getFactura(id);
-                if (factura) {
-                    document.getElementById('factura-id').value = factura.id;
-                    document.getElementById('factura-cliente').value = factura.cliente_id;
-                    document.getElementById('factura-numero').value = factura.numero || '';
-                    document.getElementById('factura-fecha').value = factura.fecha ? new Date(factura.fecha).toISOString().split('T')[0] : today;
-                    document.getElementById('factura-notas').value = factura.notas || '';
+            // 3. Load Data Asynchronously
+            try {
+                // Cargar clientes
+                const clientes = await db.getAllClientes();
+                selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+                    clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
 
-                    // Cargar datos del cliente
-                    this.onClienteChange(factura.cliente_id);
+                if (id) {
+                    // Modo edición
+                    title.textContent = 'Editar Factura';
+                    const factura = await db.getFactura(id);
+                    if (factura) {
+                        document.getElementById('factura-id').value = factura.id;
+                        document.getElementById('factura-cliente').value = factura.cliente_id;
+                        document.getElementById('factura-numero').value = factura.numero || '';
+                        document.getElementById('factura-fecha').value = factura.fecha ? new Date(factura.fecha).toISOString().split('T')[0] : today;
+                        document.getElementById('factura-notas').value = factura.notas || '';
 
-                    // Cargar líneas
-                    if (factura.lineas && factura.lineas.length > 0) {
-                        factura.lineas.forEach(l => {
-                            this.addLinea(l.concepto, l.cantidad, l.precio);
-                        });
+                        // Cargar datos del cliente
+                        this.onClienteChange(factura.cliente_id);
+
+                        // Cargar líneas
+                        if (factura.lineas && factura.lineas.length > 0) {
+                            factura.lineas.forEach(l => {
+                                this.addLinea(l.concepto, l.cantidad, l.precio);
+                            });
+                        }
                     }
+                } else {
+                    title.textContent = 'Nueva Factura';
+                    // Generar número de factura
+                    try {
+                        const nextNum = await this.generateNumeroFactura();
+                        document.getElementById('factura-numero').value = nextNum;
+                    } catch (numErr) {
+                        console.error('Error generating invoice number:', numErr);
+                    }
+                    // Añadir una línea vacía
+                    this.addLinea();
                 }
-            } else {
-                title.textContent = 'Nueva Factura';
-                // Generar número de factura
-                document.getElementById('factura-numero').value = await this.generateNumeroFactura();
-                // Añadir una línea vacía
-                this.addLinea();
+
+                this.updateTotales();
+            } catch (dataError) {
+                console.error('Error loading data for invoice modal:', dataError);
+                selectCliente.innerHTML = '<option value="">Error cargando datos</option>';
+                app.showToast('Error cargando datos: ' + dataError.message, 'error');
             }
 
-            this.updateTotales();
-            modal.classList.add('active');
         } catch (error) {
             console.error('Error opening invoice modal:', error);
-            app.showToast('Error al abrir modal: ' + error.message, 'error');
+            // Critical error, ensure modal is closed
+            document.getElementById('modal-factura').classList.remove('active');
+            alert('Error crítico al abrir modal: ' + error.message);
         }
     }
 
