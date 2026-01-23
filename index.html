@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Gestión de Clientes y Reparaciones">
+    <title>ReparApp - Clientes y Reparaciones</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- PWA -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">ReparApp</div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item" data-view="clientes">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Clientes
+                </a>
+                <a href="#" class="nav-item" data-view="reparaciones">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                        </path>
+                    </svg>
+                    Reparaciones
+                </a>
+                <a href="#" class="nav-item" data-view="facturas">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Facturas
+                </a>
+                <a href="#" class="nav-item" data-view="settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                    Ajustes
+                </a>
+            </nav>
+
+            <div class="sync-section">
+                <button class="btn-sync" id="btn-sync">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <polyline points="1 20 1 14 7 14"></polyline>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                    <span>Sincronizar</span>
+                </button>
+                <p style="text-align: center; margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);"
+                    id="sync-status">Sin sincronizar</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <div class="view active" id="view-dashboard">
+                <header class="content-header">
+                    <h1 class="page-title">Dashboard</h1>
+                </header>
+                <div class="content-body">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="stat-clientes">0</h4>
+                                <p>Clientes</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="stat-reparaciones">0</h4>
+                                <p>Reparaciones</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon cyan">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="stat-info">
+                                <h4 id="stat-completadas">0</h4>
+                                <p>Completadas</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                        <h2 style="margin-bottom: 0;">Reparaciones Recientes</h2>
+                        <div class="view-mode-toggle">
+                            <button class="btn-icon mode-list" title="Lista">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-small" title="Mosaico Pequeño">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-large active" title="Mosaico Grande">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="cards-grid" id="dashboard-repairs">
+                        <!-- Reparaciones recientes se cargan aquí -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clientes View -->
+            <div class="view" id="view-clientes">
+                <header class="content-header">
+                    <h1 class="page-title">Clientes</h1>
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="M21 21l-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" class="search-input" id="search-clientes"
+                                placeholder="Buscar por nombre o teléfono...">
+                        </div>
+                        <div class="view-mode-toggle">
+                            <button class="btn-icon mode-list" title="Lista">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-small" title="Mosaico Pequeño">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-large active" title="Mosaico Grande">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-cliente">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nuevo Cliente
+                        </button>
+                    </div>
+                </header>
+                <div class="content-body">
+                    <div class="cards-grid" id="clientes-grid">
+                        <!-- Clientes se cargan aquí -->
+                    </div>
+                    <div class="empty-state" id="empty-clientes" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                        </svg>
+                        <h3>No hay clientes</h3>
+                        <p>Añade tu primer cliente para comenzar</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reparaciones View -->
+            <div class="view" id="view-reparaciones">
+                <header class="content-header">
+                    <h1 class="page-title">Reparaciones</h1>
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="M21 21l-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" class="search-input" id="search-reparaciones"
+                                placeholder="Buscar reparación...">
+                        </div>
+                        <select class="form-select" id="filter-estado" style="width: 150px;">
+                            <option value="">Todos</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="en_proceso">En Proceso</option>
+                            <option value="completada">Completada</option>
+                        </select>
+                        <div class="view-mode-toggle">
+                            <button class="btn-icon mode-list" title="Lista">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-small" title="Mosaico Pequeño">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-large active" title="Mosaico Grande">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-reparacion">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nueva Reparación
+                        </button>
+                    </div>
+                </header>
+                <div class="content-body">
+                    <div class="cards-grid" id="reparaciones-grid">
+                        <!-- Reparaciones se cargan aquí -->
+                    </div>
+                    <div class="empty-state" id="empty-reparaciones" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                            </path>
+                        </svg>
+                        <h3>No hay reparaciones</h3>
+                        <p>Añade una nueva reparación para comenzar</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Facturas View -->
+            <div class="view" id="view-facturas">
+                <header class="content-header">
+                    <h1 class="page-title">Facturas</h1>
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="M21 21l-4.35-4.35"></path>
+                            </svg>
+                            <input type="text" class="search-input" id="search-facturas"
+                                placeholder="Buscar factura...">
+                        </div>
+                        <div class="view-mode-toggle">
+                            <button class="btn-icon mode-list" title="Lista">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-small" title="Mosaico Pequeño">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                            </button>
+                            <button class="btn-icon mode-large active" title="Mosaico Grande">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-factura">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nueva Factura
+                        </button>
+                    </div>
+                </header>
+                <div class="content-body">
+                    <div class="cards-grid" id="facturas-grid">
+                        <!-- Facturas se cargan aquí -->
+                    </div>
+                    <div class="empty-state" id="empty-facturas" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <h3>No hay facturas</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div class="view" id="view-settings">
+                <header class="content-header">
+                    <h1 class="page-title">Ajustes y Seguridad</h1>
+                </header>
+                <div class="content-body" style="max-width: 800px; margin: 0 auto;">
+
+                    <!-- Sección Logo -->
+                    <div class="card" style="margin-bottom: var(--spacing-lg);">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Personalización</h3>
+                                <p class="card-subtitle">Configura la apariencia de la aplicación</p>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Logo de la Empresa</label>
+                                <div style="display: flex; align-items: center; gap: var(--spacing-md);">
+                                    <div id="logo-preview"
+                                        style="width: 64px; height: 64px; background: var(--bg-body); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid var(--border-color); overflow: hidden;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            id="default-logo-icon">
+                                            <path
+                                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                            </path>
+                                        </svg>
+                                        <img id="custom-logo-img" src=""
+                                            style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <input type="file" id="logo-input" accept="image/*" style="display: none;">
+                                        <button class="btn btn-secondary"
+                                            onclick="document.getElementById('logo-input').click()">
+                                            Subir Logo
+                                        </button>
+                                        <button class="btn btn-secondary" id="btn-remove-logo"
+                                            style="margin-left: var(--spacing-sm); display: none;">
+                                            Eliminar
+                                        </button>
+                                        <p
+                                            style="font-size: 0.8rem; color: var(--text-secondary); margin-top: var(--spacing-sm);">
+                                            Se usará en facturas y documentos (Recomendado: PNG fondo transparente)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Datos Empresa -->
+                    <div class="card" style="margin-bottom: var(--spacing-lg);">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Datos de Empresa</h3>
+                                <p class="card-subtitle">Información para las facturas</p>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form id="form-company-data">
+                                <div class="form-group">
+                                    <label class="form-label">Nombre / Razón Social</label>
+                                    <input type="text" class="form-input" id="company-name"
+                                        placeholder="Mi Empresa S.L.">
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                                    <div class="form-group">
+                                        <label class="form-label">NIF / CIF / DNI</label>
+                                        <input type="text" class="form-input" id="company-dni" placeholder="B12345678">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Teléfono</label>
+                                        <input type="tel" class="form-input" id="company-phone"
+                                            placeholder="+34 600 000 000">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Dirección Completa</label>
+                                    <input type="text" class="form-input" id="company-address"
+                                        placeholder="C/ Ejemplo, 123, 28000 Madrid">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-input" id="company-email"
+                                        placeholder="contacto@miempresa.com">
+                                </div>
+                                <div style="text-align: right; margin-top: var(--spacing-md);">
+                                    <button type="submit" class="btn btn-primary" id="btn-save-company">Guardar
+                                        Datos</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Sección Almacenamiento Local (PC) -->
+                    <div class="card" style="margin-bottom: var(--spacing-lg);">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Almacenamiento Local (PC)</h3>
+                                <p class="card-subtitle">Sincroniza tus datos automáticamente en una carpeta de tu PC
+                                </p>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="local-sync-status"
+                                style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color);">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <p style="font-size: 0.9rem; color: var(--text-secondary);">Estado:</p>
+                                        <p id="local-sync-message"
+                                            style="font-weight: bold; color: var(--status-pending);">No vinculado</p>
+                                    </div>
+                                    <button class="btn btn-secondary" id="btn-link-folder">
+                                        Vincular Carpeta
+                                    </button>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2"
+                                    style="vertical-align: middle; margin-right: 4px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                Al vincular una carpeta, la app guardará archivos JSON automáticamente cada vez que
+                                realices cambios.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Sección Copias de Seguridad -->
+                    <div class="card" style="margin-bottom: var(--spacing-lg);">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Copia de Seguridad</h3>
+                                <p class="card-subtitle">Exporta o importa tus datos</p>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
+                                <div>
+                                    <h4 style="color: var(--electric-cyan); margin-bottom: var(--spacing-md);">Exportar
+                                    </h4>
+                                    <p style="margin-bottom: var(--spacing-md); font-size: 0.9rem;">
+                                        Descarga una copia completa de tus clientes, reparaciones y facturas.
+                                    </p>
+                                    <button class="btn btn-primary" id="btn-export-backup" style="flex: 1;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Exportar (JSON)
+                                    </button>
+                                    <button class="btn btn-secondary" id="btn-export-advanced"
+                                        style="flex: 1; margin-top: 10px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                        </svg>
+                                        Exportar Avanzado (CSV+PDF)
+                                    </button>
+                                </div>
+                                <div>
+                                    <h4 style="color: var(--status-in-progress); margin-bottom: var(--spacing-md);">
+                                        Importar</h4>
+                                    <p style="margin-bottom: var(--spacing-md); font-size: 0.9rem;">
+                                        Restaura datos desde un archivo JSON. <strong
+                                            style="color: var(--status-pending);">⚠️ Sobrescribirá los datos
+                                            actuales.</strong>
+                                    </p>
+                                    <input type="file" id="backup-input" accept=".json,.zip" style="display: none;">
+                                    <button class="btn btn-secondary"
+                                        onclick="document.getElementById('backup-input').click()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="17 8 12 3 7 8"></polyline>
+                                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                                        </svg>
+                                        Restaurar Copia
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Seguridad -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Seguridad</h3>
+                                <p class="card-subtitle">Protege el acceso a la aplicación</p>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Código de Seguridad (PIN)</label>
+                                <div style="display: flex; gap: var(--spacing-md); align-items: flex-end;">
+                                    <div style="flex: 1;">
+                                        <input type="password" class="form-input" id="settings-pin" placeholder="****"
+                                            maxlength="4" style="letter-spacing: 4px; font-size: 1.2rem;">
+                                    </div>
+                                    <button class="btn btn-primary" id="btn-save-pin">Actualizar PIN</button>
+                                </div>
+                                <p
+                                    style="font-size: 0.8rem; color: var(--status-pending); margin-top: var(--spacing-sm);">
+                                    Deja en blanco para desactivar. Si olvidas el PIN, necesitarás borrar los datos del
+                                    navegador.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección Zona de Peligro -->
+                    <div class="card" style="border-color: var(--status-error);">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title" style="color: var(--status-error);">Zona de Peligro</h3>
+                                <p class="card-subtitle">Acciones irreversibles</p>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h4 style="color: var(--text-primary); margin-bottom: 5px;">Borrar todos los datos
+                                    </h4>
+                                    <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                        Elimina permanentemente clientes, reparaciones y facturas.<br>
+                                        La configuración (PIN, Logo, Empresa) se mantendrá.
+                                    </p>
+                                </div>
+                                <button class="btn btn-danger" id="btn-clear-data">Borrar Todo</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Auth Screen Overlay -->
+    <div id="auth-screen"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center;">
+
+        <div
+            style="width: 100%; max-width: 400px; padding: 40px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div
+                    style="font-size: 2rem; font-weight: 700; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;">
+                    ReparApp</div>
+                <p style="color: var(--text-secondary);" id="auth-subtitle">Inicia sesión para acceder</p>
+            </div>
+
+            <form id="auth-form">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="auth-email" class="form-input" required placeholder="tu@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" id="auth-password" class="form-input" required
+                        placeholder="Mínimo 6 caracteres" minlength="6">
+                </div>
+
+                <div id="auth-error"
+                    style="color: var(--danger); font-size: 0.9rem; margin-bottom: 20px; display: none; padding: 10px; background: rgba(255, 71, 87, 0.1); border-radius: 6px;">
+                </div>
+
+                <button type="submit" class="btn btn-primary"
+                    style="width: 100%; padding: 12px; font-size: 1rem; justify-content: center; margin-bottom: 20px;">
+                    <span id="btn-auth-text">Iniciar Sesión</span>
+                </button>
+
+                <div style="text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                    <span id="auth-switch-text">¿No tienes cuenta?</span>
+                    <a href="#" id="btn-toggle-auth"
+                        style="color: var(--electric-blue); text-decoration: none; font-weight: 600;">Regístrate</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lock Screen Overlay -->
+    <div id="lock-screen"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-body); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center;">
+        <div style="text-align: center; margin-bottom: var(--spacing-xl);">
+            <div
+                style="width: 80px; height: 80px; background: rgba(0, 255, 198, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 2px solid var(--electric-cyan);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--electric-cyan)" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h1 style="color: var(--text-primary); font-size: 1.5rem; margin-bottom: var(--spacing-sm);">App Bloqueada
+            </h1>
+            <p style="color: var(--text-secondary);">Introduce tu código de seguridad</p>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: var(--spacing-lg);">
+            <input type="password" id="lock-pin" maxlength="4"
+                style="background: var(--bg-card); border: 2px solid var(--border-color); color: var(--text-primary); font-size: 2rem; width: 160px; text-align: center; padding: 10px; border-radius: 8px; letter-spacing: 8px;">
+        </div>
+
+        <button class="btn btn-primary" id="btn-unlock"
+            style="min-width: 160px; font-size: 1rem; padding: 12px;">Desbloquear</button>
+        <p id="lock-error" style="color: var(--status-pending); margin-top: var(--spacing-md); display: none;">PIN
+            incorrecto</p>
+    </div>
+
+    <!-- Modal Cliente -->
+    <div class="modal-overlay" id="modal-cliente">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-cliente-title">Nuevo Cliente</h2>
+                <button class="modal-close" data-close-modal="modal-cliente">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="form-cliente">
+                <div class="modal-body">
+                    <input type="hidden" id="cliente-id">
+
+                    <!-- Sección: Datos Personales -->
+                    <h4
+                        style="color: var(--electric-blue); margin-bottom: var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Datos Personales</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label">Nombre *</label>
+                            <input type="text" class="form-input" id="cliente-nombre" required placeholder="Nombre">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" class="form-input" id="cliente-apellido" placeholder="Apellido">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-input" id="cliente-direccion"
+                                placeholder="Dirección del cliente">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                            <div class="form-group">
+                                <label class="form-label">DNI / NIF</label>
+                                <input type="text" class="form-input" id="cliente-dni" placeholder="12345678A">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Teléfono *</label>
+                                <input type="tel" class="form-input" id="cliente-telefono" required
+                                    placeholder="Número de teléfono">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" id="cliente-email" placeholder="correo@ejemplo.com">
+                        </div>
+
+
+
+                        <!-- Sección: Notas -->
+                        <h4
+                            style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                            Notas Adicionales</h4>
+
+                        <div class="form-group">
+                            <label class="form-label">Notas</label>
+                            <textarea class="form-textarea" id="cliente-notas"
+                                placeholder="Observaciones, contraseñas, información adicional..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary"
+                            data-close-modal="modal-cliente">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Reparación -->
+    <div class="modal-overlay" id="modal-reparacion">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-reparacion-title">Nueva Reparación</h2>
+                <button class="modal-close" data-close-modal="modal-reparacion">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="form-reparacion">
+                <div class="modal-body">
+                    <input type="hidden" id="reparacion-id">
+
+                    <!-- Sección: Cliente -->
+                    <h4
+                        style="color: var(--electric-blue); margin-bottom: var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Cliente</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">Cliente *</label>
+                        <select class="form-select" id="reparacion-cliente" required>
+                            <option value="">Seleccionar cliente...</option>
+                        </select>
+                    </div>
+
+                    <!-- Sección: Dispositivo -->
+                    <h4
+                        style="color: var(--electric-purple); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Dispositivo</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" id="reparacion-dispositivo">
+                                <option value="">Sin especificar</option>
+                                <option value="movil">Móvil</option>
+                                <option value="tablet">Tablet</option>
+                                <option value="ordenador">Ordenador</option>
+                                <option value="videoconsola">Videoconsola</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Marca</label>
+                            <input type="text" class="form-input" id="reparacion-marca" placeholder="Samsung, Apple...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-input" id="reparacion-modelo" placeholder="iPhone 15...">
+                        </div>
+                    </div>
+
+                    <!-- Sección: Reparación -->
+                    <h4
+                        style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Detalles de la Reparación</h4>
+
+                    <div class="form-group">
+                        <label class="form-label">Problema *</label>
+                        <textarea class="form-textarea" id="reparacion-problema" required
+                            placeholder="Describe el problema del dispositivo..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Solución</label>
+                        <textarea class="form-textarea" id="reparacion-solucion"
+                            placeholder="Describe la solución aplicada..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">PIN / Patrón de Desbloqueo</label>
+                        <input type="text" class="form-input" id="reparacion-pin"
+                            placeholder="PIN, patrón o contraseña del dispositivo">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Notas Adicionales</label>
+                        <textarea class="form-textarea" id="reparacion-notas"
+                            placeholder="Observaciones, accesorios entregados, información extra..."></textarea>
+                    </div>
+
+                    <!-- Estado y Precio al final -->
+                    <h4
+                        style="color: var(--status-pending); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                        Estado y Precio</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="reparacion-estado">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en_proceso">En Proceso</option>
+                                <option value="completada">Completada</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Precio Estimado (€)</label>
+                            <input type="number" class="form-input" id="reparacion-precio" step="0.01" min="0"
+                                placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label">Precio Final (€)</label>
+                            <input type="number" class="form-input" id="reparacion-precio-final" step="0.01" min="0"
+                                placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha de Entrega</label>
+                            <input type="date" class="form-input" id="reparacion-fecha-entrega">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        data-close-modal="modal-reparacion">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Factura -->
+    <div class="modal-overlay" id="modal-factura">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-factura-title">Nueva Factura</h2>
+                <button class="modal-close" data-close-modal="modal-factura">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="form-factura">
+                <div class="modal-body">
+                    <input type="hidden" id="factura-id">
+
+                    <!-- Sección: Cliente -->
+
+
+                    <div class="form-group">
+                        <label class="form-label">Cliente *</label>
+                        <select class="form-select" id="factura-cliente" required>
+                            <option value="">Seleccionar cliente...</option>
+                        </select>
+                    </div>
+
+                    <!-- Datos del cliente (auto-rellenados) -->
+                    <div id="factura-cliente-info"
+                        style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--spacing-md); margin-bottom: var(--spacing-lg);">
+                        <div
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm); font-size: 0.9rem;">
+                            <div><strong style="color: var(--electric-blue);">Nombre:</strong> <span
+                                    id="factura-info-nombre">-</span></div>
+                            <div><strong style="color: var(--electric-blue);">DNI:</strong> <span
+                                    id="factura-info-dni">-</span></div>
+                            <div><strong style="color: var(--electric-blue);">Teléfono:</strong> <span
+                                    id="factura-info-telefono">-</span></div>
+                            <div><strong style="color: var(--electric-blue);">Email:</strong> <span
+                                    id="factura-info-email">-</span></div>
+                            <div style="grid-column: 1 / -1;"><strong
+                                    style="color: var(--electric-blue);">Dirección:</strong> <span
+                                    id="factura-info-direccion">-</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Datos Factura -->
+
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label">Número de Factura</label>
+                            <input type="text" class="form-input" id="factura-numero" placeholder="FAC-2026-001">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha</label>
+                            <div style="display: flex; gap: var(--spacing-sm);">
+                                <input type="date" class="form-input" id="factura-fecha" style="flex: 1;">
+                                <button type="button" class="btn-icon" id="btn-edit-fecha" title="Cambiar fecha">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Conceptos -->
+
+
+                    <div id="factura-lineas">
+                        <!-- Las líneas se añaden dinámicamente -->
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" id="btn-add-linea"
+                        style="margin-bottom: var(--spacing-lg);">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" width="16" height="16">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Añadir Concepto
+                    </button>
+
+                    <!-- Totales -->
+                    <div
+                        style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--spacing-md);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-sm);">
+                            <span>Subtotal:</span>
+                            <span id="factura-subtotal">0.00 €</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-sm);">
+                            <span>IVA (21%):</span>
+                            <span id="factura-iva">0.00 €</span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; color: var(--electric-cyan); border-top: 1px solid var(--border-color); padding-top: var(--spacing-sm);">
+                            <span>TOTAL:</span>
+                            <span id="factura-total">0.00 €</span>
+                        </div>
+                    </div>
+
+                    <!-- Notas -->
+                    <div class="form-group" style="margin-top: var(--spacing-lg);">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-textarea" id="factura-notas"
+                            placeholder="Notas adicionales para la factura..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal="modal-factura">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Factura</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación -->
+    <div class="modal-overlay" id="modal-confirm">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-body confirm-dialog">
+                <h3 id="confirm-title">¿Eliminar?</h3>
+                <p id="confirm-message">Esta acción no se puede deshacer.</p>
+                <div class="confirm-actions">
+                    <button class="btn btn-secondary" data-close-modal="modal-confirm">Cancelar</button>
+                    <button class="btn btn-danger" id="btn-confirm-delete">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- External Libs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/utils/csv.js"></script>
+    <script src="js/utils/file-sync.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/ui/navigation.js"></script>
+    <script src="js/ui/clients.js"></script>
+    <script src="js/ui/repairs.js"></script>
+    <script src="js/ui/invoices.js"></script>
+    <script src="js/ui/settings.js"></script>
+    <script src="js/ui/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
