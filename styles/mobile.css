@@ -232,12 +232,18 @@
 
 /* 4. MODALES Y OVERLAYS (FIX CRÍTICO) */
 .modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     z-index: 20000 !important;
     /* Superar navbar (9999) */
     align-items: flex-start !important;
     /* Changed from center to flex-start for keyboard safety */
     justify-content: center !important;
     padding: 16px !important;
+    background: rgba(0, 0, 0, 0.85) !important;
     transition: none !important;
     /* Disable transition to prevent freeze */
     opacity: 1 !important;
@@ -255,16 +261,21 @@
 .modal {
     width: 100% !important;
     max-width: 100% !important;
-    margin: 40px 0 0 0 !important;
-    /* Top margin safely */
-    max-height: 85vh !important;
+    margin: 60px 0 0 0 !important;
+    /* Top margin safely below topbar */
+    max-height: calc(100vh - 80px) !important;
     overflow-y: auto !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 16px !important;
     position: relative !important;
     z-index: 20001 !important;
     transform: none !important;
     /* Disable transform transition */
     transition: none !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* Auth y Lock Screen */
