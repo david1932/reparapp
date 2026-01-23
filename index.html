@@ -8,6 +8,7 @@
     <meta name="description" content="Gestión de Clientes y Reparaciones">
     <title>ReparApp - Clientes y Reparaciones</title>
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/mobile.css" media="(max-width: 768px)">
     <link rel="manifest" href="manifest.json">
     <!-- PWA -->
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -15,6 +16,19 @@
 
 <body>
     <div class="app-container">
+        <!-- Mobile Top Bar (Hidden on desktop via CSS) -->
+        <div class="mobile-top-bar">
+            <div class="mobile-logo">ReparApp</div>
+            <button class="btn-sync-mobile" id="btn-sync-mobile" title="Sincronizar">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+        </div>
+
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">

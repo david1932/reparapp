@@ -1,0 +1,192 @@
+/* ============================================
+   MOBILE SPECIFIC STYLES
+   Solo se aplica en pantallas <= 768px
+   ============================================ */
+
+:root {
+    --mobile-nav-height: 64px;
+    --mobile-top-height: 60px;
+}
+
+/* Transformar contenedor principal a Grid */
+.app-container {
+    display: grid !important;
+    /* Override flex */
+    grid-template-rows: var(--mobile-top-height) 1fr var(--mobile-nav-height);
+    grid-template-columns: 100%;
+    grid-template-areas:
+        "topbar"
+        "content"
+        "navbar";
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* 1. TOP BAR (Visible en móvil) */
+.mobile-top-bar {
+    display: flex !important;
+    /* Forzado visible */
+    grid-area: topbar;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1001;
+}
+
+.mobile-logo {
+    font-size: 1.25rem;
+    font-weight: 800;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.btn-sync-mobile {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--gradient-accent);
+    border: none;
+    color: var(--bg-primary);
+    box-shadow: 0 0 15px rgba(0, 255, 198, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-sync-mobile svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* 2. SIDEBAR -> BOTTOM NAVBAR */
+.sidebar {
+    grid-area: navbar;
+    position: static !important;
+    /* Reset fixed positioning logic */
+    width: 100% !important;
+    height: 100% !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+    border-right: none !important;
+    border-top: 1px solid var(--border-color);
+    background: rgba(10, 10, 10, 0.98);
+    backdrop-filter: blur(12px);
+    z-index: 1001;
+}
+
+/* Ocultar elementos de sidebar que no son navegación */
+.sidebar-header,
+.sync-section {
+    display: none !important;
+}
+
+.sidebar-nav {
+    flex-direction: row !important;
+    width: 100%;
+    justify-content: space-around;
+    gap: 0 !important;
+    padding: 0;
+}
+
+.nav-item {
+    flex: 1;
+    flex-direction: column !important;
+    justify-content: center;
+    padding: 4px !important;
+    border-radius: 0 !important;
+    font-size: 0.65rem;
+    gap: 4px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    /* Disable hover lifts */
+}
+
+.nav-item svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 2px;
+}
+
+.nav-item span {
+    display: block !important;
+}
+
+.nav-item.active {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.nav-item.active svg {
+    color: var(--electric-blue);
+    transform: translateY(-2px);
+}
+
+.nav-item.active span {
+    color: var(--electric-blue);
+}
+
+/* 3. MAIN CONTENT */
+.main-content {
+    grid-area: content;
+    width: 100%;
+    height: 100%;
+    /* Remove padding that might be set by desktop */
+}
+
+.content-header {
+    padding: 16px;
+    position: sticky;
+    top: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+}
+
+.page-title {
+    font-size: 1.5rem;
+}
+
+.content-body {
+    padding: 16px;
+    padding-bottom: 80px;
+    /* Espacio extra para scroll final */
+}
+
+/* AJUSTES UI GENERALES */
+.cards-grid {
+    grid-template-columns: 1fr;
+    /* Una columna */
+    gap: 16px;
+}
+
+.stat-card {
+    padding: 16px;
+}
+
+.header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.search-container {
+    width: 100%;
+    max-width: none;
+}
+
+.view-mode-toggle {
+    display: none !important;
+}
+
+/* Ocultar botones desktop innecesarios */
+.desktop-only {
+    display: none !important;
+}
