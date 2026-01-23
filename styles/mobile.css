@@ -1,6 +1,6 @@
 /* ============================================
    MOBILE SPECIFIC STYLES
-   Solo se aplica en pantallas <= 768px
+   Solo se aplica en pantallas <= 1024px
    ============================================ */
 
 :root {
@@ -8,7 +8,6 @@
     --mobile-top-height: 60px;
 }
 
-/* Transformar contenedor principal a Grid */
 /* Transformar contenedor principal a Grid */
 .app-container {
     display: grid !important;
@@ -204,4 +203,30 @@
 /* Ocultar botones desktop innecesarios */
 .desktop-only {
     display: none !important;
+}
+
+/* 4. MODALES Y OVERLAYS (FIX CRÍTICO) */
+.modal-overlay {
+    z-index: 20000 !important;
+    /* Superar navbar (9999) */
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+}
+
+.modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    border-radius: 16px !important;
+    position: relative !important;
+    z-index: 20001 !important;
+}
+
+/* Auth y Lock Screen */
+#auth-screen,
+#lock-screen {
+    z-index: 30000 !important;
 }
