@@ -323,43 +323,48 @@ class RepairsUI {
      * Abre el modal de reparación
      */
     async openModal(id = null) {
-        const modal = document.getElementById('modal-reparacion');
-        const title = document.getElementById('modal-reparacion-title');
-        const form = document.getElementById('form-reparacion');
-        const selectCliente = document.getElementById('reparacion-cliente');
+        try {
+            const modal = document.getElementById('modal-reparacion');
+            const title = document.getElementById('modal-reparacion-title');
+            const form = document.getElementById('form-reparacion');
+            const selectCliente = document.getElementById('reparacion-cliente');
 
-        form.reset();
-        document.getElementById('reparacion-id').value = '';
+            form.reset();
+            document.getElementById('reparacion-id').value = '';
 
-        // Cargar clientes en el select
-        const clientes = await db.getAllClientes();
-        selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
-            clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
+            // Cargar clientes en el select
+            const clientes = await db.getAllClientes();
+            selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+                clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
 
-        if (id) {
-            // Modo edición
-            title.textContent = 'Editar Reparación';
-            const reparacion = await db.getReparacion(id);
-            if (reparacion) {
-                document.getElementById('reparacion-id').value = reparacion.id;
-                document.getElementById('reparacion-cliente').value = reparacion.cliente_id;
-                document.getElementById('reparacion-dispositivo').value = reparacion.dispositivo || '';
-                document.getElementById('reparacion-marca').value = reparacion.marca || '';
-                document.getElementById('reparacion-modelo').value = reparacion.modelo || '';
-                document.getElementById('reparacion-problema').value = reparacion.problema || reparacion.descripcion || '';
-                document.getElementById('reparacion-solucion').value = reparacion.solucion || '';
-                document.getElementById('reparacion-estado').value = reparacion.estado;
-                document.getElementById('reparacion-precio').value = reparacion.precio || '';
-                document.getElementById('reparacion-precio-final').value = reparacion.precio_final || '';
-                document.getElementById('reparacion-fecha-entrega').value = reparacion.fecha_entrega ? new Date(reparacion.fecha_entrega).toISOString().split('T')[0] : '';
-                document.getElementById('reparacion-pin').value = reparacion.pin || '';
-                document.getElementById('reparacion-notas').value = reparacion.notas || '';
+            if (id) {
+                // Modo edición
+                title.textContent = 'Editar Reparación';
+                const reparacion = await db.getReparacion(id);
+                if (reparacion) {
+                    document.getElementById('reparacion-id').value = reparacion.id;
+                    document.getElementById('reparacion-cliente').value = reparacion.cliente_id;
+                    document.getElementById('reparacion-dispositivo').value = reparacion.dispositivo || '';
+                    document.getElementById('reparacion-marca').value = reparacion.marca || '';
+                    document.getElementById('reparacion-modelo').value = reparacion.modelo || '';
+                    document.getElementById('reparacion-problema').value = reparacion.problema || reparacion.descripcion || '';
+                    document.getElementById('reparacion-solucion').value = reparacion.solucion || '';
+                    document.getElementById('reparacion-estado').value = reparacion.estado;
+                    document.getElementById('reparacion-precio').value = reparacion.precio || '';
+                    document.getElementById('reparacion-precio-final').value = reparacion.precio_final || '';
+                    document.getElementById('reparacion-fecha-entrega').value = reparacion.fecha_entrega ? new Date(reparacion.fecha_entrega).toISOString().split('T')[0] : '';
+                    document.getElementById('reparacion-pin').value = reparacion.pin || '';
+                    document.getElementById('reparacion-notas').value = reparacion.notas || '';
+                }
+            } else {
+                title.textContent = 'Nueva Reparación';
             }
-        } else {
-            title.textContent = 'Nueva Reparación';
-        }
 
-        modal.classList.add('active');
+            modal.classList.add('active');
+        } catch (error) {
+            console.error('Error opening repair modal:', error);
+            app.showToast('Error al abrir modal: ' + error.message, 'error');
+        }
     }
 
     /**

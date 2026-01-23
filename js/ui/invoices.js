@@ -547,60 +547,65 @@ class InvoicesUI {
      * Abre el modal de factura
      */
     async openModal(id = null) {
-        const modal = document.getElementById('modal-factura');
-        const title = document.getElementById('modal-factura-title');
-        const form = document.getElementById('form-factura');
-        const selectCliente = document.getElementById('factura-cliente');
-        const lineasContainer = document.getElementById('factura-lineas');
+        try {
+            const modal = document.getElementById('modal-factura');
+            const title = document.getElementById('modal-factura-title');
+            const form = document.getElementById('form-factura');
+            const selectCliente = document.getElementById('factura-cliente');
+            const lineasContainer = document.getElementById('factura-lineas');
 
-        form.reset();
-        document.getElementById('factura-id').value = '';
-        document.getElementById('factura-cliente-info').style.display = 'none';
-        lineasContainer.innerHTML = '';
+            form.reset();
+            document.getElementById('factura-id').value = '';
+            document.getElementById('factura-cliente-info').style.display = 'none';
+            lineasContainer.innerHTML = '';
 
-        // Cargar clientes
-        const clientes = await db.getAllClientes();
-        selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
-            clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
+            // Cargar clientes
+            const clientes = await db.getAllClientes();
+            selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+                clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
 
-        // Fecha actual
-        const today = new Date().toISOString().split('T')[0];
-        const dateInput = document.getElementById('factura-fecha');
-        dateInput.value = today;
-        dateInput.removeAttribute('readonly');
-        dateInput.removeAttribute('disabled');
+            // Fecha actual
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('factura-fecha');
+            dateInput.value = today;
+            dateInput.removeAttribute('readonly');
+            dateInput.removeAttribute('disabled');
 
-        if (id) {
-            // Modo edición
-            title.textContent = 'Editar Factura';
-            const factura = await db.getFactura(id);
-            if (factura) {
-                document.getElementById('factura-id').value = factura.id;
-                document.getElementById('factura-cliente').value = factura.cliente_id;
-                document.getElementById('factura-numero').value = factura.numero || '';
-                document.getElementById('factura-fecha').value = factura.fecha ? new Date(factura.fecha).toISOString().split('T')[0] : today;
-                document.getElementById('factura-notas').value = factura.notas || '';
+            if (id) {
+                // Modo edición
+                title.textContent = 'Editar Factura';
+                const factura = await db.getFactura(id);
+                if (factura) {
+                    document.getElementById('factura-id').value = factura.id;
+                    document.getElementById('factura-cliente').value = factura.cliente_id;
+                    document.getElementById('factura-numero').value = factura.numero || '';
+                    document.getElementById('factura-fecha').value = factura.fecha ? new Date(factura.fecha).toISOString().split('T')[0] : today;
+                    document.getElementById('factura-notas').value = factura.notas || '';
 
-                // Cargar datos del cliente
-                this.onClienteChange(factura.cliente_id);
+                    // Cargar datos del cliente
+                    this.onClienteChange(factura.cliente_id);
 
-                // Cargar líneas
-                if (factura.lineas && factura.lineas.length > 0) {
-                    factura.lineas.forEach(l => {
-                        this.addLinea(l.concepto, l.cantidad, l.precio);
-                    });
+                    // Cargar líneas
+                    if (factura.lineas && factura.lineas.length > 0) {
+                        factura.lineas.forEach(l => {
+                            this.addLinea(l.concepto, l.cantidad, l.precio);
+                        });
+                    }
                 }
+            } else {
+                title.textContent = 'Nueva Factura';
+                // Generar número de factura
+                document.getElementById('factura-numero').value = await this.generateNumeroFactura();
+                // Añadir una línea vacía
+                this.addLinea();
             }
-        } else {
-            title.textContent = 'Nueva Factura';
-            // Generar número de factura
-            document.getElementById('factura-numero').value = await this.generateNumeroFactura();
-            // Añadir una línea vacía
-            this.addLinea();
-        }
 
-        this.updateTotales();
-        modal.classList.add('active');
+            this.updateTotales();
+            modal.classList.add('active');
+        } catch (error) {
+            console.error('Error opening invoice modal:', error);
+            app.showToast('Error al abrir modal: ' + error.message, 'error');
+        }
     }
 
     /**
