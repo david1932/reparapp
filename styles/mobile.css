@@ -9,18 +9,20 @@
 }
 
 /* Transformar contenedor principal a Grid */
+/* Transformar contenedor principal a Grid */
 .app-container {
     display: grid !important;
-    /* Override flex */
-    grid-template-rows: var(--mobile-top-height) 1fr var(--mobile-nav-height);
-    grid-template-columns: 100%;
+    flex-direction: column !important;
+    /* Safety override */
+    grid-template-rows: 60px 1fr 64px !important;
+    grid-template-columns: 100% !important;
     grid-template-areas:
         "topbar"
         "content"
-        "navbar";
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
+        "navbar" !important;
+    height: 100vh !important;
+    width: 100vw !important;
+    overflow: hidden !important;
 }
 
 /* 1. TOP BAR (Visible en móvil) */
