@@ -69,17 +69,22 @@
 /* 2. SIDEBAR -> BOTTOM NAVBAR */
 .sidebar {
     grid-area: navbar;
-    position: static !important;
-    /* Reset fixed positioning logic */
+    position: fixed !important;
+    /* Fixed to bottom */
+    bottom: 0 !important;
+    left: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 64px !important;
+    display: flex !important;
+    /* Force flex */
     flex-direction: row !important;
     padding: 0 !important;
     border-right: none !important;
     border-top: 1px solid var(--border-color);
-    background: rgba(10, 10, 10, 0.98);
-    backdrop-filter: blur(12px);
-    z-index: 1001;
+    background: #0a0a0a !important;
+    /* Solid background override */
+    z-index: 9999 !important;
+    /* Max z-index */
 }
 
 /* Ocultar elementos de sidebar que no son navegación */
@@ -89,25 +94,33 @@
 }
 
 .sidebar-nav {
+    display: flex !important;
     flex-direction: row !important;
     width: 100%;
     justify-content: space-around;
+    align-items: center !important;
     gap: 0 !important;
-    padding: 0;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 .nav-item {
+    display: flex !important;
+    /* Force visibility */
     flex: 1;
     flex-direction: column !important;
     justify-content: center;
-    padding: 4px !important;
+    align-items: center !important;
+    padding: 8px 0 !important;
     border-radius: 0 !important;
     font-size: 0.65rem;
     gap: 4px !important;
     background: transparent !important;
     box-shadow: none !important;
     transform: none !important;
-    /* Disable hover lifts */
+    opacity: 1 !important;
+    /* Anti-hide */
+    color: #888888 !important;
 }
 
 .nav-item svg {
