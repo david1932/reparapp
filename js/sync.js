@@ -121,17 +121,19 @@ class SyncManager {
         for (const cliente of localClientes) {
             try {
                 if (cliente.deleted) {
-                    // Hard Delete on Server
                     await supabaseClient.deleteCliente(cliente.id);
                 } else {
-                    // Upsert (Create/Update)
-                    // if (!cliente.user_id) cliente.user_id = userId; // REMOVED
+                    // Sanitizar payload: quitar user_id porque no existe en schema
+                    const payload = { ...cliente };
+                    delete payload.user_id;
+
+                    // Verificar existencia (usando ID original)
                     const serverCliente = await supabaseClient.getCliente(cliente.id);
 
                     if (!serverCliente) {
-                        await supabaseClient.createCliente(cliente);
+                        await supabaseClient.createCliente(payload);
                     } else if (cliente.ultima_modificacion > serverCliente.ultima_modificacion) {
-                        await supabaseClient.updateCliente(cliente.id, cliente);
+                        await supabaseClient.updateCliente(cliente.id, payload);
                     }
                 }
             } catch (error) {
@@ -145,13 +147,15 @@ class SyncManager {
                 if (reparacion.deleted) {
                     await supabaseClient.deleteReparacion(reparacion.id);
                 } else {
-                    // if (!reparacion.user_id) reparacion.user_id = userId; // REMOVED
+                    const payload = { ...reparacion };
+                    delete payload.user_id;
+
                     const serverReparacion = await supabaseClient.getReparacion(reparacion.id);
 
                     if (!serverReparacion) {
-                        await supabaseClient.createReparacion(reparacion);
+                        await supabaseClient.createReparacion(payload);
                     } else if (reparacion.ultima_modificacion > serverReparacion.ultima_modificacion) {
-                        await supabaseClient.updateReparacion(reparacion.id, reparacion);
+                        await supabaseClient.updateReparacion(reparacion.id, payload);
                     }
                 }
             } catch (error) {
@@ -165,13 +169,15 @@ class SyncManager {
                 if (factura.deleted) {
                     await supabaseClient.deleteFactura(factura.id);
                 } else {
-                    // if (!factura.user_id) factura.user_id = userId; // REMOVED: Schema mismtach (column missing)
+                    const payload = { ...factura };
+                    delete payload.user_id;
+
                     const serverFactura = await supabaseClient.getFactura(factura.id);
 
                     if (!serverFactura) {
-                        await supabaseClient.createFactura(factura);
+                        await supabaseClient.createFactura(payload);
                     } else if (factura.ultima_modificacion > serverFactura.ultima_modificacion) {
-                        await supabaseClient.updateFactura(factura.id, factura);
+                        await supabaseClient.updateFactura(factura.id, payload);
                     }
                 }
             } catch (error) {
