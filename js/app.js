@@ -463,5 +463,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { passive: false });
     }
 
+    const btnSync = document.getElementById('btn-sync-mobile');
+    if (btnSync) {
+        btnSync.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (window.syncManager) {
+                console.log('Sync triggered via mobile touch');
+                window.syncManager.sync();
+            }
+        }, { passive: false });
+
+        // Also add click just in case
+        btnSync.addEventListener('click', (e) => {
+            if (window.syncManager) window.syncManager.sync();
+        });
+    }
+
     console.log('Mobile handlers initialized: UIs exposed to window + Modals Relocated');
 });
