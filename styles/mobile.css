@@ -239,8 +239,8 @@
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
     z-index: 20000 !important;
     /* Superar navbar (9999) */
     align-items: flex-start !important;
