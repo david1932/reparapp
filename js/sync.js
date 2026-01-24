@@ -108,7 +108,7 @@ class SyncManager {
             return;
         }
 
-        // Obtener datos modificados localmente
+        // Obtener datos modificados localmente (incluye eliminados soft-delete)
         const [localClientes, localReparaciones, localFacturas] = await Promise.all([
             db.getClientesModifiedAfter(this.lastSyncTimestamp),
             db.getReparacionesModifiedAfter(this.lastSyncTimestamp),
@@ -119,18 +119,20 @@ class SyncManager {
 
         // Subir clientes
         for (const cliente of localClientes) {
-            // Asegurar user_id
-            if (!cliente.user_id) cliente.user_id = userId;
-
             try {
-                const serverCliente = await supabaseClient.getCliente(cliente.id);
+                if (cliente.deleted) {
+                    // Hard Delete on Server
+                    await supabaseClient.deleteCliente(cliente.id);
+                } else {
+                    // Upsert (Create/Update)
+                    if (!cliente.user_id) cliente.user_id = userId;
+                    const serverCliente = await supabaseClient.getCliente(cliente.id);
 
-                if (!serverCliente) {
-                    // No existe en servidor, crear
-                    await supabaseClient.createCliente(cliente);
-                } else if (cliente.ultima_modificacion > serverCliente.ultima_modificacion) {
-                    // Local más reciente, actualizar
-                    await supabaseClient.updateCliente(cliente.id, cliente);
+                    if (!serverCliente) {
+                        await supabaseClient.createCliente(cliente);
+                    } else if (cliente.ultima_modificacion > serverCliente.ultima_modificacion) {
+                        await supabaseClient.updateCliente(cliente.id, cliente);
+                    }
                 }
             } catch (error) {
                 console.error(`Error syncing cliente ${cliente.id}:`, error);
@@ -139,18 +141,18 @@ class SyncManager {
 
         // Subir reparaciones
         for (const reparacion of localReparaciones) {
-            // Asegurar user_id
-            if (!reparacion.user_id) reparacion.user_id = userId;
-
             try {
-                const serverReparacion = await supabaseClient.getReparacion(reparacion.id);
+                if (reparacion.deleted) {
+                    await supabaseClient.deleteReparacion(reparacion.id);
+                } else {
+                    if (!reparacion.user_id) reparacion.user_id = userId;
+                    const serverReparacion = await supabaseClient.getReparacion(reparacion.id);
 
-                if (!serverReparacion) {
-                    // No existe en servidor, crear
-                    await supabaseClient.createReparacion(reparacion);
-                } else if (reparacion.ultima_modificacion > serverReparacion.ultima_modificacion) {
-                    // Local más reciente, actualizar
-                    await supabaseClient.updateReparacion(reparacion.id, reparacion);
+                    if (!serverReparacion) {
+                        await supabaseClient.createReparacion(reparacion);
+                    } else if (reparacion.ultima_modificacion > serverReparacion.ultima_modificacion) {
+                        await supabaseClient.updateReparacion(reparacion.id, reparacion);
+                    }
                 }
             } catch (error) {
                 console.error(`Error syncing reparacion ${reparacion.id}:`, error);
@@ -159,18 +161,18 @@ class SyncManager {
 
         // Subir facturas
         for (const factura of localFacturas) {
-            // Asegurar user_id
-            if (!factura.user_id) factura.user_id = userId;
-
             try {
-                const serverFactura = await supabaseClient.getFactura(factura.id);
+                if (factura.deleted) {
+                    await supabaseClient.deleteFactura(factura.id);
+                } else {
+                    if (!factura.user_id) factura.user_id = userId;
+                    const serverFactura = await supabaseClient.getFactura(factura.id);
 
-                if (!serverFactura) {
-                    // No existe en servidor, crear
-                    await supabaseClient.createFactura(factura);
-                } else if (factura.ultima_modificacion > serverFactura.ultima_modificacion) {
-                    // Local más reciente, actualizar
-                    await supabaseClient.updateFactura(factura.id, factura);
+                    if (!serverFactura) {
+                        await supabaseClient.createFactura(factura);
+                    } else if (factura.ultima_modificacion > serverFactura.ultima_modificacion) {
+                        await supabaseClient.updateFactura(factura.id, factura);
+                    }
                 }
             } catch (error) {
                 console.error(`Error syncing factura ${factura.id}:`, error);
