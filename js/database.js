@@ -558,17 +558,31 @@ class Database {
      * Elimina TODOS los datos de negocio (Clientes, Reparaciones, Facturas)
      * Mantiene la configuración (Logo, PIN, Datos Empresa)
      */
+    /**
+     * Elimina TODOS los datos de negocio (Clientes, Reparaciones, Facturas)
+     * Realiza un SOFT DELETE masivo para que se propague a la nube
+     */
     async clearAllData() {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['clientes', 'reparaciones', 'facturas'], 'readwrite');
+        // 1. Clientes
+        const clientes = await this.getAllClientes(); // Esto trae los activos
+        // Necesitamos borrarlos uno a uno para activar el soft-delete logic
+        for (const c of clientes) {
+            await this.deleteCliente(c.id);
+        }
 
-            transaction.onerror = () => reject(transaction.error);
-            transaction.oncomplete = () => resolve();
+        // 2. Reparaciones
+        const reparaciones = await this.getAllReparaciones();
+        for (const r of reparaciones) {
+            await this.deleteReparacion(r.id);
+        }
 
-            transaction.objectStore('clientes').clear();
-            transaction.objectStore('reparaciones').clear();
-            transaction.objectStore('facturas').clear();
-        });
+        // 3. Facturas
+        const facturas = await this.getAllFacturas();
+        for (const f of facturas) {
+            await this.deleteFactura(f.id);
+        }
+
+        return true;
     }
 }
 
