@@ -289,6 +289,14 @@
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
+/* Override inline styles for specific modals */
+#modal-reparacion .modal,
+#modal-factura .modal,
+#modal-cliente .modal {
+    max-width: 90% !important;
+    width: 90% !important;
+}
+
 .modal-footer {
     padding-bottom: 40px !important;
     /* Espacio extra debajo del botón */
