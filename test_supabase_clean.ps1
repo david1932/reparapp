@@ -12,14 +12,15 @@ $Headers = @{
 $TestId = [guid]::NewGuid().ToString()
 
 Write-Host "1. Creating Client (NO user_id)..."
-$IsoDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+# Fix: Schema uses bigint (milliseconds), not ISO String
+$Timestamp = [long](Get-Date -UFormat %s) * 1000
 
 $Body = @{
     id                  = $TestId
     nombre              = "Test Sync Fix"
     telefono            = "666777888"
-    fecha_creacion      = $IsoDate
-    ultima_modificacion = $IsoDate
+    fecha_creacion      = $Timestamp
+    ultima_modificacion = $Timestamp
     # user_id OMITTED
 } | ConvertTo-Json
 
