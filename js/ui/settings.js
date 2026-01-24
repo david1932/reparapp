@@ -696,6 +696,63 @@ class SettingsUI {
 
             app.showToast(`Limpieza completada: ${deletedCount} duplicados eliminados`, 'success');
 
+            // --- NUEVO: Limpieza de Reparaciones Duplicadas ---
+            const allReparaciones = await db.getAllReparaciones();
+            const repGroups = {};
+            let deletedRepairs = 0;
+
+            // Agrupar por: Cliente + Dispositivo + Problema + Fecha
+            for (const r of allReparaciones) {
+                // Key compuesta
+                const key = `${r.cliente_id}_${r.dispositivo}_${r.problema}_${r.fecha_entrada}`;
+                if (!repGroups[key]) repGroups[key] = [];
+                repGroups[key].push(r);
+            }
+
+            for (const key in repGroups) {
+                const group = repGroups[key];
+                if (group.length > 1) {
+                    group.sort((a, b) => b.ultima_modificacion - a.ultima_modificacion); // Keep newest
+                    const master = group[0];
+                    for (let i = 1; i < group.length; i++) {
+                        await db.deleteReparacion(group[i].id);
+                        deletedRepairs++;
+                    }
+                }
+            }
+
+            if (deletedRepairs > 0) {
+                app.showToast(`Eliminadas ${deletedRepairs} reparaciones duplicadas`, 'success');
+            }
+
+            // --- NUEVO: Limpieza de Facturas Duplicadas ---
+            const allFacturas = await db.getAllFacturas();
+            const facGroups = {};
+            let deletedInvoices = 0;
+
+            // Agrupar por: Número de Factura
+            for (const f of allFacturas) {
+                const key = f.numero; // El número debe ser único
+                if (!facGroups[key]) facGroups[key] = [];
+                facGroups[key].push(f);
+            }
+
+            for (const key in facGroups) {
+                const group = facGroups[key];
+                if (group.length > 1) {
+                    group.sort((a, b) => b.ultima_modificacion - a.ultima_modificacion); // Keep newest
+                    const master = group[0];
+                    for (let i = 1; i < group.length; i++) {
+                        await db.deleteFactura(group[i].id);
+                        deletedInvoices++;
+                    }
+                }
+            }
+
+            if (deletedInvoices > 0) {
+                app.showToast(`Eliminadas ${deletedInvoices} facturas duplicadas`, 'success');
+            }
+
             // Forzar sync para subir cambios
             setTimeout(() => {
                 if (window.syncManager) window.syncManager.sync();
