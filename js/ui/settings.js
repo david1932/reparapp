@@ -257,21 +257,29 @@ class SettingsUI {
         try {
             app.showToast('Generando copia de seguridad...', 'info');
 
+            // Fetch data explicitly first
+            const clientes = await db.getAllClientes();
+            const reparaciones = await db.getAllReparaciones();
+            const facturas = await db.getAllFacturas();
+
+            // Fetch config explicitly
+            const configData = {
+                company_name: await db.getConfig('company_name'),
+                company_dni: await db.getConfig('company_dni'),
+                company_address: await db.getConfig('company_address'),
+                company_email: await db.getConfig('company_email'),
+                company_phone: await db.getConfig('company_phone')
+            };
+
             const backup = {
                 version: 2,
                 timestamp: Date.now(),
                 data: {
-                    clientes: await db.getAllClientes(),
-                    reparaciones: await db.getAllReparaciones(),
-                    facturas: await db.getAllFacturas()
+                    clientes: Array.isArray(clientes) ? clientes : [],
+                    reparaciones: Array.isArray(reparaciones) ? reparaciones : [],
+                    facturas: Array.isArray(facturas) ? facturas : []
                 },
-                config: {
-                    company_name: await db.getConfig('company_name'),
-                    company_dni: await db.getConfig('company_dni'),
-                    company_address: await db.getConfig('company_address'),
-                    company_email: await db.getConfig('company_email'),
-                    company_phone: await db.getConfig('company_phone')
-                }
+                config: configData
             };
 
             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Export</title>
+</head>
+
+<body>
+    <h1>Debug Export</h1>
+    <pre id="output">Running...</pre>
+
+    <!-- Load App Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/ui/settings.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        async function runTest() {
+            const out = document.getElementById('output');
+            try {
+                // Initialize DB
+                await db.init();
+
+                // create dummy data
+                await db.saveCliente({ nombre: "Test Client", telefono: "123" });
+
+                // Run Export Logic Manually
+                const backup = {
+                    version: 2,
+                    timestamp: Date.now(),
+                    data: {
+                        clientes: await db.getAllClientes(),
+                        reparaciones: await db.getAllReparaciones(),
+                        facturas: await db.getAllFacturas()
+                    },
+                    config: {
+                        company_name: 'Test Co'
+                    }
+                };
+
+                const json = JSON.stringify(backup, null, 2);
+                out.textContent = json;
+
+            } catch (e) {
+                out.textContent = 'Error: ' + e.message + '\n' + e.stack;
+            }
+        }
+
+        // Wait a bit for scripts
+        setTimeout(runTest, 1000);
+    </script>
+</body>
+
+</html>
