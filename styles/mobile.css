@@ -268,10 +268,13 @@
 }
 
 .modal {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 60px 0 0 0 !important;
-    max-height: calc(100vh - 80px) !important;
+    width: 90% !important;
+    /* Margen lateral */
+    max-width: 90% !important;
+    margin: 40px auto 100px auto !important;
+    /* Centrado y con margen inferior grande */
+    max-height: 80dvh !important;
+    /* Altura segura */
     overflow-y: auto !important;
     background: var(--bg-secondary) !important;
     border: 1px solid var(--border-color) !important;
@@ -283,6 +286,12 @@
     display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.modal-footer {
+    padding-bottom: 40px !important;
+    /* Espacio extra debajo del botón */
 }
 
 .modal-body {
