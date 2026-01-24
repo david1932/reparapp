@@ -125,7 +125,7 @@ class SyncManager {
                     await supabaseClient.deleteCliente(cliente.id);
                 } else {
                     // Upsert (Create/Update)
-                    if (!cliente.user_id) cliente.user_id = userId;
+                    // if (!cliente.user_id) cliente.user_id = userId; // REMOVED
                     const serverCliente = await supabaseClient.getCliente(cliente.id);
 
                     if (!serverCliente) {
@@ -145,7 +145,7 @@ class SyncManager {
                 if (reparacion.deleted) {
                     await supabaseClient.deleteReparacion(reparacion.id);
                 } else {
-                    if (!reparacion.user_id) reparacion.user_id = userId;
+                    // if (!reparacion.user_id) reparacion.user_id = userId; // REMOVED
                     const serverReparacion = await supabaseClient.getReparacion(reparacion.id);
 
                     if (!serverReparacion) {
@@ -165,7 +165,7 @@ class SyncManager {
                 if (factura.deleted) {
                     await supabaseClient.deleteFactura(factura.id);
                 } else {
-                    if (!factura.user_id) factura.user_id = userId;
+                    // if (!factura.user_id) factura.user_id = userId; // REMOVED: Schema mismtach (column missing)
                     const serverFactura = await supabaseClient.getFactura(factura.id);
 
                     if (!serverFactura) {
