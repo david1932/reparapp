@@ -22,7 +22,10 @@ class SettingsUI {
         // Listeners Backup
         document.getElementById('btn-export-backup')?.addEventListener('click', () => this.exportBackup());
         document.getElementById('btn-export-advanced')?.addEventListener('click', () => this.exportAdvancedBackup());
-        document.getElementById('backup-input')?.addEventListener('change', (e) => this.importBackup(e));
+
+        // Listeners Import Separate
+        document.getElementById('backup-input-json')?.addEventListener('change', (e) => this.handleImportJson(e));
+        document.getElementById('backup-input-zip')?.addEventListener('change', (e) => this.handleImportZip(e));
 
         // Listeners Seguridad
         document.getElementById('btn-save-pin')?.addEventListener('click', () => this.savePin());
@@ -475,89 +478,65 @@ class SettingsUI {
     }
 
     /**
-     * Importa copia de seguridad (Soporta JSON plano, ZIP legacy, y ZIP Avanzado)
+     * Importar JSON Estricto
      */
-    async importBackup(event) {
+    async handleImportJson(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-
         reader.onload = async (e) => {
-            const result = e.target.result;
-            const arr = new Uint8Array(result);
-
-            // Check ZIP Signature
-            if (arr[0] === 0x50 && arr[1] === 0x4B && arr[2] === 0x03 && arr[3] === 0x04) {
-                try {
-                    if (!window.JSZip) { app.showToast('Falta librería JSZip', 'error'); return; }
-
-                    const zip = await JSZip.loadAsync(result);
-
-                    // Debug: listar todos los archivos en el ZIP
-                    const allFiles = Object.keys(zip.files);
-                    console.log("ZIP contiene:", allFiles);
-
-                    // Detectar tipo de backup buscando archivo CSV en carpeta data
-                    // JSZip usa rutas como "data/clientes.csv"
-
-                    // 1. Detectar formato "hybrid" de Android (CSVs en raíz + metadata.json)
-                    const metadataFile = zip.file("metadata.json");
-                    const rootClientesCsv = zip.file("clientes.csv");
-
-                    if (metadataFile && rootClientesCsv) {
-                        console.log("Detectado formato Hybrid (Android)");
-                        await this.importHybridBackup(zip);
+            try {
+                const json = JSON.parse(e.target.result);
+                // Validar estructura básica
+                if (!json.data && !Array.isArray(json.data)) {
+                    // Intento de recuperación si es un array directo de claves (el error raro del usuario)
+                    if (Array.isArray(json)) {
+                        app.showToast('Archivo JSON inválido: Parece una lista de claves, no datos.', 'error');
                         return;
                     }
-
-                    // 2. Detectar backup Avanzado de esta web (CSVs en carpeta data/)
-                    const clientesCsvFile = zip.file("data/clientes.csv");
-
-                    if (clientesCsvFile) {
-                        // Backup Avanzado (CSV)
-                        console.log("Detectado Backup Avanzado (CSV)");
-                        await this.importAdvancedBackup(zip);
-                        return;
-                    }
-
-                    // 3. Backup Legacy o JSON dentro de ZIP
-                    let jsonFile = zip.file("data.json");
-
-                    if (!jsonFile) {
-                        // Buscar cualquier JSON en el ZIP (excepto metadata.json)
-                        const jsonFiles = allFiles.filter(name => name.endsWith('.json') && !name.includes('/') && name !== 'metadata.json');
-                        if (jsonFiles.length > 0) {
-                            jsonFile = zip.file(jsonFiles[0]);
-                        }
-                    }
-
-                    if (jsonFile) {
-                        const jsonStr = await jsonFile.async("string");
-                        this.processImportData(JSON.parse(jsonStr));
-                    } else {
-                        app.showToast('Formato de ZIP no reconocido', 'error');
-                    }
-
-                } catch (err) {
-                    console.error("ZIP Error:", err);
-                    app.showToast('Error al leer ZIP', 'error');
                 }
-            } else {
-                // Try Plain JSON
-                const textReader = new FileReader();
-                textReader.onload = (te) => {
-                    try {
-                        this.processImportData(JSON.parse(te.target.result));
-                    } catch (err) {
-                        app.showToast('Archivo inválido', 'error');
-                    }
-                };
-                textReader.readAsText(file);
-            }
-        };
 
-        reader.readAsArrayBuffer(file);
+                await this.processImportData(json);
+            } catch (err) {
+                console.error("Error parsing JSON:", err);
+                app.showToast('Error al leer el archivo JSON. Asegúrate que no está corrupto.', 'error');
+            }
+            // Reset input
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    /**
+     * Importar ZIP Estricto
+     */
+    async handleImportZip(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const zip = new JSZip();
+            await zip.loadAsync(file);
+
+            // Lógica de detección de tipo de ZIP (Hybrid o Advanced)
+            const metadataFile = zip.file("metadata.json");
+            const rootClientesCsv = zip.file("clientes.csv");
+
+            if (metadataFile && rootClientesCsv) {
+                console.log("Detectado formato Android/Hybrid");
+                await this.importHybridBackup(zip);
+            } else {
+                console.log("Asumiendo formato Avanzado Web");
+                await this.importAdvancedBackup(zip);
+            }
+
+        } catch (err) {
+            console.error("Error reading ZIP:", err);
+            app.showToast('Error al leer el archivo ZIP.', 'error');
+        }
+        // Reset input
+        event.target.value = '';
     }
 
     /**

@@ -580,20 +580,34 @@
                                     <h4 style="color: var(--status-in-progress); margin-bottom: var(--spacing-md);">
                                         Importar</h4>
                                     <p style="margin-bottom: var(--spacing-md); font-size: 0.9rem;">
-                                        Restaura datos desde un archivo JSON. <strong
-                                            style="color: var(--status-pending);">⚠️ Sobrescribirá los datos
-                                            actuales.</strong>
+                                        Restaura tus datos. <strong style="color: var(--status-pending);">⚠️
+                                            Sobrescribirá los datos actuales.</strong>
                                     </p>
-                                    <input type="file" id="backup-input" accept=".json,.zip" style="display: none;">
-                                    <button class="btn btn-secondary"
-                                        onclick="document.getElementById('backup-input').click()">
+
+                                    <!-- Importar JSON -->
+                                    <input type="file" id="backup-input-json" accept=".json" style="display: none;">
+                                    <button class="btn btn-secondary" style="width: 100%; margin-bottom: 10px;"
+                                        onclick="document.getElementById('backup-input-json').click()">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                             <polyline points="17 8 12 3 7 8"></polyline>
                                             <line x1="12" y1="3" x2="12" y2="15"></line>
                                         </svg>
-                                        Restaurar Copia
+                                        Restaurar (JSON)
+                                    </button>
+
+                                    <!-- Importar ZIP -->
+                                    <input type="file" id="backup-input-zip" accept=".zip" style="display: none;">
+                                    <button class="btn btn-secondary" style="width: 100%;"
+                                        onclick="document.getElementById('backup-input-zip').click()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                            <polyline points="17 8 12 3 7 8"></polyline>
+                                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                                        </svg>
+                                        Restaurar Avanzado (ZIP)
                                     </button>
                                 </div>
                             </div>
