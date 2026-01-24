@@ -183,9 +183,13 @@
 .header-actions .btn {
     width: 100% !important;
     max-width: none !important;
-    min-height: 44px !important;
-    /* Touch target size */
-    margin: 0 !important;
+    height: 48px !important;
+    /* Larger touch target */
+    min-height: 48px !important;
+    margin: 4px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .page-title {

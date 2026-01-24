@@ -308,6 +308,7 @@
                             </button>
                         </div>
                         <button class="btn btn-primary" id="btn-add-reparacion"
+                            ontouchstart="if(window.repairsUI) window.repairsUI.openModal();"
                             onclick="if(window.repairsUI) window.repairsUI.openModal(); else console.error('RepairsUI not ready');">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
@@ -378,6 +379,7 @@
                             </button>
                         </div>
                         <button class="btn btn-primary" id="btn-add-factura"
+                            ontouchstart="if(window.invoicesUI) window.invoicesUI.openModal();"
                             onclick="if(window.invoicesUI) window.invoicesUI.openModal(); else console.error('InvoicesUI not ready');">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2">
