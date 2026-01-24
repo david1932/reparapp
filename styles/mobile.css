@@ -61,7 +61,10 @@
     justify-content: center;
 }
 
-height: 20px;
+.btn-sync-mobile svg {
+    width: 20px;
+    height: 20px;
+}
 }
 
 @keyframes spin {
