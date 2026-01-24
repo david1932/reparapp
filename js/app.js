@@ -427,4 +427,14 @@ const app = new App();
 // Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
+
+    // Expose references for inline HTML handlers (Critical for Mobile)
+    window.app = app;
+    window.repairsUI = repairsUI;
+    window.invoicesUI = invoicesUI;
+    window.clientsUI = clientsUI;
+    window.syncManager = syncManager;
+    window.dashboardUI = dashboardUI;
+
+    console.log('Mobile handlers initialized: UIs exposed to window');
 });
