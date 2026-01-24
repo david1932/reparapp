@@ -754,10 +754,16 @@ class SettingsUI {
             }
 
             // Forzar sync para subir cambios
-            setTimeout(() => {
-                if (window.syncManager) window.syncManager.sync();
-                window.location.reload();
-            }, 2000);
+            app.showToast('Sincronizando cambios con la nube...', 'info');
+            if (window.syncManager) {
+                try {
+                    await window.syncManager.sync();
+                } catch (err) {
+                    console.error("Error auto-syncing after clean:", err);
+                }
+            }
+
+            window.location.reload();
 
         } catch (error) {
             console.error('Error cleaning duplicates:', error);
