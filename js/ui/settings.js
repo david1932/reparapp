@@ -248,6 +248,48 @@ class SettingsUI {
     }
 
     /**
+     * Exporta copia de seguridad simple (JSON)
+     */
+    async exportBackup() {
+        try {
+            app.showToast('Generando copia de seguridad...', 'info');
+
+            const backup = {
+                version: 2,
+                timestamp: Date.now(),
+                data: {
+                    clientes: await db.getAllClientes(),
+                    reparaciones: await db.getAllReparaciones(),
+                    facturas: await db.getAllFacturas()
+                },
+                config: {
+                    company_name: await db.getConfig('company_name'),
+                    company_dni: await db.getConfig('company_dni'),
+                    company_address: await db.getConfig('company_address'),
+                    company_email: await db.getConfig('company_email'),
+                    company_phone: await db.getConfig('company_phone')
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_gestion_simple_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            app.showToast('Copia descargada correctamente', 'success');
+        } catch (error) {
+            console.error('Error exporting backup:', error);
+            app.showToast('Error al exportar copia', 'error');
+        }
+    }
+
+    /**
      * Exporta copia de seguridad Avanzada (CSV + PDF + ZIP)
      */
     async exportAdvancedBackup() {
