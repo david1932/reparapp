@@ -994,23 +994,59 @@ class SettingsUI {
      * Gestiona el borrado total de datos
      */
     async handleClearData() {
-        if (!confirm('¿Estás seguro de que quieres BORRAR TODOS LOS DATOS? Esta acción no se puede deshacer.')) {
-            return;
-        }
-
-        const confirmation = prompt('Para confirmar, escribe "BORRAR" en mayúsculas:');
-        if (confirmation !== 'BORRAR') {
-            app.showToast('Operación cancelada: Código incorrecto', 'error');
-            return;
-        }
-
         try {
-            await db.clearAllData();
-            app.showToast('Datos eliminados correctamente', 'success');
-            setTimeout(() => window.location.reload(), 1500);
+            if (confirm('¡ATENCIÓN! ESTA ACCIÓN ES IRREVERSIBLE.\n\nSe borrarán TODOS los clientes, reparaciones y facturas.\nSe borrará la Nube también.\n\n¿Estás realmente seguro?')) {
+                const pin = await db.getConfig('app_pin');
+                if (pin) {
+                    const input = prompt('Introduce el PIN de seguridad:');
+                    if (input !== pin) {
+                        app.showToast('PIN incorrecto', 'error');
+                        return;
+                    }
+                }
+
+                app.showToast('Iniciando BORRADO REAL... (Esto puede tardar)', 'info');
+
+                // 1. Borrado Nube (Nuclear Wipe)
+                if (window.supabaseClient && window.supabaseClient.isConfigured) {
+                    try {
+                        console.log("Wiping Cloud Data...");
+                        // Borrar Facturas Cloud
+                        const f = await supabaseClient.getFacturas();
+                        if (f && f.length) {
+                            await Promise.all(f.map(item => supabaseClient.deleteFactura(item.id)));
+                        }
+
+                        // Borrar Reparaciones Cloud
+                        const r = await supabaseClient.getReparaciones();
+                        if (r && r.length) {
+                            await Promise.all(r.map(item => supabaseClient.deleteReparacion(item.id)));
+                        }
+
+                        // Borrar Clientes Cloud
+                        const c = await supabaseClient.getClientes();
+                        if (c && c.length) {
+                            await Promise.all(c.map(item => supabaseClient.deleteCliente(item.id)));
+                        }
+                        console.log("Cloud Wipe Complete");
+                    } catch (e) {
+                        console.error("Error wiping cloud:", e);
+                        // Continue to local wipe anyway
+                    }
+                }
+
+                // 2. Borrado Local
+                await db.clearAllData();
+
+                // 3. Reset Timestamp Sync
+                await db.setConfig('last_sync', 0);
+
+                app.showToast('Sistema formateado correctamente. Base de datos vacía.', 'success');
+                setTimeout(() => window.location.reload(), 2000);
+            }
         } catch (error) {
             console.error('Error clearing data:', error);
-            app.showToast('Error al eliminar datos', 'error');
+            app.showToast('Error al borrar datos', 'error');
         }
     }
 
