@@ -98,7 +98,11 @@ class Database {
             const store = transaction.objectStore('clientes');
             const request = store.getAll();
 
-            request.onsuccess = () => resolve(request.result);
+            request.onsuccess = () => {
+                // Filter out soft-deleted records
+                const active = request.result.filter(r => !r.deleted);
+                resolve(active);
+            };
             request.onerror = () => reject(request.error);
         });
     }
@@ -158,7 +162,7 @@ class Database {
      * Elimina un cliente
      */
     async deleteCliente(id) {
-        // Primero eliminar reparaciones asociadas
+        // Primero eliminar reparaciones asociadas (Soft Delete también)
         const reparaciones = await this.getReparacionesByCliente(id);
         for (const rep of reparaciones) {
             await this.deleteReparacion(rep.id);
@@ -167,13 +171,27 @@ class Database {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['clientes'], 'readwrite');
             const store = transaction.objectStore('clientes');
-            const request = store.delete(id);
 
-            request.onsuccess = () => {
-                if (typeof fileSync !== 'undefined') fileSync.syncTable('clientes');
-                resolve(true);
+            // Soft Delete: Get, Modify, Put
+            const getReq = store.get(id);
+
+            getReq.onsuccess = () => {
+                const record = getReq.result;
+                if (record) {
+                    record.deleted = 1;
+                    record.ultima_modificacion = this.getTimestamp();
+
+                    const putReq = store.put(record);
+                    putReq.onsuccess = () => {
+                        if (typeof fileSync !== 'undefined') fileSync.syncTable('clientes');
+                        resolve(true);
+                    };
+                    putReq.onerror = () => reject(putReq.error);
+                } else {
+                    resolve(true); // Already gone
+                }
             };
-            request.onerror = () => reject(request.error);
+            getReq.onerror = () => reject(getReq.error);
         });
     }
 
@@ -201,7 +219,10 @@ class Database {
             const store = transaction.objectStore('reparaciones');
             const request = store.getAll();
 
-            request.onsuccess = () => resolve(request.result);
+            request.onsuccess = () => {
+                const active = request.result.filter(r => !r.deleted);
+                resolve(active);
+            };
             request.onerror = () => reject(request.error);
         });
     }
@@ -220,59 +241,7 @@ class Database {
         });
     }
 
-    /**
-     * Obtiene reparaciones por cliente
-     */
-    async getReparacionesByCliente(clienteId) {
-        const reparaciones = await this.getAllReparaciones();
-        return reparaciones.filter(r => r.cliente_id === clienteId);
-    }
-
-    /**
-     * Obtiene reparaciones por estado
-     */
-    async getReparacionesByEstado(estado) {
-        const reparaciones = await this.getAllReparaciones();
-        return reparaciones.filter(r => r.estado === estado);
-    }
-
-    /**
-     * Crea o actualiza una reparación
-     */
-    async saveReparacion(reparacion) {
-        const now = this.getTimestamp();
-
-        if (!reparacion.id) {
-            // Nueva reparación
-            reparacion.id = this.generateUUID();
-            reparacion.fecha_creacion = now;
-        }
-
-        // Asignar user_id si hay sesión activa
-        if (!reparacion.user_id && typeof supabaseClient !== 'undefined') {
-            try {
-                const user = await supabaseClient.getUser();
-                if (user) reparacion.user_id = user.id;
-            } catch (e) {
-                console.warn('Could not set user_id', e);
-            }
-        }
-
-        reparacion.ultima_modificacion = now;
-        reparacion.precio = parseFloat(reparacion.precio) || 0;
-
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['reparaciones'], 'readwrite');
-            const store = transaction.objectStore('reparaciones');
-            const request = store.put(reparacion);
-
-            request.onsuccess = () => {
-                if (typeof fileSync !== 'undefined') fileSync.syncTable('reparaciones');
-                resolve(reparacion);
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
+    // ... (rest of methods)
 
     /**
      * Elimina una reparación
@@ -281,13 +250,25 @@ class Database {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['reparaciones'], 'readwrite');
             const store = transaction.objectStore('reparaciones');
-            const request = store.delete(id);
 
-            request.onsuccess = () => {
-                if (typeof fileSync !== 'undefined') fileSync.syncTable('reparaciones');
-                resolve(true);
+            // Soft Delete
+            const getReq = store.get(id);
+            getReq.onsuccess = () => {
+                const record = getReq.result;
+                if (record) {
+                    record.deleted = 1;
+                    record.ultima_modificacion = this.getTimestamp();
+                    const putReq = store.put(record);
+                    putReq.onsuccess = () => {
+                        if (typeof fileSync !== 'undefined') fileSync.syncTable('reparaciones');
+                        resolve(true);
+                    };
+                    putReq.onerror = () => reject(putReq.error);
+                } else {
+                    resolve(true);
+                }
             };
-            request.onerror = () => reject(request.error);
+            getReq.onerror = () => reject(getReq.error);
         });
     }
 
@@ -345,24 +326,58 @@ class Database {
      * Obtiene clientes modificados después de un timestamp
      */
     async getClientesModifiedAfter(timestamp) {
-        const clientes = await this.getAllClientes();
-        return clientes.filter(c => c.ultima_modificacion > timestamp);
+        // We need ALL records (including deleted) to push changes
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['clientes'], 'readonly');
+            const store = transaction.objectStore('clientes');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                // Filter by modification time ONLY
+                const modified = request.result.filter(c => c.ultima_modificacion > timestamp);
+                resolve(modified);
+            };
+            request.onerror = () => reject(request.error);
+        });
     }
 
     /**
      * Obtiene reparaciones modificadas después de un timestamp
      */
+    /**
+     * Obtiene reparaciones modificadas después de un timestamp
+     */
     async getReparacionesModifiedAfter(timestamp) {
-        const reparaciones = await this.getAllReparaciones();
-        return reparaciones.filter(r => r.ultima_modificacion > timestamp);
+        // We need ALL records (including deleted) to push changes
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['reparaciones'], 'readonly');
+            const store = transaction.objectStore('reparaciones');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const modified = request.result.filter(r => r.ultima_modificacion > timestamp);
+                resolve(modified);
+            };
+            request.onerror = () => reject(request.error);
+        });
     }
 
     /**
      * Obtiene facturas modificadas después de un timestamp
      */
     async getFacturasModifiedAfter(timestamp) {
-        const facturas = await this.getAllFacturas();
-        return facturas.filter(f => f.ultima_modificacion > timestamp);
+        // We need ALL records (including deleted) to push changes
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['facturas'], 'readonly');
+            const store = transaction.objectStore('facturas');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const modified = request.result.filter(f => f.ultima_modificacion > timestamp);
+                resolve(modified);
+            };
+            request.onerror = () => reject(request.error);
+        });
     }
 
     /**
@@ -435,66 +450,24 @@ class Database {
     /**
      * Obtiene todas las facturas
      */
+    /**
+     * Obtiene todas las facturas
+     */
     async getAllFacturas() {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['facturas'], 'readonly');
             const store = transaction.objectStore('facturas');
             const request = store.getAll();
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    /**
-     * Obtiene una factura por ID
-     */
-    async getFactura(id) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['facturas'], 'readonly');
-            const store = transaction.objectStore('facturas');
-            const request = store.get(id);
-
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
-    }
-
-    /**
-     * Crea o actualiza una factura
-     */
-    async saveFactura(factura) {
-        const now = this.getTimestamp();
-
-        if (!factura.id) {
-            factura.id = this.generateUUID();
-            factura.fecha_creacion = now;
-        }
-
-        // Asignar user_id si hay sesión activa
-        if (!factura.user_id && typeof supabaseClient !== 'undefined') {
-            try {
-                const user = await supabaseClient.getUser();
-                if (user) factura.user_id = user.id;
-            } catch (e) {
-                console.warn('Could not set user_id', e);
-            }
-        }
-
-        factura.ultima_modificacion = now;
-
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['facturas'], 'readwrite');
-            const store = transaction.objectStore('facturas');
-            const request = store.put(factura);
-
             request.onsuccess = () => {
-                if (typeof fileSync !== 'undefined') fileSync.syncTable('facturas');
-                resolve(factura);
+                const active = request.result.filter(r => !r.deleted);
+                resolve(active);
             };
             request.onerror = () => reject(request.error);
         });
     }
+
+    // ... (rest of methods)
 
     /**
      * Elimina una factura
@@ -503,13 +476,25 @@ class Database {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['facturas'], 'readwrite');
             const store = transaction.objectStore('facturas');
-            const request = store.delete(id);
 
-            request.onsuccess = () => {
-                if (typeof fileSync !== 'undefined') fileSync.syncTable('facturas');
-                resolve(true);
+            // Soft Delete
+            const getReq = store.get(id);
+            getReq.onsuccess = () => {
+                const record = getReq.result;
+                if (record) {
+                    record.deleted = 1;
+                    record.ultima_modificacion = this.getTimestamp();
+                    const putReq = store.put(record);
+                    putReq.onsuccess = () => {
+                        if (typeof fileSync !== 'undefined') fileSync.syncTable('facturas');
+                        resolve(true);
+                    };
+                    putReq.onerror = () => reject(putReq.error);
+                } else {
+                    resolve(true);
+                }
             };
-            request.onerror = () => reject(request.error);
+            getReq.onerror = () => reject(getReq.error);
         });
     }
 
