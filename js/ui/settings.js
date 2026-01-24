@@ -34,6 +34,9 @@ class SettingsUI {
         // Listener Sincronización Local
         document.getElementById('btn-link-folder')?.addEventListener('click', () => this.handleLinkFolder());
 
+        // Listener Deduplicación
+        document.getElementById('btn-deduplicate')?.addEventListener('click', () => this.cleanDuplicates());
+
         // Inicializar estado de sincronización local
         this.updateLocalSyncStatus();
 
