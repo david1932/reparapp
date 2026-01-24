@@ -1005,43 +1005,53 @@ class SettingsUI {
                     }
                 }
 
-                app.showToast('Iniciando BORRADO REAL... (Esto puede tardar)', 'info');
+                app.showToast('Iniciando BORRADO DE NUBE... (NO CIERRES LA VENTANA)', 'info');
 
-                // 1. Borrado Nube (Nuclear Wipe)
+                // 1. Borrado Nube (Nuclear Wipe - Sequencial)
                 if (window.supabaseClient && window.supabaseClient.isConfigured) {
                     try {
                         console.log("Wiping Cloud Data...");
-                        // Borrar Facturas Cloud
+
+                        // Facturas
                         const f = await supabaseClient.getFacturas();
                         if (f && f.length) {
-                            await Promise.all(f.map(item => supabaseClient.deleteFactura(item.id)));
+                            app.showToast(`Eliminando ${f.length} facturas de la nube...`, 'info');
+                            for (const item of f) {
+                                await supabaseClient.deleteFactura(item.id);
+                            }
                         }
 
-                        // Borrar Reparaciones Cloud
+                        // Reparaciones
                         const r = await supabaseClient.getReparaciones();
                         if (r && r.length) {
-                            await Promise.all(r.map(item => supabaseClient.deleteReparacion(item.id)));
+                            app.showToast(`Eliminando ${r.length} reparaciones de la nube...`, 'info');
+                            for (const item of r) {
+                                await supabaseClient.deleteReparacion(item.id);
+                            }
                         }
 
-                        // Borrar Clientes Cloud
+                        // Clientes
                         const c = await supabaseClient.getClientes();
                         if (c && c.length) {
-                            await Promise.all(c.map(item => supabaseClient.deleteCliente(item.id)));
+                            app.showToast(`Eliminando ${c.length} clientes de la nube...`, 'info');
+                            for (const item of c) {
+                                await supabaseClient.deleteCliente(item.id);
+                            }
                         }
                         console.log("Cloud Wipe Complete");
+                        app.showToast('Nube limpia. Borrando local...', 'success');
+
                     } catch (e) {
                         console.error("Error wiping cloud:", e);
-                        // Continue to local wipe anyway
+                        alert("⚠️ Error al borrar la nube. Es posible que los datos vuelvan a aparecer al sincronizar.");
                     }
                 }
 
                 // 2. Borrado Local
                 await db.clearAllData();
-
-                // 3. Reset Timestamp Sync
                 await db.setConfig('last_sync', 0);
 
-                app.showToast('Sistema formateado correctamente. Base de datos vacía.', 'success');
+                app.showToast('✅ Misión cumplida: Todo borrado.', 'success');
                 setTimeout(() => window.location.reload(), 2000);
             }
         } catch (error) {
