@@ -61,9 +61,22 @@
     justify-content: center;
 }
 
-.btn-sync-mobile svg {
-    width: 20px;
-    height: 20px;
+height: 20px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-sync-mobile.syncing svg {
+    animation: spin 1s linear infinite;
+    color: var(--electric-blue);
 }
 
 /* 2. SIDEBAR -> BOTTOM NAVBAR */

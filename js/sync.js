@@ -182,6 +182,7 @@ class SyncManager {
      * Actualiza la UI del botón de sync
      */
     updateSyncUI(syncing) {
+        // Desktop Button
         const btnSync = document.getElementById('btn-sync');
         if (btnSync) {
             if (syncing) {
@@ -190,6 +191,18 @@ class SyncManager {
             } else {
                 btnSync.classList.remove('syncing');
                 btnSync.querySelector('span').textContent = 'Sincronizar';
+            }
+        }
+
+        // Mobile Button
+        const btnSyncMobile = document.getElementById('btn-sync-mobile');
+        if (btnSyncMobile) {
+            if (syncing) {
+                btnSyncMobile.classList.add('syncing');
+                // Optional: Show toast if starting
+                if (window.app && window.app.showToast) window.app.showToast('Sincronizando...', 'info');
+            } else {
+                btnSyncMobile.classList.remove('syncing');
             }
         }
     }
