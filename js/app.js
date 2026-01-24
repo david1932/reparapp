@@ -445,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.clientsUI = clientsUI;
     window.syncManager = syncManager;
     window.dashboardUI = dashboardUI;
+    window.settingsUI = settingsUI;
 
     // Add global touchstart listeners for robustness
     const btnRep = document.getElementById('btn-add-reparacion');

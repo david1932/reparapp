@@ -681,12 +681,11 @@
                                 <div>
                                     <h4 style="color: var(--text-primary); margin-bottom: 5px;">Borrar todos los datos
                                     </h4>
-                                    <p style="font-size: 0.85rem; color: var(--text-secondary);">
-                                        Elimina permanentemente clientes, reparaciones y facturas.<br>
-                                        La configuración (PIN, Logo, Empresa) se mantendrá.
                                     </p>
                                 </div>
-                                <button class="btn btn-danger" id="btn-clear-data">Borrar Todo</button>
+                                <button class="btn btn-danger" id="btn-clear-data"
+                                    onclick="if(window.settingsUI) window.settingsUI.handleClearData()">Borrar
+                                    Todo</button>
                             </div>
                         </div>
                     </div>
