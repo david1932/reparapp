@@ -259,7 +259,12 @@
 
 .modal-overlay.active {
     display: flex !important;
-    /* Show when active */
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    inset: 0 !important;
+    pointer-events: auto !important;
 }
 
 .modal {

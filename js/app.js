@@ -428,6 +428,16 @@ const app = new App();
 document.addEventListener('DOMContentLoaded', () => {
     app.init();
 
+    // NUCLEAR FIX: Move modals to body to prevent nesting issues
+    const modals = ['modal-reparacion', 'modal-factura', 'modal-cliente', 'modal-confirm'];
+    modals.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            document.body.appendChild(el);
+            console.log(`Moved ${id} to body safe zone`);
+        }
+    });
+
     // Expose references for inline HTML handlers (Critical for Mobile)
     window.app = app;
     window.repairsUI = repairsUI;
@@ -436,5 +446,22 @@ document.addEventListener('DOMContentLoaded', () => {
     window.syncManager = syncManager;
     window.dashboardUI = dashboardUI;
 
-    console.log('Mobile handlers initialized: UIs exposed to window');
+    // Add global touchstart listeners for robustness
+    const btnRep = document.getElementById('btn-add-reparacion');
+    if (btnRep) {
+        btnRep.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stop ghost clicks
+            if (window.repairsUI) window.repairsUI.openModal();
+        }, { passive: false });
+    }
+
+    const btnInv = document.getElementById('btn-add-factura');
+    if (btnInv) {
+        btnInv.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (window.invoicesUI) window.invoicesUI.openModal();
+        }, { passive: false });
+    }
+
+    console.log('Mobile handlers initialized: UIs exposed to window + Modals Relocated');
 });
