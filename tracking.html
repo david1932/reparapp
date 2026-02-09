@@ -418,48 +418,63 @@
         async function searchRepair(input) {
             if (!input) return;
 
-            let id = input.trim();
+            let rawInput = input.trim();
+            let finalId = rawInput;
 
-            // LOGICA: Si pegan EL LINK ENTERO, extraer todo
-            if (id.includes('?id=') || id.includes('tracking.html')) {
-                console.log('🔍 Detectado Link Completo en el buscador');
+            console.log('--- INICIO BÚSQUEDA ---');
+            console.log('Input original:', rawInput);
+
+            // LOGICA: Si pegan EL LINK ENTERO, extraer todo lo posible
+            if (rawInput.includes('?id=') || rawInput.includes('tracking.html') || rawInput.includes('&u=')) {
+                console.log('🔍 Detectada URL o Link complejo');
                 try {
-                    // Limpiar posibles espacios o caracteres invisibles al inicio
-                    const rawUrl = id.trim();
-                    const cleanUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
-                    const urlObj = new URL(cleanUrl);
-
-                    const extractedId = urlObj.searchParams.get('id');
-                    const u = urlObj.searchParams.get('u');
-                    const k = urlObj.searchParams.get('k');
-
-                    if (extractedId) {
-                        id = extractedId; // IMPORTANTE: Actualizar la variable id con el ID real
+                    // Normalizar URL para el parser
+                    let urlToParse = rawInput;
+                    if (!urlToParse.startsWith('http')) {
+                        urlToParse = (urlToParse.includes('://')) ? urlToParse : `https://${urlToParse}`;
                     }
 
-                    if (u && k) {
-                        dynamicUrl = decodeURIComponent(u);
-                        dynamicKey = decodeURIComponent(k);
-                        initSupabase(); // Re-conectar con las nuevas llaves
+                    const urlObj = new URL(urlToParse);
+                    const qId = urlObj.searchParams.get('id');
+                    const qU = urlObj.searchParams.get('u');
+                    const qK = urlObj.searchParams.get('k');
+
+                    if (qId) finalId = qId;
+
+                    if (qU && qK) {
+                        console.log('⚙️ Actualizando credenciales dinámicamente...');
+                        dynamicUrl = qU;
+                        dynamicKey = qK;
+                        initSupabase(); // Re-conectar con las nuevas llaves del link
                     }
                 } catch (e) {
-                    console.error('Error parseando URL pegada:', e);
+                    console.warn('Parser de URL falló, intentando extracción manual:', e);
+                    // Fallback manual si URL falla
+                    const idMatch = rawInput.match(/[?&]id=([^&]+)/);
+                    if (idMatch) finalId = idMatch[1];
+                    const uMatch = rawInput.match(/[?&]u=([^&]+)/);
+                    const kMatch = rawInput.match(/[?&]k=([^&]+)/);
+                    if (uMatch && kMatch) {
+                        dynamicUrl = uMatch[1];
+                        dynamicKey = kMatch[1];
+                        initSupabase();
+                    }
                 }
             }
 
-            // Limpiar ID de caracteres extraños (quitar el resto de la URL si quedó algo)
-            id = id.replace(/[^a-zA-Z0-9-]/g, '');
+            // Limpiar ID final de basura técnica (quitar rastro de url si quedó algo)
+            finalId = finalId.replace(/[^a-zA-Z0-9-]/g, '');
 
-            // Validar
-            if (id.length < 10) {
-                const msg = 'El ID parece demasiado corto. Pega el enlace completo de WhatsApp.';
-                document.getElementById('error-msg').innerText = msg;
-                document.getElementById('error-msg').style.display = 'block';
+            // Validar longitud mínima de un UUID real (aprox)
+            if (finalId.length < 15 && !rawInput.includes('id=')) {
+                const msg = '⚠️ El ID parece incompleto o incorrecto.';
+                errorMsg.innerHTML = `<div style="color:#fcd34d; background:rgba(252,211,77,0.1); padding:10px; border-radius:10px; font-size:13px;">${msg}<br><small>Pega el enlace completo que genera la App.</small></div>`;
+                errorMsg.style.display = 'block';
                 return;
             }
 
-            // Update input to show clean UUID
-            document.getElementById('repair-id').value = id;
+            // Mostrar el ID limpio en el buscador para feedback visual
+            inputId.value = finalId;
 
             // UI Reset
             card.style.display = 'none';
@@ -467,15 +482,12 @@
             btnSearch.textContent = '⏳ Buscando...';
             btnSearch.disabled = true;
 
-            console.log('--- INICIO BÚSQUEDA ---');
-            console.log('ID:', id);
-
             try {
                 // CONSULTA A SUPABASE
                 const { data, error } = await _supabase
                     .from('reparaciones')
                     .select('*')
-                    .eq('id', id)
+                    .eq('id', finalId)
                     .single();
 
                 if (error) {
