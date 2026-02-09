@@ -9,6 +9,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- WhatsApp & Social Media Preview (OG Tags) -->
+    <meta property="og:title" content="📱 Consulta tu Reparación">
+    <meta property="og:description" content="Pincha aquí para ver el estado en tiempo real.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://fanciful-dusk-b57665.netlify.app/img/logo_repair.png">
+    <meta name="theme-color" content="#22d3ee">
+
     <style>
         :root {
             --bg-deep: #020617;
@@ -354,6 +362,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         let dynamicUrl = urlParams.get('u');
         let dynamicKey = urlParams.get('k');
+        let token = urlParams.get('t'); // Nueva versión compacta
 
         function decodeSafe(str) {
             if (!str) return null;
@@ -370,8 +379,25 @@
         let _supabase = null;
 
         function initSupabase() {
-            const finalUrl = decodeSafe(dynamicUrl) || SUPABASE_URL;
-            const finalKey = decodeSafe(dynamicKey) || SUPABASE_KEY;
+            let finalUrl = decodeSafe(dynamicUrl) || SUPABASE_URL;
+            let finalKey = decodeSafe(dynamicKey) || SUPABASE_KEY;
+            let idFromToken = null;
+
+            // Procesar Token Compacto (id|url|key)
+            if (token) {
+                try {
+                    const decoded = atob(token);
+                    const parts = decoded.split('|');
+                    if (parts.length === 3) {
+                        idFromToken = parts[0];
+                        finalUrl = parts[1];
+                        finalKey = parts[2];
+                        console.log('✅ Token decodificado con éxito.');
+                    }
+                } catch (e) {
+                    console.error('Error decodificando token:', e);
+                }
+            }
 
             console.log('🔗 Conectando a Supabase:', finalUrl);
 
@@ -385,17 +411,18 @@
                 return;
             }
             _supabase = window.supabase.createClient(finalUrl, finalKey);
+            return idFromToken;
         }
 
-        initSupabase();
+        const initialId = initSupabase();
 
-        if (dynamicUrl && dynamicKey) {
-            console.log("✅ Credenciales configuradas desde URL.");
+        if ((dynamicUrl && dynamicKey) || token) {
+            console.log("✅ Credenciales configuradas correctamente.");
         } else {
             console.warn("⚠️ No hay credenciales en el link.");
             const errEl = document.getElementById('error-msg');
             errEl.style.display = 'block';
-            errEl.innerHTML = '<div style="background:rgba(251,191,36,0.1);color:#fbbf24;padding:10px;border-radius:10px;font-size:12px">💡 Para ver tus datos, pega el <b>enlace completo</b> que genera la App por WhatsApp arriba.</div>';
+            errEl.innerHTML = '<div style="background:rgba(251,191,36,0.1);color:#fbbf24;padding:10px;border-radius:10px;font-size:12px;text-align:center;">💡 Pincha en el <b>enlace azul</b> que te hemos enviado por WhatsApp para ver los detalles.</div>';
         }
 
         // UI REFERENCIAS
@@ -406,7 +433,7 @@
 
         // BUSCAR AL CARGAR SI HAY PARAMETRO URL
         window.addEventListener('load', () => {
-            const id = urlParams.get('id');
+            const id = urlParams.get('id') || initialId;
             if (id) {
                 inputId.value = id;
                 searchRepair(id);

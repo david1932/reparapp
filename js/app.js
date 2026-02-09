@@ -45,18 +45,20 @@ class App {
             // Aplicar Tema (Oscuro/Claro)
             await this.applyTheme();
 
-            // VERIFICACIÓN DE LICENCIA (NUEVO)
+            // VERIFICACIÓN DE LICENCIA
             if (window.licenseManager) {
                 await licenseManager.init();
-
-                // Configurar eventos del overlay siempre (por si acaso)
                 this.setupLicenseHandlers();
 
-                /* DESACTIVADO TEMPORALMENTE PARA DESARROLLO
                 if (!licenseManager.isLicensed) {
-                    document.getElementById('license-overlay').style.display = 'flex';
+                    if (licenseManager.isInTrial) {
+                        this.showToast(`MODO PRUEBA: Tienes ${licenseManager.trialRemainingDays} días para activar ReparApp.`, 'info');
+                    } else {
+                        // Trial agotado y sin licencia -> BLOQUEAR
+                        const overlay = document.getElementById('license-overlay');
+                        if (overlay) overlay.style.display = 'flex';
+                    }
                 }
-                */
             }
 
             // Inicializar sincronización local
@@ -244,6 +246,20 @@ class App {
         const inputName = document.getElementById('lic-name');
         const inputKey = document.getElementById('lic-key');
         const errorMsg = document.getElementById('lic-error');
+        const fingerprintEl = document.getElementById('lic-fingerprint');
+        const subtitleEl = overlay?.querySelector('[data-i18n="lic_subtitle"]');
+
+        if (fingerprintEl && window.licenseManager) {
+            fingerprintEl.textContent = licenseManager.fingerprint || 'GENERANDO...';
+
+            // Si la licencia existe pero no es válida, es que ha expirado
+            const stored = localStorage.getItem('app_license_data');
+            if (stored && !licenseManager.isLicensed && subtitleEl) {
+                subtitleEl.textContent = "TU LICENCIA ANUAL HA EXPIRADO. POR FAVOR, RENUÉVALA.";
+                subtitleEl.style.color = "#f87171";
+                subtitleEl.style.fontWeight = "bold";
+            }
+        }
 
         if (!btn) return; // Si no existe el overlay
 

@@ -105,12 +105,18 @@
             <input type="text" id="company" placeholder="Ej: Talleres Pepe SL">
         </label>
 
+        <label style="margin-top: 1rem; display: block;">
+            <p>ID de Equipo (CID) del cliente</p>
+            <input type="text" id="fingerprint" placeholder="Ej: 5f3a2b1c">
+        </label>
+
         <button onclick="generate()">GENERAR CLAVE DE VENTA</button>
 
         <div id="result" title="Click para copiar" onclick="copy()" style="cursor: pointer;"></div>
 
-        <div style="text-align: center; margin-top: 1rem; color: #94a3b8; font-size: 0.8rem;">
-            (Uso interno: NO DISTRIBUIR)
+        <div
+            style="text-align: center; margin-top: 1.5rem; color: #64748b; font-size: 0.75rem; border-top: 1px solid #334155; padding-top: 1rem;">
+            <b>Instrucciones:</b><br> Pide al cliente el "ID de Equipo" que aparece en su pantalla de activación.
         </div>
     </div>
 
@@ -119,11 +125,15 @@
     <script>
         async function generate() {
             const name = document.getElementById('company').value;
-            if (!name) return alert('Debes introducir un nombre de cliente');
+            const cid = document.getElementById('fingerprint').value;
+
+            if (!name || !cid) return alert('Debes introducir el nombre y el ID de equipo');
 
             try {
-                // Usar método admin del manager
-                const key = await licenseManager._adminGenerate(name);
+                // Usar método admin del manager con el fingerprint manual
+                const key = await licenseManager._adminGenerate(name, cid);
+
+                if (key.startsWith('ERROR')) return alert(key);
 
                 const res = document.getElementById('result');
                 res.style.display = 'block';

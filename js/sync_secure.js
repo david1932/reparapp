@@ -405,7 +405,7 @@ class SyncManager {
         console.log('🧹 Ejecutando limpieza de nube (Retention Policy)...');
         try {
             const reparaciones = await db.getAllReparaciones();
-            const RETENTION_DAYS = 10;
+            const RETENTION_DAYS = 7;
             const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
             let deletedCount = 0;

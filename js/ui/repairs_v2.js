@@ -449,21 +449,20 @@ class RepairsUI {
                 <div class="card-footer" style="flex-wrap: wrap; gap: 8px; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 15px;">
                     <div class="price">${this.formatPrice(reparacion.precio_final || reparacion.precio)}</div>
                     <div style="display: flex; gap: 6px;">
-                        ${trackUrl ? `
-                        <button class="btn btn-icon btn-sm" onclick="repairsUI.copyTrackingLink('${reparacion.id}')" title="Copiar Enlace Seguimiento">
+                        <button class="btn btn-icon btn-sm btn-copy-link" data-action="copy-link" data-id="${reparacion.id}" title="Copiar Enlace Seguimiento">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                             </svg>
-                        </button>` : ''}
+                        </button>
 
-                        <button class="btn btn-icon btn-sm" onclick="repairsUI.sendWhatsAppPro('${reparacion.id}')" title="Enviar WhatsApp (Pro)" style="color: #25D366;">
+                        <button class="btn btn-icon btn-sm btn-whatsapp-pro" data-action="whatsapp-pro" data-id="${reparacion.id}" title="Enviar WhatsApp (Pro)" style="color: #25D366;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;">
                                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-13.1 8.38 8.38 0 0 1 3.8.9L21 3z"></path>
                             </svg>
                         </button>
 
-                        <button class="btn btn-icon btn-sm" onclick="repairsUI.editReparacion('${reparacion.id}')" title="Editar">
+                        <button class="btn btn-icon btn-sm btn-edit" data-action="edit" data-id="${reparacion.id}" title="Editar">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -496,24 +495,23 @@ class RepairsUI {
         const reparacion = this.reparaciones.find(r => r.id === id);
         if (!reparacion) return;
 
-        let trackUrl = '';
-        if (this.trackingUrl) {
-            const separator = this.trackingUrl.includes('?') ? '&' : '?';
-            trackUrl = `${this.trackingUrl}${separator}id=${reparacion.id}`;
+        let trackUrl = 'https://fanciful-dusk-b57665.netlify.app/tracking.html';
+        const sUrl = window.supabaseClient?.url;
+        const sKey = window.supabaseClient?.anonKey;
 
-            const sUrl = window.supabaseClient?.url;
-            const sKey = window.supabaseClient?.anonKey;
-
-            if (sUrl && sKey) {
-                try {
-                    trackUrl += `&u=${encodeURIComponent(btoa(sUrl))}&k=${encodeURIComponent(btoa(sKey))}`;
-                } catch (e) {
-                    console.error("Encoding failed", e);
-                }
+        if (sUrl && sKey) {
+            try {
+                // ANONYMOUS TOKEN: id|url|key
+                const token = btoa(`${reparacion.id}|${sUrl}|${sKey}`);
+                trackUrl += `?t=${token}`;
+            } catch (e) {
+                console.error("Token generation failed", e);
+                trackUrl += `?id=${reparacion.id}`;
             }
+        } else {
+            trackUrl += `?id=${reparacion.id}`;
         }
 
-        if (!trackUrl) return;
 
         try {
             await navigator.clipboard.writeText(trackUrl);
@@ -535,16 +533,33 @@ class RepairsUI {
             });
         });
 
+        // Copiar Enlace
+        document.querySelectorAll('[data-action="copy-link"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.copyTrackingLink(btn.dataset.id);
+            });
+        });
+
+        // WhatsApp Pro
+        document.querySelectorAll('[data-action="whatsapp-pro"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.sendWhatsAppPro(btn.dataset.id);
+            });
+        });
+
         // Editar
-        document.querySelectorAll('.btn-edit[data-action="edit"]').forEach(btn => {
-            btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-action="edit"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const id = btn.dataset.id;
                 this.openModal(id);
             });
         });
 
         // Imprimir Ticket
-        document.querySelectorAll('.btn-print[data-action="print"]').forEach(btn => {
+        document.querySelectorAll('[data-action="print"]').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const id = btn.dataset.id;
@@ -566,16 +581,14 @@ class RepairsUI {
         });
 
         // Eliminar
-        document.querySelectorAll('.btn-delete[data-action="delete"]').forEach(btn => {
+        document.querySelectorAll('[data-action="delete"]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                console.log('Delete button clicked', btn.dataset.id); // DEBUG
-                e.stopPropagation(); // Evitar abrir modal
+                e.stopPropagation();
                 const id = btn.dataset.id;
                 app.confirmDelete(
                     i18n.t('rep_delete_confirm'),
                     i18n.t('dlg_delete_warning'),
                     async () => {
-                        console.log('Executing delete callback for', id); // DEBUG
                         await this.deleteReparacion(id);
                     }
                 );
@@ -1259,30 +1272,28 @@ class RepairsUI {
         const phone = cliente ? cliente.telefono : '';
 
         // Generate Vitaminized Text
-        const price = this.formatPrice(rep.precio_final || rep.precio);
         const dispositivo = `${this.getDispositivoLabel(rep.dispositivo)} ${rep.marca || ''} ${rep.modelo || ''}`.trim();
         const imei = rep.imei || 'N/A';
-        // SMART TRACKING: Use official URL + Credentials (Base64)
-        let trackUrl = this.trackingUrl || 'https://david1932.github.io/reparapp/tracking.html';
-        const separator = trackUrl.includes('?') ? '&' : '?';
-        trackUrl = `${trackUrl}${separator}id=${rep.id}`;
 
+        // ANONYMOUS SMART LINK (Netlify)
+        let trackUrl = 'https://fanciful-dusk-b57665.netlify.app/tracking.html';
         const sUrl = window.supabaseClient?.url;
         const sKey = window.supabaseClient?.anonKey;
         if (sUrl && sKey) {
             try {
-                trackUrl += `&u=${encodeURIComponent(btoa(sUrl))}&k=${encodeURIComponent(btoa(sKey))}`;
-            } catch (e) { }
+                const token = btoa(`${rep.id}|${sUrl}|${sKey}`);
+                trackUrl += `?t=${token}`;
+            } catch (e) {
+                trackUrl += `?id=${rep.id}`;
+            }
+        } else {
+            trackUrl += `?id=${rep.id}`;
         }
+
 
         let template = (['listo', 'reparado', 'entregado'].includes(rep.estado)) ?
-            (this.templates?.reparado || i18n.t('tpl_default_ready')) :
-            (this.templates?.pendiente || i18n.t('tpl_default_pending'));
-
-        // Fallback if template is symbolic or missing
-        if (!template || template.includes('{TPL_')) {
-            template = "Hola {CLIENTE}, sobre tu {DISPOSITIVO}. IMEI: {IMEI}. Estado: {ESTADO}. Precio: {PRECIO}.";
-        }
+            "Hola {CLIENTE}, *tu dispositivo está listo*. Pincha aquí para ver los detalles:\n{URL}" :
+            "Hola {CLIENTE}, *hemos recibido tu dispositivo*. Puedes seguir el estado aquí:\n{URL}";
 
         let checklistSummary = '';
         if (rep.checklist) {
@@ -1292,15 +1303,7 @@ class RepairsUI {
 
         let message = template
             .replace(/{CLIENTE}/g, name)
-            .replace(/{DISPOSITIVO}/g, dispositivo)
-            .replace(/{PRECIO}/g, price)
-            .replace(/{TOTAL}/g, price)
-            .replace(/{URL}/g, trackUrl)
-            .replace(/{IMEI}/g, imei)
-            .replace(/{SN}/g, imei)
-            .replace(/{ESTADO}/g, rep.estado || 'pendiente') // REMOVED escapeHtml
-            .replace(/{REPUESTOS}/g, (rep.parts || []).map(p => p.name).join(', ') || 'Ninguno')
-            .replace(/{CHECKLIST}/g, checklistSummary);
+            .replace(/{URL}/g, trackUrl);
 
         // --- MEDIA SHARING (The "Pro" part) ---
         if (navigator.share && rep.photos && rep.photos.length > 0) {
@@ -1397,4 +1400,5 @@ class RepairsUI {
 
 // Instancia global
 const repairsUI = new RepairsUI();
-window.repUI = repairsUI; // Alias para compatibilidad con handlers HTML
+window.repairsUI = repairsUI;
+window.repUI = repairsUI; // Alias fallback
