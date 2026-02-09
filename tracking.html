@@ -450,8 +450,12 @@
             // UI Reset
             card.style.display = 'none';
             errorMsg.style.display = 'none';
-            btnSearch.textContent = 'Buscando...';
+            btnSearch.textContent = '⏳ Buscando...';
             btnSearch.disabled = true;
+
+            console.log('--- INICIO BÚSQUEDA ---');
+            console.log('ID:', id);
+            console.log('Supabase URL:', SUPABASE_URL);
 
             try {
                 // CONSULTA A SUPABASE
@@ -462,19 +466,23 @@
                     .single();
 
                 if (error) {
-                    console.error('Supabase Error Full:', error);
+                    console.error('❌ Error de Supabase:', error);
                     // Errores comunes
-                    if (error.code === 'PGRST116') throw new Error('Reparación no encontrada en la nube.');
-                    if (error.code === '42501') throw new Error('Acceso denegado (RLS activa). Activa la lectura pública en Supabase.');
+                    if (error.code === 'PGRST116') throw new Error('Reparación no encontrada en la base de datos.');
+                    if (error.code === '42501') throw new Error('Acceso denegado. Activa la lectura pública (RLS) en Supabase.');
                     throw error;
                 }
 
-                if (!data) throw new Error('No se encontraron datos para este ID.');
+                if (!data) {
+                    console.error('❌ No se han devuelto datos');
+                    throw new Error('No se encontraron datos para este ID.');
+                }
 
+                console.log('✅ Datos recibidos:', data);
                 renderResult(data);
 
             } catch (e) {
-                console.error(e);
+                console.error('❌ Error en el proceso:', e);
                 errorMsg.style.display = 'block';
                 errorMsg.innerHTML = `
                     <p style="margin:0 0 5px 0;"><b>⚠️ ${e.message || 'Error desconocido'}</b></p>
