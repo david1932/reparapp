@@ -3498,44 +3498,56 @@
 
     <!-- License Verification Overlay -->
     <div id="license-overlay"
-        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0f172a; z-index: 100000; flex-direction: column; align-items: center; justify-content: center; color: white;">
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #020617; z-index: 100000; flex-direction: column; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif;">
         <div
-            style="background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 90%; max-width: 450px; text-align: center; border: 1px solid #334155;">
-            <div style="font-size: 3rem; margin-bottom: 20px;">🛡️</div>
-            <h2 style="margin-bottom: 10px; font-size: 1.8rem; color: white;" data-i18n="lic_title">Activación Requerida
-            </h2>
-            <p style="color: #94a3b8; margin-bottom: 30px;" data-i18n="lic_subtitle">Esta copia de ReparApp PRO no está
-                activada.</p>
+            style="background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); width: 90%; max-width: 450px; text-align: center;">
+            <div
+                style="width: 70px; height: 70px; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 10px 20px rgba(6, 182, 212, 0.3);">
+                🛡️</div>
+
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: white;" data-i18n="lic_title">Activación
+                Requerida</h2>
+            <p style="color: #94a3b8; font-size: 14px; margin: 8px 0 32px;" data-i18n="lic_subtitle">Copia de ReparApp
+                PRO no activada</p>
 
             <div style="text-align: left; margin-bottom: 20px;">
-                <label style="display: block; color: #cbd5e1; margin-bottom: 5px; font-size: 0.9rem;"
-                    data-i18n="lic_company">Nombre de Empresa
-                    / Titular</label>
+                <label
+                    style="display: block; color: #94a3b8; margin-bottom: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"
+                    data-i18n="lic_company">Nombre de Empresa / Titular</label>
                 <input type="text" id="lic-name" placeholder="Ej: Servicios Rápidos SL"
-                    style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px;"
+                    style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; outline: none;"
                     data-i18n-placeholder="lic_company">
             </div>
 
-            <div style="text-align: left; margin-bottom: 30px;">
-                <label style="display: block; color: #cbd5e1; margin-bottom: 5px; font-size: 0.9rem;"
-                    data-i18n="lic_key">Clave de
-                    Producto</label>
+            <div style="text-align: left; margin-bottom: 24px;">
+                <label
+                    style="display: block; color: #94a3b8; margin-bottom: 8px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"
+                    data-i18n="lic_key">Clave de Producto</label>
                 <input type="text" id="lic-key" placeholder="XXXX-XXXX-XXXX-XXXX"
-                    style="width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; font-family: monospace; letter-spacing: 1px; text-transform: uppercase;"
+                    style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; outline: none;"
                     data-i18n-placeholder="lic_key">
             </div>
 
             <button id="btn-activate"
-                style="width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: transform 0.1s;"
+                style="width: 100%; padding: 16px; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; border: none; border-radius: 14px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);"
                 data-i18n="lic_activate">
-                Activar Licencia
+                ACTIVAR AHORA
             </button>
-            <p id="lic-error" style="color: #ef4444; margin-top: 15px; font-size: 0.9rem; display: none;"
-                data-i18n="lic_error">❌ Clave
-                incorrecta para este nombre</p>
+
+            <p id="lic-error"
+                style="color: #f87171; background: rgba(220, 38, 38, 0.1); padding: 12px; border-radius: 10px; margin-top: 20px; font-size: 13px; display: none;"
+                data-i18n="lic_error">❌ Clave incorrecta para este equipo</p>
+
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.05);">
+                <span style="color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">ID de
+                    Equipo para el vendedor:</span>
+                <div id="lic-fingerprint"
+                    style="margin-top: 4px; font-family: monospace; color: #22d3ee; font-size: 14px; font-weight: 600;">
+                    CARGANDO...</div>
+            </div>
         </div>
-        <p style="margin-top: 30px; color: #475569; font-size: 0.8rem;" data-i18n="lic_support">Soporte:
-            soporte@reparapp.com</p>
+        <p style="margin-top: 32px; color: #475569; font-size: 12px;" data-i18n="lic_support">Soporte:
+            ventas@reparapp.com</p>
     </div>
 
     <!-- Main Scripts -->
@@ -3551,11 +3563,12 @@
     <script src="js/sync_secure.js"></script>
     <script src="js/ui/navigation.js"></script>
     <script src="js/ui/clients.js"></script>
-    <script src="js/ui/repairs_v2.js"></script> <!-- RENAMED -->
+    <script src="js/ui/repairs_v2.js?v=FIX_FINAL"></script> <!-- RENAMED -->
     <script src="js/ui/invoices.js"></script>
     <script src="js/ui/inventory.js"></script>
     <script src="js/ui/appointments.js"></script>
     <script src="js/ui/settings.js"></script>
+    <script src="test_live_link.js"></script>
     <script src="js/ui/manager.js?v=1.1.2"></script>
     <script src="js/ui/auth.js"></script>
     <script src="js/ui/progress.js"></script>
