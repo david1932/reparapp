@@ -386,7 +386,12 @@
             // Procesar Token Compacto (id|url|key)
             if (token) {
                 try {
-                    const decoded = atob(token);
+                    // Convert URL-Safe Base64 back to Standard Base64
+                    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+                    // Add padding if missing
+                    while (base64.length % 4) base64 += '=';
+
+                    const decoded = atob(base64);
                     const parts = decoded.split('|');
                     if (parts.length === 3) {
                         idFromToken = parts[0];
@@ -538,8 +543,8 @@
                 errorMsg.style.display = 'block';
                 errorMsg.innerHTML = `
                     <p style="margin:0 0 5px 0;"><b>⚠️ ${e.message || 'Error desconocido'}</b></p>
-                    <p style="font-size:11px; opacity:0.8; margin:0;">1. Asegúrate de pulsar <b>"Sincronizar"</b> en la App.</p>
-                    <p style="font-size:11px; opacity:0.8; margin:0;">2. Verifica que las llaves de Supabase sean correctas.</p>
+                    <p style="font-size:11px; opacity:0.8; margin:0;">1. Pulsa <b>"Sincronizar"</b> en la App para subir los datos.</p>
+                    <p style="font-size:11px; opacity:0.8; margin:0;">2. Si la reparación es antigua, ábrela en la App y dale a WhatsApp para actualizarla.</p>
                 `;
             } finally {
                 btnSearch.textContent = 'Buscar';

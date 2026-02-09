@@ -501,8 +501,9 @@ class RepairsUI {
 
         if (sUrl && sKey) {
             try {
-                // ANONYMOUS TOKEN: id|url|key
-                const token = btoa(`${reparacion.id}|${sUrl}|${sKey}`);
+                // ANONYMOUS URL-SAFE TOKEN: id|url|key
+                const rawToken = btoa(`${reparacion.id}|${sUrl}|${sKey}`);
+                const token = rawToken.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
                 trackUrl += `?t=${token}`;
             } catch (e) {
                 console.error("Token generation failed", e);
@@ -1281,7 +1282,8 @@ class RepairsUI {
         const sKey = window.supabaseClient?.anonKey;
         if (sUrl && sKey) {
             try {
-                const token = btoa(`${rep.id}|${sUrl}|${sKey}`);
+                const rawToken = btoa(`${rep.id}|${sUrl}|${sKey}`);
+                const token = rawToken.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
                 trackUrl += `?t=${token}`;
             } catch (e) {
                 trackUrl += `?id=${rep.id}`;
@@ -1292,8 +1294,8 @@ class RepairsUI {
 
 
         let template = (['listo', 'reparado', 'entregado'].includes(rep.estado)) ?
-            "Hola {CLIENTE}, *tu dispositivo está listo*. Pincha aquí para ver los detalles:\n{URL}" :
-            "Hola {CLIENTE}, *hemos recibido tu dispositivo*. Puedes seguir el estado aquí:\n{URL}";
+            "📱 *Consulta tu Reparación*\n\nHola {CLIENTE}, tu dispositivo está listo. Pincha aquí para ver los detalles:\n{URL}" :
+            "📱 *Consulta tu Reparación*\n\nHola {CLIENTE}, hemos recibido tu dispositivo. Pincha aquí para ver el estado:\n{URL}";
 
         let checklistSummary = '';
         if (rep.checklist) {
