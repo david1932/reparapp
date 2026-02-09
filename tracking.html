@@ -350,25 +350,32 @@
         let SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
         let SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
 
-        // Lógica Dynamic Cloud (Para usuarios sin hosting propio)
+        // Lógica de Credenciales Dinámicas (Tracking Universal)
         const urlParams = new URLSearchParams(window.location.search);
         const dynamicUrl = urlParams.get('u');
         const dynamicKey = urlParams.get('k');
 
         if (dynamicUrl && dynamicKey) {
-            console.log('Using dynamic credentials from URL');
+            console.log('Detectadas credenciales dinámicas');
             try {
                 // Soportar Base64 para URLs más limpias y seguras
                 SUPABASE_URL = dynamicUrl.startsWith('http') ? dynamicUrl : atob(dynamicUrl);
                 SUPABASE_KEY = dynamicKey.length < 50 ? atob(dynamicKey) : dynamicKey;
             } catch (e) {
-                console.error('Error decoding dynamic credentials');
+                console.error('Error decodificando credenciales:', e);
             }
+        } else {
+            console.warn('Usando credenciales por defecto (puede que no veas tus reparaciones)');
         }
 
         // CHECK LIBRARY LOADED
         if (!window.supabase || !window.supabase.createClient) {
-            document.body.innerHTML = '<h3 style="color:white;text-align:center;margin-top:50px">Error: No se pudo conectar con el servidor (Librería Supabase).<br>Verifica tu conexión a Internet.</h3>';
+            const errorHtml = `
+                <div style="background:rgba(220,38,38,0.1); padding:20px; border-radius:15px; border:1px solid rgba(220,38,38,0.2); text-align:center;">
+                    <p style="color:#ef4444; font-weight:bold;">No se pudo conectar con el servidor.</p>
+                    <p style="font-size:13px; color:#94a3b8;">Verifica que tengas conexión a internet y que el Supabase SDK se haya cargado.</p>
+                </div>`;
+            document.querySelector('.container').innerHTML += errorHtml;
             throw new Error('Supabase SDK not loaded');
         }
 
@@ -442,21 +449,25 @@
                     .single();
 
                 if (error) {
-                    console.error('Supabase Error:', error);
+                    console.error('Supabase Error Full:', error);
                     // Errores comunes
-                    if (error.code === 'PGRST116') throw new Error('Reparación no encontrada (ID incorrecto).');
-                    if (error.code === '42501') throw new Error('Permiso denegado. Revisa las Policies (RLS) en Supabase para lectura pública.');
+                    if (error.code === 'PGRST116') throw new Error('Reparación no encontrada en la nube.');
+                    if (error.code === '42501') throw new Error('Acceso denegado (RLS activa). Activa la lectura pública en Supabase.');
                     throw error;
                 }
 
-                if (!data) throw new Error('No se encontraron datos.');
+                if (!data) throw new Error('No se encontraron datos para este ID.');
 
                 renderResult(data);
 
             } catch (e) {
                 console.error(e);
                 errorMsg.style.display = 'block';
-                errorMsg.innerHTML = `Error: ${e.message || 'Desconocido'}<br><small>Asegúrate de haber pulsado "Sincronizar" en la App.</small>`;
+                errorMsg.innerHTML = `
+                    <p style="margin:0 0 5px 0;"><b>⚠️ ${e.message || 'Error desconocido'}</b></p>
+                    <p style="font-size:11px; opacity:0.8; margin:0;">1. Asegúrate de pulsar <b>"Sincronizar"</b> en la App.</p>
+                    <p style="font-size:11px; opacity:0.8; margin:0;">2. Verifica que las llaves de Supabase sean correctas.</p>
+                `;
             } finally {
                 btnSearch.textContent = 'Buscar';
                 btnSearch.disabled = false;
