@@ -355,22 +355,28 @@
         const dynamicUrl = urlParams.get('u');
         const dynamicKey = urlParams.get('k');
 
-        if (dynamicUrl && dynamicKey) {
+        function safeAtob(str) {
             try {
-                // Soportar Base64 para URLs más limpias y seguras
-                SUPABASE_URL = dynamicUrl.startsWith('http') ? dynamicUrl : atob(dynamicUrl);
-                SUPABASE_KEY = dynamicKey.length < 50 ? atob(dynamicKey) : dynamicKey;
-                console.log('✅ Base de datos cargada desde el enlace.');
+                if (!str) return null;
+                // Si ya parece una URL o Key real, no decodificar
+                if (str.startsWith('http') || str.length > 100 && str.includes('.')) return str;
+                return atob(str);
             } catch (e) {
-                console.error('Error decodificando credenciales:', e);
+                return str;
             }
+        }
+
+        if (dynamicUrl && dynamicKey) {
+            SUPABASE_URL = safeAtob(dynamicUrl);
+            SUPABASE_KEY = safeAtob(dynamicKey);
+            console.log('✅ Credenciales dinámicas aplicadas.');
         } else {
             console.warn('⚠️ No se han detectado credenciales en el enlace.');
             const warningEl = document.getElementById('error-msg');
             warningEl.style.display = 'block';
             warningEl.innerHTML = `
-                <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 10px; font-size: 12px;">
-                    💡 <b>Nota:</b> Estás abriendo la web directamente. Para ver tus datos reales, usa el enlace generado por la App.
+                <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px;">
+                    💡 <b>Nota:</b> Para ver tus reparaciones, usa el enlace generado por la App o asegúrate de que el link incluya tus llaves.
                 </div>
             `;
         }
