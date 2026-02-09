@@ -1,0 +1,177 @@
+/* Estilos para impresión Premium (Tickets 58mm) */
+@media print {
+
+    /* Ocultar interfaz app */
+    body>*:not(#receipt-container) {
+        display: none !important;
+    }
+
+    #receipt-container {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 58mm;
+        margin: 0;
+        padding: 0;
+        /* Margen físico de impresora */
+        background: white;
+
+        /* Tipografía Premium Clean */
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #1a1a1a;
+        font-size: 11px;
+        line-height: 1.4;
+    }
+
+    /* Estructura */
+    .ticket {
+        width: 100%;
+        padding: 0 1mm;
+        box-sizing: border-box;
+    }
+
+    /* ------ HEADER ------ */
+    .ticket-header {
+        text-align: center;
+        margin-bottom: 4mm;
+        padding-bottom: 3mm;
+        border-bottom: 2px solid #000;
+        /* Línea fuerte de marca */
+    }
+
+    .ticket-logo-text {
+        font-size: 18px;
+        font-weight: 900;
+        /* Extra bold */
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
+        margin: 0;
+        line-height: 1;
+    }
+
+    .ticket-meta {
+        margin-top: 1mm;
+        font-size: 9px;
+        color: #555;
+    }
+
+    /* ------ BODY ------ */
+    .ticket-section {
+        margin-bottom: 3mm;
+    }
+
+    .section-title {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #666;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 1mm;
+        padding-bottom: 1px;
+    }
+
+    /* Datos grandes (ID, Precio) */
+    .ticket-highlight {
+        font-size: 14px;
+        font-weight: 800;
+        text-align: center;
+        background: #f4f4f4;
+        /* Fondo sutil */
+        padding: 2mm;
+        border-radius: 4px;
+        margin: 2mm 0;
+        -webkit-print-color-adjust: exact;
+        /* Forzar impresión de fondo */
+    }
+
+    .ticket-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1mm;
+    }
+
+    .row-label {
+        font-weight: 600;
+        color: #444;
+    }
+
+    .row-value {
+        text-align: right;
+        font-weight: 400;
+    }
+
+    /* ------ TABLA ITEMS (Factura) ------ */
+    .ticket-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2mm 0;
+    }
+
+    .ticket-table th {
+        text-align: left;
+        font-size: 9px;
+        border-bottom: 1px solid #000;
+        padding-bottom: 1mm;
+    }
+
+    .ticket-table td {
+        padding: 1mm 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .col-price {
+        text-align: right;
+    }
+
+    /* ------ TOTALES ------ */
+    .ticket-total-box {
+        margin-top: 3mm;
+        border-top: 2px solid #000;
+        padding-top: 2mm;
+        text-align: right;
+    }
+
+    .total-line {
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    /* ------ FOOTER (QR & LEGAL) ------ */
+    .ticket-footer {
+        margin-top: 5mm;
+        text-align: center;
+    }
+
+    .qr-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2mm;
+    }
+
+    .qr-img {
+        width: 35mm;
+        height: 35mm;
+        /* Bordes redondeados sutiles */
+        border-radius: 4px;
+    }
+
+    .scan-me-text {
+        font-size: 9px;
+        font-weight: 700;
+        margin-bottom: 2mm;
+        text-transform: uppercase;
+    }
+
+    .legal-text {
+        font-size: 7px;
+        color: #777;
+        text-align: justify;
+        line-height: 1.2;
+    }
+}
+
+/* Ocultar en pantalla */
+#receipt-container {
+    display: none;
+}

@@ -93,7 +93,6 @@ class FileSyncService {
             const writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(data, null, 2));
             await writable.close();
-            console.log(`Sincronizado localmente: ${fileName}`);
         } catch (error) {
             console.error(`Error writing file ${fileName}:`, error);
         }
@@ -167,7 +166,6 @@ class FileSyncService {
             return JSON.parse(content);
         } catch (error) {
             if (error.name === 'NotFoundError') {
-                console.log(`Archivo ${fileName} no encontrado en carpeta local`);
                 return null;
             }
             console.error(`Error leyendo ${fileName}:`, error);
@@ -234,7 +232,6 @@ class FileSyncService {
                 }
             }
 
-            console.log('Datos restaurados desde carpeta local:', imported);
             return { success: true, imported };
 
         } catch (error) {

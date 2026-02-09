@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Reparación</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #06b6d4;
+            /* Cyan */
+            --success: #10b981;
+            --pending: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 24px;
+            font-size: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 8px;
+        }
+
+        input {
+            flex: 1;
+            background: #334155;
+            border: 1px solid #475569;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:active {
+            opacity: 0.8;
+        }
+
+        /* STATUS CARD */
+        .status-card {
+            display: none;
+            /* Hidden by default */
+            margin-top: 20px;
+            text-align: left;
+            border-top: 1px solid #334155;
+            padding-top: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .device-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .device-model {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background: #334155;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .status-badge.completed {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.in-progress {
+            background: rgba(6, 182, 212, 0.2);
+            color: var(--accent);
+        }
+
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--pending);
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 20px;
+            margin-top: 20px;
+            border-left: 2px solid #334155;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 5px;
+            width: 8px;
+            height: 8px;
+            background: #475569;
+            border-radius: 50%;
+            border: 2px solid var(--bg-card);
+        }
+
+        .timeline-item.active::before {
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .timeline-item p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .timeline-date {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .error-msg {
+            color: #ef4444;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* PHOTOS GALLERY */
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .photo-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            background: #334155;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* CHECKLIST */
+        .checklist-display {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .solution-box {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid var(--success);
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 4px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>🔍 Estado de Reparación</h1>
+
+        <div class="input-group">
+            <input type="text" id="repair-id" placeholder="Código de Reparación (UUID)">
+            <button id="btn-search">Buscar</button>
+        </div>
+        <p class="error-msg" id="error-msg">No se encontró la reparación.</p>
+
+        <div class="status-card" id="result">
+            <div class="device-name" id="dev-name">iPhone 13</div>
+            <div class="device-model" id="dev-model">Sustitución de Pantalla</div>
+            <span class="status-badge" id="dev-badge">En Proceso</span>
+
+            <div class="timeline">
+                <div class="timeline-item" id="step-received">
+                    <p>Recibido</p>
+                    <div class="timeline-date" id="date-received">-</div>
+                </div>
+                <div class="timeline-item" id="step-diagnosis">
+                    <p>Diagnóstico / En Taller</p>
+                </div>
+                <div class="timeline-item" id="step-ready">
+                    <p>Listo para Entregar</p>
+                </div>
+            </div>
+
+            <div id="solution-container" class="solution-box" style="display: none;">
+                <strong>🛠️ Solución realizada:</strong>
+                <p id="solution-text" style="margin: 5px 0 0;"></p>
+            </div>
+
+            <div id="checklist-container" class="checklist-display" style="display: none;">
+                <strong>📋 Verificación Técnica:</strong>
+                <div id="checklist-items" style="margin-top: 10px;"></div>
+            </div>
+
+            <div id="photos-container" style="display: none; margin-top: 20px;">
+                <strong>📸 Galería de la Reparación:</strong>
+                <div id="photos-gallery" class="photo-gallery"></div>
+            </div>
+
+            <p style="margin-top: 25px; font-size: 0.8rem; color: #64748b; text-align: center;">
+                Si tienes dudas, contáctanos por WhatsApp.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN SUPABASE (Pública/Anon)
+        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+
+        // CHECK LIBRARY LOADED
+        if (!window.supabase || !window.supabase.createClient) {
+            document.body.innerHTML = '<h3 style="color:white;text-align:center;margin-top:50px">Error: No se pudo conectar con el servidor (Librería Supabase).<br>Verifica tu conexión a Internet.</h3>';
+            throw new Error('Supabase SDK not loaded');
+        }
+
+        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // UI REFERENCIAS
+        const inputId = document.getElementById('repair-id');
+        const btnSearch = document.getElementById('btn-search');
+        const card = document.getElementById('result');
+        const errorMsg = document.getElementById('error-msg');
+
+        // BUSCAR AL CARGAR SI HAY PARAMETRO URL
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                inputId.value = id;
+                searchRepair(id);
+            }
+        });
+
+        btnSearch.addEventListener('click', () => searchRepair(inputId.value.trim()));
+
+        async function searchRepair(input) {
+            if (!input) return;
+
+            // Limpiar input (si pegan la URL completa)
+            let id = input.trim();
+            if (id.includes('id=')) {
+                id = id.split('id=')[1].split('&')[0];
+            } else if (id.includes('/')) {
+                // Posible url tipo param
+                const parts = id.split('/');
+                id = parts[parts.length - 1]; // Última parte
+            }
+
+            // Validar
+            if (id.length < 5) {
+                alert('El código parece demasiado corto.');
+                return;
+            }
+
+            // UI Reset
+            card.style.display = 'none';
+            errorMsg.style.display = 'none';
+            btnSearch.textContent = 'Buscando...';
+            btnSearch.disabled = true;
+
+            try {
+                // CONSULTA A SUPABASE
+                const { data, error } = await _supabase
+                    .from('reparaciones')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) {
+                    console.error('Supabase Error:', error);
+                    // Errores comunes
+                    if (error.code === 'PGRST116') throw new Error('Reparación no encontrada (ID incorrecto).');
+                    if (error.code === '42501') throw new Error('Permiso denegado. Revisa las Policies (RLS) en Supabase para lectura pública.');
+                    throw error;
+                }
+
+                if (!data) throw new Error('No se encontraron datos.');
+
+                renderResult(data);
+
+            } catch (e) {
+                console.error(e);
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = `Error: ${e.message || 'Desconocido'}<br><small>Asegúrate de haber pulsado "Sincronizar" en la App.</small>`;
+            } finally {
+                btnSearch.textContent = 'Buscar';
+                btnSearch.disabled = false;
+            }
+        }
+
+        function renderResult(rep) {
+            // Datos básicos
+            document.getElementById('dev-name').textContent = (rep.dispositivo || 'Dispositivo').toUpperCase();
+            document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} - ${rep.problema || ''}`;
+
+            // Fecha
+            const date = new Date(rep.fecha_creacion);
+            document.getElementById('date-received').textContent = date.toLocaleDateString();
+
+            // Estado y Badge
+            const badge = document.getElementById('dev-badge');
+            let statusText = 'Pendiente';
+            let className = 'pending';
+
+            const st = (rep.estado || '').toLowerCase();
+
+            // Lógica de timeline visual
+            document.getElementById('step-received').classList.add('active');
+            document.getElementById('step-diagnosis').classList.remove('active');
+            document.getElementById('step-ready').classList.remove('active');
+
+            if (st === 'pendiente' || st === 'recibido') {
+                statusText = 'Recibido';
+                className = 'pending';
+            }
+            else if (st === 'diagnostico' || st === 'en_proceso' || st === 'esperando_pieza' || st === 'presupuesto') {
+                statusText = 'En Taller';
+                className = 'in-progress';
+                document.getElementById('step-diagnosis').classList.add('active');
+            }
+            else if (st === 'reparado' || st === 'terminado' || st === 'entregado' || st === 'completada') {
+                statusText = 'Listo / Entregado';
+                className = 'completed';
+                document.getElementById('step-diagnosis').classList.add('active');
+                document.getElementById('step-ready').classList.add('active');
+            }
+
+            badge.textContent = statusText;
+            badge.className = `status-badge ${className}`;
+
+            // --- PRO DATA: Solution ---
+            const solContainer = document.getElementById('solution-container');
+            if (rep.solucion) {
+                document.getElementById('solution-text').textContent = rep.solucion;
+                solContainer.style.display = 'block';
+            } else {
+                solContainer.style.display = 'none';
+            }
+
+            // --- PRO DATA: Checklist ---
+            const chkContainer = document.getElementById('checklist-container');
+            const chkItems = document.getElementById('checklist-items');
+            if (rep.checklist) {
+                chkItems.innerHTML = Object.entries(rep.checklist)
+                    .map(([k, v]) => `
+                        <div class="checklist-item">
+                            ${v ? '✅' : '❌'} <span>${k.charAt(0).toUpperCase() + k.slice(1)}</span>
+                        </div>
+                    `).join('');
+                chkContainer.style.display = 'block';
+            } else {
+                chkContainer.style.display = 'none';
+            }
+
+            // --- PRO DATA: Photos ---
+            const photosContainer = document.getElementById('photos-container');
+            const gallery = document.getElementById('photos-gallery');
+            if (rep.photos && rep.photos.length > 0) {
+                gallery.innerHTML = rep.photos.map(p => `
+                    <div class="photo-item" onclick="window.open('${p}', '_blank')">
+                        <img src="${p}" loading="lazy">
+                    </div>
+                `).join('');
+                photosContainer.style.display = 'block';
+            } else {
+                photosContainer.style.display = 'none';
+            }
+
+            card.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

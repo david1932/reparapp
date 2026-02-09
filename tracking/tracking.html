@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento de Reparación</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 480px;
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary);
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #result {
+            display: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: var(--border);
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+
+        .status-badge.terminado,
+        .status-badge.listo,
+        .status-badge.entregado {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.reparando,
+        .status-badge.diagnostico {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-badge.pendiente {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--background);
+            padding-bottom: 0.5rem;
+        }
+
+        .label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .value {
+            font-weight: 500;
+        }
+
+        .error {
+            color: #ef4444;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Estado de Reparación</h1>
+
+        <div class="search-box">
+            <input type="text" id="repairId" placeholder="ID de Reparación" />
+            <button onclick="checkStatus()">Buscar</button>
+        </div>
+
+        <div id="loading" style="display: none; text-align: center;">Buscando...</div>
+        <div id="error" class="error"></div>
+
+        <div id="result">
+            <div style="text-align: center;">
+                <span id="statusBadge" class="status-badge">Estado</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="label">Dispositivo</span>
+                <span class="value" id="deviceModel">-</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="label">Problema</span>
+                <span class="value" id="problemDesc">-</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="label">Fecha Entrada</span>
+                <span class="value" id="dateIn">-</span>
+            </div>
+
+            <div class="detail-row" id="costRow" style="display: none;">
+                <span class="label">Total</span>
+                <span class="value" id="totalCost">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Configuración de Supabase (Pública / Anon)
+        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+
+        // Elementos UI
+        const inputId = document.getElementById('repairId');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const resultDiv = document.getElementById('result');
+
+        // Verificar si hay ID en la URL al cargar
+        window.onload = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+            if (id) {
+                inputId.value = id;
+                checkStatus();
+            }
+        };
+
+        async function checkStatus() {
+            const id = inputId.value.trim();
+            if (!id) return;
+
+            // Reset UI
+            loading.style.display = 'block';
+            errorDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+
+            try {
+                // Verificar Supabase
+                if (typeof window.supabase === 'undefined') {
+                    throw new Error('Supabase no cargó. Revisa tu conexión.');
+                }
+
+                // Inicializar cliente (SIN SESIÓN PERSISTENTE)
+                const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: { persistSession: false }
+                });
+
+                // Consultar Supabase
+                // Usamos select('*') porque debug.html confirmó que funciona
+                const { data, error } = await client
+                    .from('reparaciones')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) {
+                    console.error(error);
+                    // Mostrar el error real en pantalla para depurar
+                    throw new Error('Supabase Error: ' + (error.message || JSON.stringify(error)));
+                }
+
+                if (data) {
+                    renderResult(data);
+                } else {
+                    throw new Error('Reparación no encontrada');
+                }
+
+            } catch (err) {
+                errorDiv.textContent = err.message || 'Error desconocido';
+                errorDiv.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function renderResult(data) {
+            resultDiv.style.display = 'block';
+
+            // Estado con color
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = (data.estado || 'Desconocido').toUpperCase();
+            badge.className = 'status-badge ' + (data.estado || '').toLowerCase();
+
+            // Datos
+            document.getElementById('deviceModel').textContent = data.modelo || 'Desconocido';
+            document.getElementById('problemDesc').textContent = data.descripcion || '-';
+
+            // Fecha formateada
+            if (data.fecha_creacion) {
+                const date = new Date(data.fecha_creacion); // Timestamps (ms) work directly
+                if (!isNaN(date.getTime())) {
+                    document.getElementById('dateIn').textContent = date.toLocaleDateString();
+                } else {
+                    document.getElementById('dateIn').textContent = '-';
+                }
+            }
+
+            // Costo (Solo si hay precio)
+            const costRow = document.getElementById('costRow');
+            if (data.precio_final && data.precio_final > 0) {
+                costRow.style.display = 'flex';
+                document.getElementById('totalCost').textContent = parseFloat(data.precio_final).toFixed(2) + ' €';
+            } else {
+                costRow.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>

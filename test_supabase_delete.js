@@ -37,7 +37,6 @@ function request(method, path, body = null) {
 }
 
 async function test() {
-    console.log("1. Creating Test Client...");
     const testId = "test-delete-" + Date.now();
     const createRes = await request('clientes', {
         id: testId,
@@ -46,29 +45,19 @@ async function test() {
         ultima_modificacion: Date.now()
     }, 'POST');
 
-    console.log("Create Status:", createRes.status);
     if (createRes.status !== 201) {
         console.error("Failed to create:", createRes.data);
         return;
     }
 
-    console.log("2. Verifying it exists...");
     const getRes = await request(`clientes?id=eq.${testId}`, null, 'GET');
-    console.log("Get Status:", getRes.status);
-    console.log("Found:", getRes.data.length > 0);
 
-    console.log("3. Attempting DELETE...");
     const delRes = await request(`clientes?id=eq.${testId}`, null, 'DELETE');
-    console.log("Delete Status:", delRes.status);
 
     // Check if it's really gone
     const checkRes = await request(`clientes?id=eq.${testId}`, null, 'GET');
-    console.log("4. Verifying deletion...");
     if (checkRes.data && checkRes.data.length === 0) {
-        console.log("SUCCESS: Record was deleted.");
     } else {
-        console.log("FAILURE: Record still exists!");
-        console.log("Data:", checkRes.data);
     }
 }
 

@@ -1,0 +1,8 @@
+URL DE SEGUIMIENTO (Clientes):
+https://david1932.github.io/reparapp/tracking.html
+
+Instrucciones:
+1. Copia la dirección de arriba.
+2. Ve a la App > Ajustes > Empresa.
+3. Pégalo en "URL de Seguimiento".
+4. Guarda los cambios.

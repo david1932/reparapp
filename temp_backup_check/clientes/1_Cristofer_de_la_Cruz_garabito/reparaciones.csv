@@ -1,0 +1,4 @@
+ID,Tipo Dispositivo,Marca,Modelo,Descripcion Problema,Descripcion Solucion,Costo Estimado,Costo Final,Estado,Fecha Admision,Fecha Entrega,Notas
+3,MOVIL,Samsung,A05S,No carga,Cambio modulo de carga,35.0,35.0,LISTO,03/01/2026 17:03,03/01/2026 17:03,
+2,MOVIL,Samsung,S24,Pantalla rota,Cambio de pantalla,105.0,105.0,LISTO,03/01/2026 17:02,03/01/2026 17:02,
+1,MOVIL,Iphone,13 pro máx,Pantalla en blanco,Cambiar pantalla,82.0,82.0,LISTO,03/01/2026 17:01,03/01/2026 17:01,"Tiene la tapa trasera rota, no se pudo probar la pantalla no sabía el pin"

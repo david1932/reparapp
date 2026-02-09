@@ -1,0 +1,20 @@
+GUÍA DE INSTALACIÓN - SISTEMA DE SEGUIMIENTOS
+
+¡Hola! Has creado con éxito tu sistema de seguimiento de reparaciones.
+Para que tus clientes puedan usarlo, necesitas "subir" estos archivos a internet.
+
+Opción Recomendada (Gratis y Fácil): NETLIFY DROP
+
+1. Ve a esta web: https://app.netlify.com/drop
+2. Verás un recuadro que dice "Drag and drop your site folder here".
+3. Arrastra la carpeta "tracking" (donde está este archivo) dentro de ese recuadro.
+4. Espera unos segundos... ¡y listo!
+5. Netlify te dará un enlace (ej: https://pedantic-einstein-123456.netlify.app).
+6. Ese es el enlace que puedes enviar a tus clientes.
+
+IMPORTANTE:
+- Tu aplicación de escritorio enviará los datos a la nube automáticamente cuando le des a "Sincronizar".
+- La página web leerá esos datos al instante.
+- No se subirán fotos ni firmas para mantener el servicio GRATUITO.
+
+Si necesitas cambiar el dominio o personalizarlo, Netlify te permite hacerlo en su panel de configuración.

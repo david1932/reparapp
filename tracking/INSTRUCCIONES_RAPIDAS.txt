@@ -1,0 +1,17 @@
+PASOS PARA SUBIR TU WEB
+========================
+
+1. Ya he abierto la carpeta "tracking" por ti.
+   (Si no la ves, es donde está este archivo).
+
+2. Ya he abierto la web "Netlify Drop" en tu navegador.
+   (La dirección es: https://app.netlify.com/drop)
+
+3. Vuelve a la carpeta anterior (para ver la carpeta "tracking" desde fuera) O simplemente selecciona TODOS los archivos de esta carpeta.
+
+4. ARRASTRA esos archivos dentro del recuadro discontinuo de la web de Netlify.
+
+5. Espera unos segundos... ¡y te dará un link!
+   Ese link es tu web pública.
+
+6. Cópialo y compártelo.

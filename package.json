@@ -17,13 +17,29 @@
   "license": "ISC",
   "build": {
     "appId": "com.reparapp.gestion",
-    "productName": "ReparApp",
+    "productName": "ReparApp PRO",
+    "asar": true,
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "**/*",
+      "!**/*.ps1",
+      "!**/*.log",
+      "!.git/**",
+      "!.github/**",
+      "!tests/**",
+      "!temp_**",
+      "!src/**",
+      "!dist/**",
+      "!keygen_tool.html",
+      "!audit_tool.js",
+      "!clean_logs.js",
+      "!MARKET_RESEARCH.md",
+      "!implementation_plan.md"
+    ],
     "win": {
-      "target": "nsis",
-      "icon": "icon.ico"
+      "target": "nsis"
     }
   },
   "devDependencies": {

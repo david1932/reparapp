@@ -77,7 +77,7 @@ class SupabaseClient {
      */
     async request(endpoint, options = {}) {
         if (!this.isConfigured) {
-            throw new Error('Supabase no está configurado');
+            throw new Error(i18n.t('err_supabase_not_configured'));
         }
 
         const url = `${this.url}/rest/v1/${endpoint}`;
@@ -103,7 +103,7 @@ class SupabaseClient {
 
         if (!response.ok) {
             const error = await response.text();
-            throw new Error(`Error de API: ${response.status} - ${error}`);
+            throw new Error(`${i18n.t('err_api')}: ${response.status} - ${error}`);
         }
 
         // DELETE y algunos otros métodos pueden no devolver JSON
@@ -117,7 +117,7 @@ class SupabaseClient {
      * Iniciar sesión con email y contraseña
      */
     async signIn(email, password) {
-        if (!this.isConfigured) throw new Error('Supabase no configurado');
+        if (!this.isConfigured) throw new Error(i18n.t('err_supabase_not_configured'));
 
         const response = await fetch(`${this.url}/auth/v1/token?grant_type=password`, {
             method: 'POST',
@@ -129,7 +129,7 @@ class SupabaseClient {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error_description || data.msg || 'Error al iniciar sesión');
+        if (!response.ok) throw new Error(data.error_description || data.msg || i18n.t('err_login'));
 
         this.saveSession(data);
         return data;
@@ -139,7 +139,7 @@ class SupabaseClient {
      * Registrarse con email y contraseña
      */
     async signUp(email, password) {
-        if (!this.isConfigured) throw new Error('Supabase no configurado');
+        if (!this.isConfigured) throw new Error(i18n.t('err_supabase_not_configured'));
 
         const response = await fetch(`${this.url}/auth/v1/signup`, {
             method: 'POST',
@@ -151,7 +151,7 @@ class SupabaseClient {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.msg || data.error?.message || 'Error al registrarse');
+        if (!response.ok) throw new Error(data.msg || data.error?.message || i18n.t('err_signup'));
 
         // Si autoconfirm está activado, guardamos sesión si viene
         if (data.access_token) {
@@ -459,4 +459,4 @@ class SupabaseClient {
 }
 
 // Instancia global
-const supabaseClient = new SupabaseClient();
+window.supabaseClient = new SupabaseClient();

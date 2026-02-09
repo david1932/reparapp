@@ -97,7 +97,7 @@ class ClientsUI {
             this.attachCardListeners();
         } catch (error) {
             console.error('Error rendering clients:', error);
-            app.showToast('Error al cargar clientes', 'error');
+            app.showToast(i18n.t('toast_error_loading'), 'error');
         }
     }
 
@@ -139,20 +139,20 @@ class ClientsUI {
                     ` : ''}
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-secondary btn-edit" data-action="edit" data-id="${cliente.id}">
+                    <button class="btn btn-secondary btn-edit" data-action="edit" data-id="${cliente.id}" title="${i18n.t('btn_edit')}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
-                        Editar
+                        ${i18n.t('btn_edit')}
                     </button>
-                    <button class="btn btn-secondary btn-repairs" data-action="repairs" data-id="${cliente.id}">
+                    <button class="btn btn-secondary btn-repairs" data-action="repairs" data-id="${cliente.id}" title="${i18n.t('btn_view')}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
                         </svg>
-                        Ver
+                        ${i18n.t('btn_view')}
                     </button>
-                    <button class="btn btn-icon btn-delete" data-action="delete" data-id="${cliente.id}">
+                    <button class="btn btn-icon btn-delete" data-action="delete" data-id="${cliente.id}" title="${i18n.t('btn_delete')}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -189,11 +189,22 @@ class ClientsUI {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Evitar abrir modal
                 const id = btn.dataset.id;
-                const cliente = this.clientes.find(c => c.id === id);
+                // Loose equality or String conversion to handle potential type mismatch (string vs number)
+                const cliente = this.clientes.find(c => String(c.id) === String(id));
                 if (cliente) {
                     app.confirmDelete(
-                        `¿Eliminar cliente "${cliente.nombre}"?`,
-                        'Se eliminarán también sus reparaciones asociadas.',
+                        i18n.t('cli_delete_confirm', { name: cliente.nombre }),
+                        i18n.t('cli_delete_warning'),
+                        async () => {
+                            await this.deleteCliente(id);
+                        }
+                    );
+                } else {
+                    console.error('Cliente no encontrado para eliminar:', id);
+                    // Fallback para permitir eliminar incluso si no se encuentra en el array local
+                    app.confirmDelete(
+                        i18n.t('dlg_delete_confirm'),
+                        i18n.t('dlg_delete_warning'),
                         async () => {
                             await this.deleteCliente(id);
                         }
@@ -229,7 +240,7 @@ class ClientsUI {
 
         if (id) {
             // Modo edición
-            title.textContent = 'Editar Cliente';
+            title.textContent = i18n.t('cli_edit_title');
             const cliente = await db.getCliente(id);
             if (cliente) {
                 document.getElementById('cliente-id').value = cliente.id;
@@ -242,7 +253,7 @@ class ClientsUI {
                 document.getElementById('cliente-notas').value = cliente.notas || '';
             }
         } else {
-            title.textContent = 'Nuevo Cliente';
+            title.textContent = i18n.t('mod_client_new');
         }
 
         modal.classList.add('active');
@@ -279,10 +290,10 @@ class ClientsUI {
             this.closeModal();
             await this.render();
 
-            app.showToast(id ? 'Cliente actualizado' : 'Cliente creado', 'success');
+            app.showToast(id ? i18n.t('toast_updated') : i18n.t('toast_saved'), 'success');
         } catch (error) {
             console.error('Error saving client:', error);
-            app.showToast('Error al guardar cliente', 'error');
+            app.showToast(i18n.t('toast_error'), 'error');
         }
     }
 
@@ -293,10 +304,10 @@ class ClientsUI {
         try {
             await db.deleteCliente(id);
             await this.render();
-            app.showToast('Cliente eliminado', 'success');
+            app.showToast(i18n.t('toast_deleted'), 'success');
         } catch (error) {
             console.error('Error deleting client:', error);
-            app.showToast('Error al eliminar cliente', 'error');
+            app.showToast(i18n.t('toast_error'), 'error');
         }
     }
 
@@ -304,11 +315,23 @@ class ClientsUI {
      * Obtiene la etiqueta del tipo de dispositivo
      */
     getDispositivoLabel(dispositivo) {
+        if (window.i18n) {
+            const keys = {
+                'movil': 'dev_movil',
+                'tablet': 'dev_tablet',
+                'ordenador': 'dev_ordenador',
+                'videoconsola': 'dev_videoconsola',
+                'otro': 'dev_otro'
+            };
+            if (keys[dispositivo]) return i18n.t(keys[dispositivo]);
+        }
+
         const labels = {
             'movil': 'Móvil',
             'tablet': 'Tablet',
             'ordenador': 'Ordenador',
-            'videoconsola': 'Videoconsola'
+            'videoconsola': 'Videoconsola',
+            'otro': 'Otro'
         };
         return labels[dispositivo] || dispositivo;
     }

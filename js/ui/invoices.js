@@ -147,38 +147,48 @@ class InvoicesUI {
         this.updateTotales();
     }
 
-    /**
-     * Actualiza los totales de la factura
-     */
-    updateTotales() {
+    async updateTotales() {
         const lineas = document.querySelectorAll('.factura-linea');
-        let subtotal = 0;
+        let totalSum = 0;
 
         lineas.forEach(linea => {
             const cantidad = parseFloat(linea.querySelector('.linea-cantidad').value) || 0;
             const precio = parseFloat(linea.querySelector('.linea-precio').value) || 0;
-            const total = cantidad * precio;
+            const lineaTotal = cantidad * precio;
 
-            linea.querySelector('.linea-total').textContent = this.formatPrice(total);
-            subtotal += total;
+            linea.querySelector('.linea-total').textContent = this.formatPrice(lineaTotal);
+            totalSum += lineaTotal;
         });
 
-        const iva = subtotal * 0.21;
-        const total = subtotal + iva;
+        // Obtener tasas seleccionadas
+        const taxRateSelect = document.getElementById('factura-tax-rate');
+        const retRateSelect = document.getElementById('factura-ret-rate');
 
-        document.getElementById('factura-subtotal').textContent = this.formatPrice(subtotal);
-        document.getElementById('factura-iva').textContent = this.formatPrice(iva);
-        document.getElementById('factura-total').textContent = this.formatPrice(total);
+        const ivaRate = parseFloat(taxRateSelect?.value) || 0;
+        const irpfRate = parseFloat(retRateSelect?.value) || 0;
+
+        // NEW LOGIC: Backtrack from totalSum (which is already PVP)
+        // Base = Total / (1 + IVA/100 - IRPF/100)
+        const base = totalSum / (1 + (ivaRate - irpfRate) / 100);
+        const iva = base * (ivaRate / 100);
+        const irpf = base * (irpfRate / 100);
+
+        document.getElementById('factura-subtotal').textContent = this.formatPrice(base);
+        document.getElementById('factura-iva').textContent = `+${this.formatPrice(iva)}`;
+        document.getElementById('factura-retention').textContent = `-${this.formatPrice(irpf)}`;
+
+        // Final Total is exactly the sum of lines
+        document.getElementById('factura-total').textContent = this.formatPrice(totalSum);
     }
 
     /**
      * Genera número de factura
      */
+    /**
+     * Genera número de factura
+     */
     async generateNumeroFactura() {
-        const facturas = await db.getAllFacturas();
-        const year = new Date().getFullYear();
-        const count = facturas.filter(f => f.numero && f.numero.includes(year.toString())).length + 1;
-        return `FAC-${year}-${count.toString().padStart(3, '0')}`;
+        return await db.generateNextInvoiceNumber();
     }
 
     /**
@@ -193,8 +203,8 @@ class InvoicesUI {
             if (this.searchQuery) {
                 const query = this.searchQuery.toLowerCase();
                 this.facturas = this.facturas.filter(f =>
-                    f.numero?.toLowerCase().includes(query) ||
-                    this.getClienteName(f.cliente_id).toLowerCase().includes(query)
+                    f.numero?.toLowerCase().startsWith(query) ||
+                    this.getClienteName(f.cliente_id).toLowerCase().startsWith(query)
                 );
             }
 
@@ -216,7 +226,7 @@ class InvoicesUI {
             this.attachCardListeners();
         } catch (error) {
             console.error('Error rendering invoices:', error);
-            app.showToast('Error al cargar facturas', 'error');
+            app.showToast(i18n.t('toast_error_loading'), 'error');
         }
     }
 
@@ -225,17 +235,14 @@ class InvoicesUI {
      */
     getClienteName(clienteId) {
         const cliente = this.clientes.find(c => c.id === clienteId);
-        return cliente ? cliente.nombre : 'Cliente desconocido';
+        return cliente ? cliente.nombre : i18n.t('cliente_desconocido');
     }
 
     /**
      * Formatea precio
      */
     formatPrice(precio) {
-        return new Intl.NumberFormat('es-ES', {
-            style: 'currency',
-            currency: 'EUR'
-        }).format(precio || 0);
+        return app.formatPrice(precio);
     }
 
     /**
@@ -243,7 +250,7 @@ class InvoicesUI {
      */
     formatDate(timestamp) {
         if (!timestamp) return '-';
-        return new Date(timestamp).toLocaleDateString('es-ES', {
+        return new Date(timestamp).toLocaleDateString(i18n.currentLocale || 'es-ES', {
             day: '2-digit',
             month: 'short',
             year: 'numeric'
@@ -275,31 +282,38 @@ class InvoicesUI {
                     <div class="price" style="margin-top: var(--spacing-md);">${this.formatPrice(factura.total)}</div>
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-secondary btn-pdf" data-action="pdf" data-id="${factura.id}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="12" y1="18" x2="12" y2="12"></line>
-                            <line x1="9" y1="15" x2="15" y2="15"></line>
-                        </svg>
-                        PDF
-                    </button>
-                    <button class="btn btn-secondary btn-edit" data-action="edit" data-id="${factura.id}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        Editar
-                    </button>
-                    <button class="btn btn-icon btn-delete" data-action="delete" data-id="${factura.id}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                </div>
+                <button class="btn btn-secondary btn-pdf" data-action="pdf" data-id="${factura.id}" title="PDF">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    PDF
+                </button>
+                <button class="btn btn-secondary btn-icon btn-print" data-action="print" data-id="${factura.id}" title="${i18n.t('btn_print')}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                </button>
+                <button class="btn btn-secondary btn-edit" data-action="edit" data-id="${factura.id}" title="${i18n.t('btn_edit')}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    ${i18n.t('btn_edit')}
+                </button>
+                <button class="btn btn-icon btn-delete" data-action="delete" data-id="${factura.id}" title="${i18n.t('btn_delete')}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
-        `;
+        </div>
+    `;
     }
 
     /**
@@ -319,8 +333,8 @@ class InvoicesUI {
             btn.addEventListener('click', () => {
                 const id = btn.dataset.id;
                 app.confirmDelete(
-                    '¿Eliminar factura?',
-                    'Esta acción no se puede deshacer.',
+                    i18n.t('inv_delete_confirm'),
+                    i18n.t('dlg_delete_warning'),
                     async () => {
                         await this.deleteFactura(id);
                     }
@@ -334,6 +348,32 @@ class InvoicesUI {
                 e.stopPropagation(); // Evitar abrir modal
                 const id = btn.dataset.id;
                 await this.generatePDF(id);
+            });
+        });
+
+        // Imprimir Ticket
+        document.querySelectorAll('#facturas-grid .btn-print').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Evitar abrir modal
+                const id = btn.dataset.id;
+                try {
+                    const factura = await db.getFactura(id);
+                    if (factura) {
+                        const cliente = await db.getCliente(factura.cliente_id);
+                        if (window.printer) {
+                            window.printer.printInvoiceTicket(factura, cliente);
+                        } else {
+                            app.showToast('Error: Módulo de impresión no cargado', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error printing invoice ticket:', error);
+                    app.showInfoModal({
+                        type: 'error',
+                        title: i18n.t('dlg_error_title'),
+                        message: i18n.t('toast_error_printing') + error.message
+                    });
+                }
             });
         });
 
@@ -518,9 +558,15 @@ class InvoicesUI {
                             <span>${this.formatPrice(factura.subtotal)}</span>
                         </div>
                         <div class="total-row">
-                            <span>IVA (21%):</span>
+                            <span>${this.escapeHtml(factura.tax_label || window.app_tax_label || 'IVA')} (${factura.impuestos !== undefined ? factura.impuestos : (window.app_tax_rate || 21)}%):</span>
                             <span>${this.formatPrice(factura.iva)}</span>
                         </div>
+                        ${factura.retencion > 0 ? `
+                        <div class="total-row">
+                            <span>${this.escapeHtml(factura.ret_label || 'IRPF')} (${factura.retencion}%):</span>
+                            <span> - ${this.formatPrice(factura.irpf)}</span>
+                        </div>
+                        ` : ''}
                         <div class="total-row final">
                             <span>TOTAL A PAGAR:</span>
                             <span>${this.formatPrice(factura.total)}</span>
@@ -538,9 +584,20 @@ class InvoicesUI {
                     <p>Gracias por su confianza</p>
                 </div>
 
-                <script>
-                    window.onload = function() { window.print(); }
-                </script>
+                <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+                    <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        🖨️ Imprimir / Guardar PDF
+                    </button>
+                    <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        Cerrar
+                    </button>
+                </div>
+
+                <style>
+                    @media print {
+                        .no-print { display: none !important; }
+                    }
+                </style>
             </body>
             </html>
         `;
@@ -574,7 +631,7 @@ class InvoicesUI {
             modal.classList.add('active');
 
             // Show loading state
-            selectCliente.innerHTML = '<option value="">Cargando clientes...</option>';
+            selectCliente.innerHTML = `<option value="">${i18n.t('loading_clients')}</option>`;
 
             // Fecha actual por defecto
             const today = new Date().toISOString().split('T')[0];
@@ -587,19 +644,75 @@ class InvoicesUI {
             try {
                 // Cargar clientes
                 const clientes = await db.getAllClientes();
-                selectCliente.innerHTML = '<option value="">Seleccionar cliente...</option>' +
-                    clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)}</option>`).join('');
+                selectCliente.innerHTML = `<option value="">${i18n.t('rep_sel_client')}</option>` +
+                    clientes.map(c => `<option value="${c.id}">${this.escapeHtml(c.nombre)} ${this.escapeHtml(c.apellido || '')}</option>`).join('');
+
+                // Initialize SearchSelect
+                if (typeof SearchSelect !== 'undefined') {
+                    if (!this.clientSearchWidget) {
+                        this.clientSearchWidget = new SearchSelect('factura-cliente', {
+                            onSelect: (val) => this.onClienteChange(val)
+                        });
+                    } else {
+                        this.clientSearchWidget.syncOptionsFromSelect();
+                    }
+                }
+
+                // Configuración de Impuestos (España vs Internacional)
+                const mode = await db.getConfig('accounting_mode') || 'spain';
+                const taxLabelEl = document.getElementById('factura-tax-label');
+                const taxRateSelect = document.getElementById('factura-tax-rate');
+                const retLabelEl = document.getElementById('factura-ret-label');
+                const retRateSelect = document.getElementById('factura-ret-rate');
+
+                if (mode === 'spain') {
+                    taxLabelEl.textContent = 'IVA:';
+                    taxRateSelect.innerHTML = [21, 10, 4, 0].map(r => `<option value="${r}">${r}%</option>`).join('');
+                    retLabelEl.textContent = 'IRPF:';
+                    retRateSelect.innerHTML = [0, 15, 7, 1, 19, 21].map(r => `<option value="${r}">${r}%</option>`).join('');
+                } else {
+                    const intlTaxLabel = await db.getConfig('intl_tax_label') || 'Tax';
+                    const intlTaxRates = (await db.getConfig('intl_tax_rates') || '21').split(',').map(r => r.trim());
+                    const intlRetLabel = await db.getConfig('intl_ret_label') || 'Retention';
+                    const intlRetRates = (await db.getConfig('intl_ret_rates') || '0').split(',').map(r => r.trim());
+
+                    taxLabelEl.textContent = intlTaxLabel + ':';
+                    taxRateSelect.innerHTML = intlTaxRates.map(r => `<option value="${r}">${r}%</option>`).join('');
+                    retLabelEl.textContent = intlRetLabel + ':';
+                    retRateSelect.innerHTML = intlRetRates.map(r => `<option value="${r}">${r}%</option>`).join('');
+                }
 
                 if (id) {
                     // Modo edición
-                    title.textContent = 'Editar Factura';
+                    title.textContent = i18n.t('inv_edit_title');
                     const factura = await db.getFactura(id);
                     if (factura) {
                         document.getElementById('factura-id').value = factura.id;
                         document.getElementById('factura-cliente').value = factura.cliente_id;
+
+                        // Update SearchSelect value
+                        if (this.clientSearchWidget) {
+                            this.clientSearchWidget.setValue(factura.cliente_id);
+                        }
+
                         document.getElementById('factura-numero').value = factura.numero || '';
                         document.getElementById('factura-fecha').value = factura.fecha ? new Date(factura.fecha).toISOString().split('T')[0] : today;
                         document.getElementById('factura-notas').value = factura.notas || '';
+
+                        // Configurar tasas si existen en la factura
+                        if (factura.impuestos !== undefined) {
+                            // Si la tasa no está en el select, la añadimos temporalmente
+                            if (!Array.from(taxRateSelect.options).some(opt => opt.value == factura.impuestos)) {
+                                taxRateSelect.innerHTML += `<option value="${factura.impuestos}">${factura.impuestos}%</option>`;
+                            }
+                            taxRateSelect.value = factura.impuestos;
+                        }
+                        if (factura.retencion !== undefined) {
+                            if (!Array.from(retRateSelect.options).some(opt => opt.value == factura.retencion)) {
+                                retRateSelect.innerHTML += `<option value="${factura.retencion}">${factura.retencion}%</option>`;
+                            }
+                            retRateSelect.value = factura.retencion;
+                        }
 
                         // Cargar datos del cliente
                         this.onClienteChange(factura.cliente_id);
@@ -612,7 +725,16 @@ class InvoicesUI {
                         }
                     }
                 } else {
-                    title.textContent = 'Nueva Factura';
+                    title.textContent = i18n.t('inv_new');
+
+                    // Default rates from global config (optional, but good for user flow)
+                    if (mode === 'spain') {
+                        const defaultIva = await db.getConfig('tax_iva');
+                        const defaultIrpf = await db.getConfig('tax_irpf');
+                        if (defaultIva) taxRateSelect.value = defaultIva;
+                        if (defaultIrpf) retRateSelect.value = defaultIrpf;
+                    }
+
                     // Generar número de factura
                     try {
                         const nextNum = await this.generateNumeroFactura();
@@ -627,13 +749,17 @@ class InvoicesUI {
                 this.updateTotales();
             } catch (dataError) {
                 console.error('Error loading data for invoice modal:', dataError);
-                selectCliente.innerHTML = '<option value="">Error cargando datos</option>';
+                selectCliente.innerHTML = `<option value="">${i18n.t('toast_error_loading')}</option>`;
             }
 
         } catch (error) {
             console.error('Error opening invoice modal:', error);
             document.getElementById('modal-factura').classList.remove('active');
-            alert('Error crítico al abrir modal: ' + error.message);
+            app.showInfoModal({
+                type: 'error',
+                title: i18n.t('app_error_title'),
+                message: i18n.t('app_error_modal_invoice') + error.message
+            });
         }
     }
 
@@ -654,7 +780,6 @@ class InvoicesUI {
             // Recoger líneas
             const lineasElements = document.querySelectorAll('.factura-linea');
             const lineas = [];
-            let subtotal = 0;
 
             lineasElements.forEach(linea => {
                 const concepto = linea.querySelector('.linea-concepto').value.trim();
@@ -663,12 +788,21 @@ class InvoicesUI {
 
                 if (concepto) {
                     lineas.push({ concepto, cantidad, precio });
-                    subtotal += cantidad * precio;
                 }
             });
 
-            const iva = subtotal * 0.21;
-            const total = subtotal + iva;
+            // NEW LOGIC: Line prices are already PVP
+            const totalSum = lineas.reduce((acc, l) => acc + (l.cantidad * l.precio), 0);
+
+            // Obtener tasas seleccionadas
+            const ivaRate = parseFloat(document.getElementById('factura-tax-rate').value) || 0;
+            const irpfRate = parseFloat(document.getElementById('factura-ret-rate').value) || 0;
+            const taxLabel = document.getElementById('factura-tax-label').textContent.replace(':', '').trim();
+            const retLabel = document.getElementById('factura-ret-label').textContent.replace(':', '').trim();
+
+            const subtotal = totalSum / (1 + (ivaRate - irpfRate) / 100);
+            const iva = subtotal * (ivaRate / 100);
+            const irpf = subtotal * (irpfRate / 100);
 
             const factura = {
                 cliente_id: document.getElementById('factura-cliente').value,
@@ -677,7 +811,12 @@ class InvoicesUI {
                 lineas: lineas,
                 subtotal: subtotal,
                 iva: iva,
-                total: total,
+                irpf: irpf,
+                impuestos: ivaRate, // Tasa de impuesto %
+                retencion: irpfRate, // Tasa de retención %
+                tax_label: taxLabel, // Nombre del impuesto (IVA, VAT, etc)
+                ret_label: retLabel, // Nombre de la retención (IRPF, WHT, etc)
+                total: totalSum,
                 notas: document.getElementById('factura-notas').value.trim() || null
             };
 
@@ -707,10 +846,10 @@ class InvoicesUI {
             this.closeModal();
             await this.render();
 
-            app.showToast(id ? 'Factura actualizada' : 'Factura creada', 'success');
+            app.showToast(id ? i18n.t('toast_updated') : i18n.t('toast_saved'), 'success');
         } catch (error) {
             console.error('Error saving invoice:', error);
-            app.showToast('Error al guardar factura', 'error');
+            app.showToast(i18n.t('toast_error'), 'error');
         }
     }
 
@@ -721,10 +860,10 @@ class InvoicesUI {
         try {
             await db.deleteFactura(id);
             await this.render();
-            app.showToast('Factura eliminada', 'success');
+            app.showToast(i18n.t('toast_deleted'), 'success');
         } catch (error) {
             console.error('Error deleting invoice:', error);
-            app.showToast('Error al eliminar factura', 'error');
+            app.showToast(i18n.t('toast_error'), 'error');
         }
     }
 
@@ -739,4 +878,5 @@ class InvoicesUI {
 }
 
 // Instancia global
-const invoicesUI = new InvoicesUI();
+// Instancia global
+window.invoicesUI = new InvoicesUI();

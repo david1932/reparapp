@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Deletion Test</title>
+</head>
+
+<body>
+    <h1>Running Deletion Test...</h1>
+    <div id="result" style="font-family: monospace; font-size: 1.2em;">Initializing...</div>
+
+    <script src="js/database.js"></script>
+    <script>
+        function log(msg, color = 'black') {
+            const el = document.getElementById('result');
+            el.innerHTML += `<div style="color: ${color}">${msg}</div>`;
+            console.log(msg);
+        }
+
+        async function runTest() {
+            try {
+                // Initialize DB
+                await db.init();
+                log("Database initialized.");
+
+                // Create Test Client
+                const cid = 'test-client-' + Date.now();
+                const clientData = {
+                    id: cid,
+                    nombre: 'Test Client Deletion',
+                    telefono: '555-0000',
+                    deleted: 0
+                };
+                await db.saveCliente(clientData);
+                log(`Created client: ${cid}`);
+
+                // Create Test Repair
+                const rid = 'test-repair-' + Date.now();
+                // We need to match the object structure expected by saveReparacion
+                // Assuming standard fields based on database.js indices
+                const repairData = {
+                    id: rid,
+                    cliente_id: cid,
+                    descripcion: 'Test Repair Deletion',
+                    estado: 'pendiente',
+                    deleted: 0,
+                    ultima_modificacion: Date.now()
+                };
+
+                // Saving repair manually via transaction if saveReparacion signature is unknown,
+                // BUT we should try to use the method if possible. 
+                // Let's assume saveReparacion exists. If not, we'll catch error.
+                if (db.saveReparacion) {
+                    await db.saveReparacion(repairData);
+                    log(`Created repair: ${rid}`);
+                } else {
+                    // Fallback to manual insert for test if method missing
+                    const tx = db.db.transaction(['reparaciones'], 'readwrite');
+                    tx.objectStore('reparaciones').put(repairData);
+                    await new Promise(resolve => tx.oncomplete = resolve);
+                    log(`Created repair (manual): ${rid}`);
+                }
+
+                // Verify they exist
+                const c1 = await db.getCliente(cid);
+                const r1 = await db.getReparacion(rid);
+                if (!c1 || !r1) throw new Error("Setup failed: Client or Repair not found.");
+
+                // EXECUTE DELETE
+                log("Executing deleteCliente()...");
+                await db.deleteCliente(cid);
+
+                // VERIFY
+                log("Verifying deletion...");
+
+                // Check Client (Soft Delete)
+                // getCliente returns the record even if deleted? 
+                // In database.js: getCliente -> store.get(id) -> resolve(result). 
+                // It does NOT filter by deleted.
+                const c2 = await db.getCliente(cid);
+                if (!c2) throw new Error("Client record disappeared (expected soft delete).");
+                if (c2.deleted !== 1) throw new Error("Client 'deleted' flag is not 1.");
+                log("PASS: Client marked as deleted.");
+
+                // Check Repair (Soft Delete)
+                const r2 = await db.getReparacion(rid);
+                if (!r2) throw new Error("Repair record disappeared (expected soft delete).");
+                if (r2.deleted !== 1) throw new Error("Repair 'deleted' flag is not 1.");
+                log("PASS: Repair marked as deleted.");
+
+                log("TEST COMPLETED SUCCESSFULLY", "green");
+                document.body.style.backgroundColor = "#e6ffe6";
+
+            } catch (e) {
+                log("TEST FAILED: " + e.message, "red");
+                console.error(e);
+                document.body.style.backgroundColor = "#ffe6e6";
+            }
+        }
+
+        // Mock objects that might be needed by database.js
+        window.fileSync = {
+            syncTable: () => console.log("Mock syncTable called")
+        };
+        window.supabaseClient = {
+            getUser: async () => null
+        };
+
+        runTest();
+    </script>
+</body>
+
+</html>
