@@ -226,8 +226,8 @@ class SyncManager {
                         estado: reparacion.estado || 'pendiente',
                         precio: reparacion.precio || reparacion.coste || 0,
                         precio_final: reparacion.precio_final || null,
-                        fecha_creacion: reparacion.fecha_creacion || reparacion.fechaCreacion || Date.now(),
-                        ultima_modificacion: reparacion.ultima_modificacion || Date.now()
+                        fecha_creacion: new Date(reparacion.fecha_creacion || reparacion.fechaCreacion || Date.now()).getTime(),
+                        ultima_modificacion: Date.now()
                     };
                     if (reparacion.marca) cleanPayload.marca = reparacion.marca;
                     if (reparacion.modelo) cleanPayload.modelo = reparacion.modelo;

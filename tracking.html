@@ -532,7 +532,8 @@
             };
             const devLabel = deviceMap[rep.dispositivo] || rep.dispositivo || 'Dispositivo';
             document.getElementById('dev-name').textContent = devLabel.toUpperCase();
-            document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} - ${rep.problema || ''}`;
+            const problemText = rep.problema || rep.descripcion || '';
+            document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} ${problemText ? '- ' + problemText : ''}`;
 
             // Fecha
             const date = new Date(rep.fecha_creacion);
@@ -554,12 +555,12 @@
                 statusText = 'Recibido';
                 className = 'pending';
             }
-            else if (st === 'diagnostico' || st === 'en_proceso' || st === 'esperando_pieza' || st === 'presupuesto') {
+            else if (st === 'diagnostico' || st === 'en_proceso' || st === 'esperando_pieza' || st === 'presupuesto' || st === 'reparando') {
                 statusText = 'En Taller';
                 className = 'in-progress';
                 document.getElementById('step-diagnosis').classList.add('active');
             }
-            else if (st === 'reparado' || st === 'terminado' || st === 'entregado' || st === 'completada') {
+            else if (st === 'reparado' || st === 'terminado' || st === 'entregado' || st === 'listo' || st === 'completada') {
                 statusText = 'Listo / Entregado';
                 className = 'completed';
                 document.getElementById('step-diagnosis').classList.add('active');
