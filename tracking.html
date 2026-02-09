@@ -356,16 +356,23 @@
         const dynamicKey = urlParams.get('k');
 
         if (dynamicUrl && dynamicKey) {
-            console.log('Detectadas credenciales dinámicas');
             try {
                 // Soportar Base64 para URLs más limpias y seguras
                 SUPABASE_URL = dynamicUrl.startsWith('http') ? dynamicUrl : atob(dynamicUrl);
                 SUPABASE_KEY = dynamicKey.length < 50 ? atob(dynamicKey) : dynamicKey;
+                console.log('✅ Base de datos cargada desde el enlace.');
             } catch (e) {
                 console.error('Error decodificando credenciales:', e);
             }
         } else {
-            console.warn('Usando credenciales por defecto (puede que no veas tus reparaciones)');
+            console.warn('⚠️ No se han detectado credenciales en el enlace.');
+            const warningEl = document.getElementById('error-msg');
+            warningEl.style.display = 'block';
+            warningEl.innerHTML = `
+                <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 10px; font-size: 12px;">
+                    💡 <b>Nota:</b> Estás abriendo la web directamente. Para ver tus datos reales, usa el enlace generado por la App.
+                </div>
+            `;
         }
 
         // CHECK LIBRARY LOADED
