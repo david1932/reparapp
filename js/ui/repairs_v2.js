@@ -495,7 +495,7 @@ class RepairsUI {
         const reparacion = this.reparaciones.find(r => r.id === id);
         if (!reparacion) return;
 
-        let trackUrl = 'https://fanciful-dusk-b57665.netlify.app/tracking.html';
+        let trackUrl = 'https://david1932.github.io/reparapp/tracking.html';
         const sUrl = window.supabaseClient?.url;
         const sKey = window.supabaseClient?.anonKey;
 
@@ -1275,8 +1275,8 @@ class RepairsUI {
         const dispositivo = `${this.getDispositivoLabel(rep.dispositivo)} ${rep.marca || ''} ${rep.modelo || ''}`.trim();
         const imei = rep.imei || 'N/A';
 
-        // ANONYMOUS SMART LINK (Netlify)
-        let trackUrl = 'https://fanciful-dusk-b57665.netlify.app/tracking.html';
+        // ANONYMOUS SMART LINK (GitHub Stable)
+        let trackUrl = 'https://david1932.github.io/reparapp/tracking.html';
         const sUrl = window.supabaseClient?.url;
         const sKey = window.supabaseClient?.anonKey;
         if (sUrl && sKey) {
