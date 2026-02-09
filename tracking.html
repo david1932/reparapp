@@ -6,180 +6,139 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estado de Reparación</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #06b6d4;
-            /* Cyan */
-            --success: #10b981;
-            --pending: #f59e0b;
+            --bg-deep: #020617;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --border-card: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --primary: #22d3ee;
+            /* Cyan-400 */
+            --secondary: #818cf8;
+            /* Indigo-400 */
+            --success: #34d399;
+            /* Emerald-400 */
+            --warning: #fbbf24;
+            /* Amber-400 */
+            --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.15) 0%, transparent 50%);
+            color: var(--text-main);
             margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .container {
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             background: var(--bg-card);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-card);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header {
+            margin-bottom: 32px;
             text-align: center;
         }
 
-        h1 {
-            margin-bottom: 24px;
-            font-size: 1.5rem;
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background: var(--accent-gradient);
+            border-radius: 18px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 10px 20px rgba(6, 182, 212, 0.3);
         }
 
-        .input-group {
-            margin-bottom: 20px;
+        h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to bottom, #fff, #94a3b8);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 6px;
             display: flex;
             gap: 8px;
+            margin-bottom: 12px;
         }
 
         input {
             flex: 1;
-            background: #334155;
-            border: 1px solid #475569;
+            background: transparent;
+            border: none;
             color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
+            padding: 12px 16px;
+            font-size: 15px;
             outline: none;
+            width: 100%;
         }
 
-        input:focus {
-            border-color: var(--accent);
-        }
-
-        button {
-            background: var(--accent);
+        #btn-search {
+            background: var(--accent-gradient);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
         }
 
-        button:active {
-            opacity: 0.8;
+        #btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(6, 182, 212, 0.4);
         }
 
-        /* STATUS CARD */
+        /* RESULT AREA */
         .status-card {
             display: none;
-            /* Hidden by default */
-            margin-top: 20px;
-            text-align: left;
-            border-top: 1px solid #334155;
-            padding-top: 20px;
-            animation: fadeIn 0.3s ease;
+            margin-top: 32px;
+            animation: slideUp 0.5s ease-out;
         }
 
-        .device-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .device-model {
-            color: var(--text-secondary);
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            background: #334155;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
-
-        .status-badge.completed {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-
-        .status-badge.in-progress {
-            background: rgba(6, 182, 212, 0.2);
-            color: var(--accent);
-        }
-
-        .status-badge.pending {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--pending);
-        }
-
-        .timeline {
-            position: relative;
-            padding-left: 20px;
-            margin-top: 20px;
-            border-left: 2px solid #334155;
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 15px;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -25px;
-            top: 5px;
-            width: 8px;
-            height: 8px;
-            background: #475569;
-            border-radius: 50%;
-            border: 2px solid var(--bg-card);
-        }
-
-        .timeline-item.active::before {
-            background: var(--accent);
-            box-shadow: 0 0 8px var(--accent);
-        }
-
-        .timeline-item p {
-            margin: 0;
-            font-size: 0.9rem;
-        }
-
-        .timeline-date {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        .error-msg {
-            color: #ef4444;
-            margin-top: 10px;
-            display: none;
-        }
-
-        @keyframes fadeIn {
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px);
             }
 
             to {
@@ -188,111 +147,212 @@
             }
         }
 
-        /* PHOTOS GALLERY */
-        .photo-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 12px;
-            margin-top: 20px;
+        .device-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .photo-item {
-            aspect-ratio: 1;
-            border-radius: 8px;
-            background: #334155;
-            overflow: hidden;
-            cursor: pointer;
+        .device-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 4px;
         }
 
-        .photo-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .device-model {
+            color: var(--text-dim);
+            font-size: 14px;
         }
 
-        /* CHECKLIST */
-        .checklist-display {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: left;
+        /* TIMELINE MODERN */
+        .modern-timeline {
+            margin: 40px 0;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
         }
 
-        .checklist-item {
+        .modern-timeline::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1;
+        }
+
+        .step {
+            z-index: 2;
+            text-align: center;
+            width: 60px;
+        }
+
+        .step-bubble {
+            width: 34px;
+            height: 34px;
+            background: #1e293b;
+            border: 3px solid #334155;
+            border-radius: 50%;
+            margin: 0 auto 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            margin-bottom: 5px;
+            justify-content: center;
+            font-size: 14px;
         }
 
-        .solution-box {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 3px solid var(--success);
+        .step.active .step-bubble {
+            background: var(--primary);
+            border-color: rgba(6, 182, 212, 0.3);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .step-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+        }
+
+        /* DETAILS GRID */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #error-msg {
+            color: #f87171;
+            background: rgba(220, 38, 38, 0.1);
             padding: 12px;
-            margin-top: 20px;
-            border-radius: 4px;
-            text-align: left;
-            font-size: 0.9rem;
+            border-radius: 12px;
+            font-size: 13px;
+            display: none;
+            margin-top: 16px;
+        }
+
+        /* FOOTER */
+        .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: var(--text-dim);
+            opacity: 0.6;
         }
     </style>
 </head>
 
 <body>
-
     <div class="container">
-        <h1>🔍 Estado de Reparación</h1>
+        <div id="result" class="status-card">
+            <div class="device-info">
+                <div id="dev-name" class="device-name">Cargando...</div>
+                <div id="dev-model" class="device-model">---</div>
+            </div>
 
-        <div class="input-group">
-            <input type="text" id="repair-id" placeholder="Código de Reparación (UUID)">
-            <button id="btn-search">Buscar</button>
+            <div class="modern-timeline">
+                <div class="step" id="step-received">
+                    <div class="step-bubble">📦</div>
+                    <div class="step-label">Recibido</div>
+                </div>
+                <div class="step" id="step-diagnosis">
+                    <div class="step-bubble">🔬</div>
+                    <div class="step-label">Taller</div>
+                </div>
+                <div class="step" id="step-ready">
+                    <div class="step-bubble">✨</div>
+                    <div class="step-label">Listo</div>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Fecha Entrada</div>
+                    <div id="date-received" class="detail-value">--/--/--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Estado Actual</div>
+                    <div id="dev-badge" class="detail-value">---</div>
+                </div>
+            </div>
+
+            <div id="solution-container" class="detail-item"
+                style="margin-bottom: 24px; display: none; background: rgba(34, 211, 238, 0.05); border-color: rgba(34, 211, 238, 0.1);">
+                <div class="detail-label" style="color: var(--primary);">Informe Técnico</div>
+                <div id="solution-text" class="detail-value"
+                    style="font-weight: 400; line-height: 1.5; color: var(--text-dim); margin-top: 8px;"></div>
+            </div>
+
+            <div id="checklist-container" style="display: none; margin-bottom: 24px;">
+                <div class="detail-label" style="margin-bottom: 12px;">Puntos Verificados</div>
+                <div id="checklist-items"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;"></div>
+            </div>
+
+            <div id="photos-container" style="display: none;">
+                <div class="detail-label" style="margin-bottom: 12px;">Fotografías</div>
+                <div id="photos-gallery"
+                    style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: thin;">
+                </div>
+            </div>
         </div>
-        <p class="error-msg" id="error-msg">No se encontró la reparación.</p>
 
-        <div class="status-card" id="result">
-            <div class="device-name" id="dev-name">iPhone 13</div>
-            <div class="device-model" id="dev-model">Sustitución de Pantalla</div>
-            <span class="status-badge" id="dev-badge">En Proceso</span>
-
-            <div class="timeline">
-                <div class="timeline-item" id="step-received">
-                    <p>Recibido</p>
-                    <div class="timeline-date" id="date-received">-</div>
-                </div>
-                <div class="timeline-item" id="step-diagnosis">
-                    <p>Diagnóstico / En Taller</p>
-                </div>
-                <div class="timeline-item" id="step-ready">
-                    <p>Listo para Entregar</p>
-                </div>
-            </div>
-
-            <div id="solution-container" class="solution-box" style="display: none;">
-                <strong>🛠️ Solución realizada:</strong>
-                <p id="solution-text" style="margin: 5px 0 0;"></p>
-            </div>
-
-            <div id="checklist-container" class="checklist-display" style="display: none;">
-                <strong>📋 Verificación Técnica:</strong>
-                <div id="checklist-items" style="margin-top: 10px;"></div>
-            </div>
-
-            <div id="photos-container" style="display: none; margin-top: 20px;">
-                <strong>📸 Galería de la Reparación:</strong>
-                <div id="photos-gallery" class="photo-gallery"></div>
-            </div>
-
-            <p style="margin-top: 25px; font-size: 0.8rem; color: #64748b; text-align: center;">
-                Si tienes dudas, contáctanos por WhatsApp.
-            </p>
+        <div class="footer">
+            Powered by ReparApp &copy; 2026
         </div>
     </div>
 
     <script>
         // CONFIGURACIÓN SUPABASE (Pública/Anon)
-        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+        // Puedes dejar estos vacíos si quieres usar un tracking universal vía URL:
+        // tracking.html?id=ID&u=BASE64_URL&k=BASE64_KEY
+        let SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        let SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+
+        // Lógica Dynamic Cloud (Para usuarios sin hosting propio)
+        const urlParams = new URLSearchParams(window.location.search);
+        const dynamicUrl = urlParams.get('u');
+        const dynamicKey = urlParams.get('k');
+
+        if (dynamicUrl && dynamicKey) {
+            console.log('Using dynamic credentials from URL');
+            try {
+                // Soportar Base64 para URLs más limpias y seguras
+                SUPABASE_URL = dynamicUrl.startsWith('http') ? dynamicUrl : atob(dynamicUrl);
+                SUPABASE_KEY = dynamicKey.length < 50 ? atob(dynamicKey) : dynamicKey;
+            } catch (e) {
+                console.error('Error decoding dynamic credentials');
+            }
+        }
 
         // CHECK LIBRARY LOADED
         if (!window.supabase || !window.supabase.createClient) {
@@ -310,8 +370,7 @@
 
         // BUSCAR AL CARGAR SI HAY PARAMETRO URL
         window.addEventListener('load', () => {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
+            const id = urlParams.get('id');
             if (id) {
                 inputId.value = id;
                 searchRepair(id);
