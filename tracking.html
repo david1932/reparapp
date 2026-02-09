@@ -25,13 +25,9 @@
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
             --primary: #22d3ee;
-            /* Cyan-400 */
             --secondary: #818cf8;
-            /* Indigo-400 */
             --success: #34d399;
-            /* Emerald-400 */
             --warning: #fbbf24;
-            /* Amber-400 */
             --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
         }
 
@@ -136,7 +132,6 @@
             box-shadow: 0 8px 15px rgba(6, 182, 212, 0.4);
         }
 
-        /* RESULT AREA */
         .status-card {
             display: none;
             margin-top: 32px;
@@ -175,7 +170,6 @@
             font-size: 14px;
         }
 
-        /* TIMELINE MODERN */
         .modern-timeline {
             margin: 40px 0;
             position: relative;
@@ -232,7 +226,6 @@
             color: var(--primary);
         }
 
-        /* DETAILS GRID */
         .details-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -269,7 +262,6 @@
             margin-top: 16px;
         }
 
-        /* FOOTER */
         .footer {
             margin-top: 32px;
             font-size: 12px;
@@ -283,19 +275,19 @@
     <div class="container">
         <div class="header">
             <div class="logo-placeholder">🔧</div>
-            <h1 data-i18n="track_title">Estado de tu Reparación</h1>
+            <h1>Estado de tu Reparación</h1>
         </div>
 
         <div class="search-box">
-            <input type="text" id="repair-id" placeholder="Introduce el ID de reparación..." maxlength="50">
-            <button id="btn-search" data-i18n="btn_search">Buscar</button>
+            <input type="text" id="repair-id" placeholder="ID de reparación..." maxlength="50">
+            <button id="btn-search">Buscar</button>
         </div>
 
         <div id="error-msg"></div>
 
         <div id="result" class="status-card">
             <div class="device-info">
-                <div id="dev-name" class="device-name">Consultando...</div>
+                <div id="dev-name" class="device-name">Cargando...</div>
                 <div id="dev-model" class="device-model">---</div>
             </div>
 
@@ -352,91 +344,70 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN SUPABASE (Pública/Anon)
-        // Puedes dejar estos vacíos si quieres usar un tracking universal vía URL:
-        // tracking.html?id=ID&u=BASE64_URL&k=BASE64_KEY
-        let SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
-        let SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+        // CONFIGURACIÓN INTERNA (Modo Pro)
+        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
 
-        // Lógica de Credenciales Dinámicas (Tracking Universal)
         const urlParams = new URLSearchParams(window.location.search);
+        let token = urlParams.get('t');
         let dynamicUrl = urlParams.get('u');
         let dynamicKey = urlParams.get('k');
-        let token = urlParams.get('t'); // Nueva versión compacta
 
         function decodeSafe(str) {
             if (!str) return null;
             try {
-                // Si contiene puntos o empieza por http, es que ya está descifrada
                 if (str.includes('.') || str.startsWith('http')) return str;
                 return atob(str);
-            } catch (e) {
-                return str;
-            }
+            } catch (e) { return str; }
         }
 
-        // Variable global del cliente para poder re-inicializar
         let _supabase = null;
 
         function initSupabase() {
-            let finalUrl = decodeSafe(dynamicUrl) || SUPABASE_URL;
-            let finalKey = decodeSafe(dynamicKey) || SUPABASE_KEY;
+            let finalUrl = SUPABASE_URL;
+            let finalKey = SUPABASE_KEY;
             let idFromToken = null;
 
-            // Procesar Token Compacto (id|url|key)
+            // Soporte para tokens universales (compatibilidad)
             if (token) {
                 try {
-                    // Convert URL-Safe Base64 back to Standard Base64
                     let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
-                    // Add padding if missing
                     while (base64.length % 4) base64 += '=';
-
                     const decoded = atob(base64);
                     const parts = decoded.split('|');
                     if (parts.length === 3) {
                         idFromToken = parts[0];
                         finalUrl = parts[1];
                         finalKey = parts[2];
-                        console.log('✅ Token decodificado con éxito.');
                     }
-                } catch (e) {
-                    console.error('Error decodificando token:', e);
+                } catch (e) { console.error('Token Error:', e); }
+            } else if (dynamicUrl && dynamicKey) {
+                finalUrl = decodeSafe(dynamicUrl);
+                finalKey = decodeSafe(dynamicKey);
+            }
+
+            if (!window.supabase || !window.supabase.createClient) return null;
+            _supabase = window.supabase.createClient(finalUrl, finalKey);
+
+            // --- STEALTH MODE ---
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                if (url.searchParams.has('t') || url.searchParams.has('u') || url.searchParams.has('k')) {
+                    const cleanUrl = window.location.pathname + (url.searchParams.get('id') ? '?id=' + url.searchParams.get('id') : '');
+                    window.history.replaceState({}, document.title, cleanUrl);
                 }
             }
-
-            console.log('🔗 Conectando a Supabase:', finalUrl);
-
-            if (!window.supabase || !window.supabase.createClient) {
-                const errorHtml = `
-                    <div style="background:rgba(220,38,38,0.1); padding:20px; border-radius:15px; border:1px solid rgba(220,38,38,0.2); text-align:center;">
-                        <p style="color:#ef4444; font-weight:bold;">Error de Librería.</p>
-                        <p style="font-size:13px; color:#94a3b8;">Verifica tu conexión a internet.</p>
-                    </div>`;
-                document.querySelector('.container').innerHTML += errorHtml;
-                return;
-            }
-            _supabase = window.supabase.createClient(finalUrl, finalKey);
             return idFromToken;
         }
 
         const initialId = initSupabase();
 
-        if ((dynamicUrl && dynamicKey) || token) {
-            console.log("✅ Credenciales configuradas correctamente.");
-        } else {
-            console.warn("⚠️ No hay credenciales en el link.");
-            const errEl = document.getElementById('error-msg');
-            errEl.style.display = 'block';
-            errEl.innerHTML = '<div style="background:rgba(251,191,36,0.1);color:#fbbf24;padding:10px;border-radius:10px;font-size:12px;text-align:center;">💡 Pincha en el <b>enlace azul</b> que te hemos enviado por WhatsApp para ver los detalles.</div>';
-        }
-
-        // UI REFERENCIAS
+        // UI
         const inputId = document.getElementById('repair-id');
         const btnSearch = document.getElementById('btn-search');
         const card = document.getElementById('result');
         const errorMsg = document.getElementById('error-msg');
 
-        // BUSCAR AL CARGAR SI HAY PARAMETRO URL
         window.addEventListener('load', () => {
             const id = urlParams.get('id') || initialId;
             if (id) {
@@ -449,103 +420,31 @@
 
         async function searchRepair(input) {
             if (!input) return;
+            let finalId = input.trim();
 
-            let rawInput = input.trim();
-            let finalId = rawInput;
-
-            console.log('--- INICIO BÚSQUEDA ---');
-            console.log('Input original:', rawInput);
-
-            // LOGICA: Si pegan EL LINK ENTERO, extraer todo lo posible
-            if (rawInput.includes('?id=') || rawInput.includes('tracking.html') || rawInput.includes('&u=')) {
-                console.log('🔍 Detectada URL o Link complejo');
+            // Extraer ID si pegan URL completa
+            if (finalId.includes('?id=')) {
                 try {
-                    // Normalizar URL para el parser
-                    let urlToParse = rawInput;
-                    if (!urlToParse.startsWith('http')) {
-                        urlToParse = (urlToParse.includes('://')) ? urlToParse : `https://${urlToParse}`;
-                    }
-
-                    const urlObj = new URL(urlToParse);
-                    const qId = urlObj.searchParams.get('id');
-                    const qU = urlObj.searchParams.get('u');
-                    const qK = urlObj.searchParams.get('k');
-
-                    if (qId) finalId = qId;
-
-                    if (qU && qK) {
-                        console.log('⚙️ Actualizando credenciales dinámicamente...');
-                        dynamicUrl = qU;
-                        dynamicKey = qK;
-                        initSupabase(); // Re-conectar con las nuevas llaves del link
-                    }
-                } catch (e) {
-                    console.warn('Parser de URL falló, intentando extracción manual:', e);
-                    // Fallback manual si URL falla
-                    const idMatch = rawInput.match(/[?&]id=([^&]+)/);
-                    if (idMatch) finalId = idMatch[1];
-                    const uMatch = rawInput.match(/[?&]u=([^&]+)/);
-                    const kMatch = rawInput.match(/[?&]k=([^&]+)/);
-                    if (uMatch && kMatch) {
-                        dynamicUrl = uMatch[1];
-                        dynamicKey = kMatch[1];
-                        initSupabase();
-                    }
-                }
+                    const u = new URL(finalId.startsWith('http') ? finalId : 'https://' + finalId);
+                    finalId = u.searchParams.get('id') || finalId;
+                } catch (e) { }
             }
 
-            // Limpiar ID final de basura técnica (quitar rastro de url si quedó algo)
             finalId = finalId.replace(/[^a-zA-Z0-9-]/g, '');
+            if (finalId.length < 10) return;
 
-            // Validar longitud mínima de un UUID real (aprox)
-            if (finalId.length < 15 && !rawInput.includes('id=')) {
-                const msg = '⚠️ El ID parece incompleto o incorrecto.';
-                errorMsg.innerHTML = `<div style="color:#fcd34d; background:rgba(252,211,77,0.1); padding:10px; border-radius:10px; font-size:13px;">${msg}<br><small>Pega el enlace completo que genera la App.</small></div>`;
-                errorMsg.style.display = 'block';
-                return;
-            }
-
-            // Mostrar el ID limpio en el buscador para feedback visual
-            inputId.value = finalId;
-
-            // UI Reset
             card.style.display = 'none';
             errorMsg.style.display = 'none';
-            btnSearch.textContent = '⏳ Buscando...';
+            btnSearch.textContent = '⏳ ...';
             btnSearch.disabled = true;
 
             try {
-                // CONSULTA A SUPABASE
-                const { data, error } = await _supabase
-                    .from('reparaciones')
-                    .select('*')
-                    .eq('id', finalId)
-                    .single();
-
-                if (error) {
-                    console.error('❌ Error de Supabase:', error);
-                    // Errores comunes
-                    if (error.code === 'PGRST116') throw new Error('Reparación no encontrada en la base de datos.');
-                    if (error.code === '42501') throw new Error('Acceso denegado. Activa la lectura pública (RLS) en Supabase.');
-                    throw error;
-                }
-
-                if (!data) {
-                    console.error('❌ No se han devuelto datos');
-                    throw new Error('No se encontraron datos para este ID.');
-                }
-
-                console.log('✅ Datos recibidos:', data);
+                const { data, error } = await _supabase.from('reparaciones').select('*').eq('id', finalId).single();
+                if (error || !data) throw new Error('Reparación no encontrada.');
                 renderResult(data);
-
             } catch (e) {
-                console.error('❌ Error en el proceso:', e);
                 errorMsg.style.display = 'block';
-                errorMsg.innerHTML = `
-                    <p style="margin:0 0 5px 0;"><b>⚠️ ${e.message || 'Error desconocido'}</b></p>
-                    <p style="font-size:11px; opacity:0.8; margin:0;">1. Pulsa <b>"Sincronizar"</b> en la App para subir los datos.</p>
-                    <p style="font-size:11px; opacity:0.8; margin:0;">2. Si la reparación es antigua, ábrela en la App y dale a WhatsApp para actualizarla.</p>
-                `;
+                errorMsg.innerHTML = `⚠️ ${e.message}<br><small>Pulsa "Sincronizar" en la App si es nueva.</small>`;
             } finally {
                 btnSearch.textContent = 'Buscar';
                 btnSearch.disabled = false;
@@ -553,91 +452,39 @@
         }
 
         function renderResult(rep) {
-            // Mostrar datos
-            const deviceMap = {
-                'movil': 'Smartphone',
-                'tablet': 'Tablet',
-                'portatil': 'Portátil',
-                'consola': 'Consola',
-                'pc': 'Sobremesa',
-                'otros': 'Dispositivo'
-            };
-            const devLabel = deviceMap[rep.dispositivo] || rep.dispositivo || 'Dispositivo';
-            document.getElementById('dev-name').textContent = devLabel.toUpperCase();
-            const problemText = rep.problema || rep.descripcion || '';
-            document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} ${problemText ? '- ' + problemText : ''}`;
+            const deviceMap = { 'movil': 'Smartphone', 'tablet': 'Tablet', 'portatil': 'Portátil', 'consola': 'Consola', 'pc': 'PC', 'otros': 'Equipo' };
+            document.getElementById('dev-name').textContent = (deviceMap[rep.dispositivo] || 'Equipo').toUpperCase();
+            document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} - ${rep.problema || ''}`;
+            document.getElementById('date-received').textContent = new Date(rep.fecha_creacion).toLocaleDateString();
 
-            // Fecha
-            const date = new Date(rep.fecha_creacion);
-            document.getElementById('date-received').textContent = date.toLocaleDateString();
-
-            // Estado y Badge
             const badge = document.getElementById('dev-badge');
-            let statusText = 'Pendiente';
-            let className = 'pending';
-
             const st = (rep.estado || '').toLowerCase();
 
-            // Lógica de timeline visual
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
             document.getElementById('step-received').classList.add('active');
-            document.getElementById('step-diagnosis').classList.remove('active');
-            document.getElementById('step-ready').classList.remove('active');
 
-            if (st === 'pendiente' || st === 'recibido') {
-                statusText = 'Recibido';
-                className = 'pending';
-            }
-            else if (st === 'diagnostico' || st === 'en_proceso' || st === 'esperando_pieza' || st === 'presupuesto' || st === 'reparando') {
-                statusText = 'En Taller';
-                className = 'in-progress';
+            if (['pendiente', 'recibido'].includes(st)) {
+                badge.textContent = 'Recibido';
+                badge.style.color = 'var(--warning)';
+            } else if (['reparando', 'taller', 'proceso'].some(s => st.includes(s))) {
+                badge.textContent = 'En Taller';
+                badge.style.color = 'var(--secondary)';
                 document.getElementById('step-diagnosis').classList.add('active');
-            }
-            else if (st === 'reparado' || st === 'terminado' || st === 'entregado' || st === 'listo' || st === 'completada') {
-                statusText = 'Listo / Entregado';
-                className = 'completed';
+            } else {
+                badge.textContent = 'Listo';
+                badge.style.color = 'var(--success)';
                 document.getElementById('step-diagnosis').classList.add('active');
                 document.getElementById('step-ready').classList.add('active');
             }
 
-            badge.textContent = statusText;
-            badge.className = `status-badge ${className}`;
-
-            // --- PRO DATA: Solution ---
-            const solContainer = document.getElementById('solution-container');
             if (rep.solucion) {
                 document.getElementById('solution-text').textContent = rep.solucion;
-                solContainer.style.display = 'block';
-            } else {
-                solContainer.style.display = 'none';
+                document.getElementById('solution-container').style.display = 'block';
             }
 
-            // --- PRO DATA: Checklist ---
-            const chkContainer = document.getElementById('checklist-container');
-            const chkItems = document.getElementById('checklist-items');
-            if (rep.checklist) {
-                chkItems.innerHTML = Object.entries(rep.checklist)
-                    .map(([k, v]) => `
-                        <div class="checklist-item">
-                            ${v ? '✅' : '❌'} <span>${k.charAt(0).toUpperCase() + k.slice(1)}</span>
-                        </div>
-                    `).join('');
-                chkContainer.style.display = 'block';
-            } else {
-                chkContainer.style.display = 'none';
-            }
-
-            // --- PRO DATA: Photos ---
-            const photosContainer = document.getElementById('photos-container');
-            const gallery = document.getElementById('photos-gallery');
             if (rep.photos && rep.photos.length > 0) {
-                gallery.innerHTML = rep.photos.map(p => `
-                    <div class="photo-item" onclick="window.open('${p}', '_blank')">
-                        <img src="${p}" loading="lazy">
-                    </div>
-                `).join('');
-                photosContainer.style.display = 'block';
-            } else {
-                photosContainer.style.display = 'none';
+                document.getElementById('photos-gallery').innerHTML = rep.photos.map(p => `<img src="${p}" style="height:80px;border-radius:10px;cursor:pointer;" onclick="window.open('${p}','_blank')">`).join('');
+                document.getElementById('photos-container').style.display = 'block';
             }
 
             card.style.display = 'block';

@@ -500,15 +500,8 @@ class RepairsUI {
         const sKey = window.supabaseClient?.anonKey;
 
         if (sUrl && sKey) {
-            try {
-                // ANONYMOUS URL-SAFE TOKEN: id|url|key
-                const rawToken = btoa(`${reparacion.id}|${sUrl}|${sKey}`);
-                const token = rawToken.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                trackUrl += `?t=${token}`;
-            } catch (e) {
-                console.error("Token generation failed", e);
-                trackUrl += `?id=${reparacion.id}`;
-            }
+            // PRO MODE: El link es limpio, la web ya conoce las llaves
+            trackUrl += `?id=${reparacion.id}`;
         } else {
             trackUrl += `?id=${reparacion.id}`;
         }
@@ -1281,21 +1274,16 @@ class RepairsUI {
         const sUrl = window.supabaseClient?.url;
         const sKey = window.supabaseClient?.anonKey;
         if (sUrl && sKey) {
-            try {
-                const rawToken = btoa(`${rep.id}|${sUrl}|${sKey}`);
-                const token = rawToken.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                trackUrl += `?t=${token}`;
-            } catch (e) {
-                trackUrl += `?id=${rep.id}`;
-            }
+            // PRO MODE: Link ultra limpio
+            trackUrl += `?id=${rep.id}`;
         } else {
             trackUrl += `?id=${rep.id}`;
         }
 
 
         let template = (['listo', 'reparado', 'entregado'].includes(rep.estado)) ?
-            "📱 *Consulta tu Reparación*\n\nHola {CLIENTE}, tu dispositivo está listo. Pincha aquí para ver los detalles:\n{URL}" :
-            "📱 *Consulta tu Reparación*\n\nHola {CLIENTE}, hemos recibido tu dispositivo. Pincha aquí para ver el estado:\n{URL}";
+            "📱 *Consulta tu Reparación*\n\nHola {CLIENTE}, tu equipo ya está listo. Pincha aquí para ver los detalles:\n{URL}" :
+            "📱 *Consulta tu Reparación*\n\nHola {CLIENTE}, hemos recibido tu equipo. Pincha aquí para ver el estado:\n{URL}";
 
         let checklistSummary = '';
         if (rep.checklist) {
