@@ -355,11 +355,11 @@
         const dynamicUrl = urlParams.get('u');
         const dynamicKey = urlParams.get('k');
 
-        function safeAtob(str) {
+        function decodeSafe(str) {
+            if (!str) return null;
             try {
-                if (!str) return null;
-                // Si ya parece una URL o Key real, no decodificar
-                if (str.startsWith('http') || str.length > 100 && str.includes('.')) return str;
+                // Si contiene puntos o empieza por http, es que ya está descifrada
+                if (str.includes('.') || str.startsWith('http')) return str;
                 return atob(str);
             } catch (e) {
                 return str;
@@ -367,18 +367,14 @@
         }
 
         if (dynamicUrl && dynamicKey) {
-            SUPABASE_URL = safeAtob(dynamicUrl);
-            SUPABASE_KEY = safeAtob(dynamicKey);
-            console.log('✅ Credenciales dinámicas aplicadas.');
+            SUPABASE_URL = decodeSafe(dynamicUrl);
+            SUPABASE_KEY = decodeSafe(dynamicKey);
+            console.log("✅ Credenciales configuradas correctamente.");
         } else {
-            console.warn('⚠️ No se han detectado credenciales en el enlace.');
-            const warningEl = document.getElementById('error-msg');
-            warningEl.style.display = 'block';
-            warningEl.innerHTML = `
-                <div style="color: #fbbf24; background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px;">
-                    💡 <b>Nota:</b> Para ver tus reparaciones, usa el enlace generado por la App o asegúrate de que el link incluya tus llaves.
-                </div>
-            `;
+            console.warn("⚠️ No hay credenciales en el link.");
+            const errEl = document.getElementById('error-msg');
+            errEl.style.display = 'block';
+            errEl.innerHTML = '<div style="background:rgba(251,191,36,0.1);color:#fbbf24;padding:10px;border-radius:10px;font-size:12px">💡 Usa el enlace que genera la App por WhatsApp para ver tus reparaciones.</div>';
         }
 
         // CHECK LIBRARY LOADED
