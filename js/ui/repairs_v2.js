@@ -129,13 +129,38 @@ class RepairsUI {
                     reparado: await db.getConfig('tpl_reparado'),
                     entregado: await db.getConfig('tpl_entregado')
                 };
+
+                // AUTO-FIX: Corregir URLs locales hardcodeadas por error
+                for (const key in this.templates) {
+                    if (this.templates[key] && this.templates[key].includes('127.0.0.1')) {
+                        console.log(`Fixing template ${key}: Removing localhost`);
+                        // Reemplazar URL completa si es posible, o just el dominio
+                        this.templates[key] = this.templates[key]
+                            .replace(/http:\/\/127\.0\.0\.1:\d+\/tracking\.html\?id=/g, '{URL}')
+                            .replace(/http:\/\/127\.0\.0\.1:\d+/g, '{URL}');
+
+                        // Guardar corrección para el futuro
+                        await db.saveConfig(`tpl_${key}`, this.templates[key]);
+                    }
+                }
             } catch (e) {
                 console.warn('Could not load templates, using defaults', e);
                 this.templates = {}; // Fallback to empty to trigger defaults in renderCard
             }
 
-            // Get Tracking URL
-            this.trackingUrl = await db.getConfig('tracking_url');
+            // Get Tracking URL with robust fallback/fix
+            let tUrl = await db.getConfig('tracking_url');
+
+            // AUTO-FIX: Si no hay URL o es local (127.0.0.1), forzar la de GitHub
+            // Esto asegura que aunque el usuario no lo configure, funcione
+            if (!tUrl || tUrl.includes('127.0.0.1') || tUrl.includes('localhost')) {
+                console.warn('Tracking URL inválida detectada:', tUrl);
+                tUrl = 'https://david1932.github.io/reparapp/tracking.html';
+                await db.saveConfig('tracking_url', tUrl);
+                console.log('Tracking URL corregida automáticamente a:', tUrl);
+            }
+
+            this.trackingUrl = tUrl;
 
             // Filtrar por cliente si es necesario
             if (this.filterClienteId) {
@@ -288,7 +313,22 @@ class RepairsUI {
 
         let trackUrl = '';
         if (this.trackingUrl) {
-            trackUrl = this.trackingUrl.includes('?') ? `${this.trackingUrl}&id=${reparacion.id}` : `${this.trackingUrl}?id=${reparacion.id}`;
+            const separator = this.trackingUrl.includes('?') ? '&' : '?';
+            trackUrl = `${this.trackingUrl}${separator}id=${reparacion.id}`;
+
+            // UNIVERSAL TRACKING: Enviar credenciales (Base64) para que el hosting central funcione
+            const sUrl = window.supabaseClient?.url;
+            const sKey = window.supabaseClient?.anonKey;
+            if (sUrl && sKey && sUrl !== '' && sKey !== '') {
+                try {
+                    // Usar encodeURIComponent para evitar que caracteres + y / rompan la URL
+                    const uEncoded = encodeURIComponent(btoa(sUrl));
+                    const kEncoded = encodeURIComponent(btoa(sKey));
+                    trackUrl += `&u=${uEncoded}&k=${kEncoded}`;
+                } catch (e) {
+                    console.warn('Could not encode credentials for tracking URL');
+                }
+            }
         }
 
         let whatsappLink = '';
@@ -351,6 +391,14 @@ class RepairsUI {
                 .replace(/{REPUESTOS}/g, repuestosNum)
                 .replace(/{PIEZAS}/g, repuestosNum)
                 .replace(/{CHECKLIST}/g, checklistSummary);
+
+            // FINAL SAFETY CHECK: FORCE REPLACE LOCALHOST IF IT SLIPPED THROUGH
+            if (message.includes('127.0.0.1') || message.includes('localhost')) {
+                const currentTracking = this.trackingUrl || 'https://david1932.github.io/reparapp/tracking.html';
+                message = message
+                    .replace(/http:\/\/127\.0\.0\.1:\d+\/tracking\.html\?id=/g, `${currentTracking}?id=`)
+                    .replace(/http:\/\/127\.0\.0\.1:\d+/g, currentTracking);
+            }
 
             const cleanPhone = clientePhone.replace(/\D/g, ''); // Remove non-digits
             // Basic check for Spain (34) if missing
