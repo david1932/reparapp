@@ -450,19 +450,20 @@ class RepairsUI {
                     <div class="price">${this.formatPrice(reparacion.precio_final || reparacion.precio)}</div>
                     <div style="display: flex; gap: 6px;">
                         ${trackUrl ? `
-                        <button class="btn btn-icon btn-sm" onclick="window.ui.repairs.copyTrackingLink('${reparacion.id}')" title="Copiar Enlace Seguimiento">
+                        <button class="btn btn-icon btn-sm" onclick="repairsUI.copyTrackingLink('${reparacion.id}')" title="Copiar Enlace Seguimiento">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                             </svg>
                         </button>` : ''}
 
-                        ${whatsappLink ? `
-                        <button class="btn btn-icon btn-sm btn-whatsapp" onclick="window.open('${whatsappLink}', '_blank')" title="Enviar WhatsApp">
-                            <i class="fab fa-whatsapp"></i>
-                        </button>` : ''}
+                        <button class="btn btn-icon btn-sm" onclick="repairsUI.sendWhatsAppPro('${reparacion.id}')" title="Enviar WhatsApp (Pro)" style="color: #25D366;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-13.1 8.38 8.38 0 0 1 3.8.9L21 3z"></path>
+                            </svg>
+                        </button>
 
-                        <button class="btn btn-icon btn-sm" onclick="window.ui.repairs.editReparacion('${reparacion.id}')" title="Editar">
+                        <button class="btn btn-icon btn-sm" onclick="repairsUI.editReparacion('${reparacion.id}')" title="Editar">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -479,6 +480,13 @@ class RepairsUI {
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Edita una reparación
+     */
+    async editReparacion(id) {
+        this.openModal(id);
     }
 
     /**
@@ -1254,7 +1262,18 @@ class RepairsUI {
         const price = this.formatPrice(rep.precio_final || rep.precio);
         const dispositivo = `${this.getDispositivoLabel(rep.dispositivo)} ${rep.marca || ''} ${rep.modelo || ''}`.trim();
         const imei = rep.imei || 'N/A';
-        const trackUrl = `${window.location.origin}/tracking.html?id=${rep.id}`;
+        // SMART TRACKING: Use official URL + Credentials (Base64)
+        let trackUrl = this.trackingUrl || 'https://david1932.github.io/reparapp/tracking.html';
+        const separator = trackUrl.includes('?') ? '&' : '?';
+        trackUrl = `${trackUrl}${separator}id=${rep.id}`;
+
+        const sUrl = window.supabaseClient?.url;
+        const sKey = window.supabaseClient?.anonKey;
+        if (sUrl && sKey) {
+            try {
+                trackUrl += `&u=${encodeURIComponent(btoa(sUrl))}&k=${encodeURIComponent(btoa(sKey))}`;
+            } catch (e) { }
+        }
 
         let template = (['listo', 'reparado', 'entregado'].includes(rep.estado)) ?
             (this.templates?.reparado || i18n.t('tpl_default_ready')) :
