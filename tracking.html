@@ -273,9 +273,21 @@
 
 <body>
     <div class="container">
+        <div class="header">
+            <div class="logo-placeholder">🔧</div>
+            <h1 data-i18n="track_title">Estado de tu Reparación</h1>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="repair-id" placeholder="Introduce el ID de reparación..." maxlength="50">
+            <button id="btn-search" data-i18n="btn_search">Buscar</button>
+        </div>
+
+        <div id="error-msg"></div>
+
         <div id="result" class="status-card">
             <div class="device-info">
-                <div id="dev-name" class="device-name">Cargando...</div>
+                <div id="dev-name" class="device-name">Consultando...</div>
                 <div id="dev-model" class="device-model">---</div>
             </div>
 
