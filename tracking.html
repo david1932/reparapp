@@ -352,8 +352,8 @@
 
         // Lógica de Credenciales Dinámicas (Tracking Universal)
         const urlParams = new URLSearchParams(window.location.search);
-        const dynamicUrl = urlParams.get('u');
-        const dynamicKey = urlParams.get('k');
+        let dynamicUrl = urlParams.get('u');
+        let dynamicKey = urlParams.get('k');
 
         function decodeSafe(str) {
             if (!str) return null;
@@ -366,29 +366,37 @@
             }
         }
 
+        // Variable global del cliente para poder re-inicializar
+        let _supabase = null;
+
+        function initSupabase() {
+            const finalUrl = decodeSafe(dynamicUrl) || SUPABASE_URL;
+            const finalKey = decodeSafe(dynamicKey) || SUPABASE_KEY;
+
+            console.log('🔗 Conectando a Supabase:', finalUrl);
+
+            if (!window.supabase || !window.supabase.createClient) {
+                const errorHtml = `
+                    <div style="background:rgba(220,38,38,0.1); padding:20px; border-radius:15px; border:1px solid rgba(220,38,38,0.2); text-align:center;">
+                        <p style="color:#ef4444; font-weight:bold;">Error de Librería.</p>
+                        <p style="font-size:13px; color:#94a3b8;">Verifica tu conexión a internet.</p>
+                    </div>`;
+                document.querySelector('.container').innerHTML += errorHtml;
+                return;
+            }
+            _supabase = window.supabase.createClient(finalUrl, finalKey);
+        }
+
+        initSupabase();
+
         if (dynamicUrl && dynamicKey) {
-            SUPABASE_URL = decodeSafe(dynamicUrl);
-            SUPABASE_KEY = decodeSafe(dynamicKey);
-            console.log("✅ Credenciales configuradas correctamente.");
+            console.log("✅ Credenciales configuradas desde URL.");
         } else {
             console.warn("⚠️ No hay credenciales en el link.");
             const errEl = document.getElementById('error-msg');
             errEl.style.display = 'block';
-            errEl.innerHTML = '<div style="background:rgba(251,191,36,0.1);color:#fbbf24;padding:10px;border-radius:10px;font-size:12px">💡 Usa el enlace que genera la App por WhatsApp para ver tus reparaciones.</div>';
+            errEl.innerHTML = '<div style="background:rgba(251,191,36,0.1);color:#fbbf24;padding:10px;border-radius:10px;font-size:12px">💡 Para ver tus datos, pega el <b>enlace completo</b> que genera la App por WhatsApp arriba.</div>';
         }
-
-        // CHECK LIBRARY LOADED
-        if (!window.supabase || !window.supabase.createClient) {
-            const errorHtml = `
-                <div style="background:rgba(220,38,38,0.1); padding:20px; border-radius:15px; border:1px solid rgba(220,38,38,0.2); text-align:center;">
-                    <p style="color:#ef4444; font-weight:bold;">No se pudo conectar con el servidor.</p>
-                    <p style="font-size:13px; color:#94a3b8;">Verifica que tengas conexión a internet y que el Supabase SDK se haya cargado.</p>
-                </div>`;
-            document.querySelector('.container').innerHTML += errorHtml;
-            throw new Error('Supabase SDK not loaded');
-        }
-
-        const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // UI REFERENCIAS
         const inputId = document.getElementById('repair-id');
@@ -412,29 +420,32 @@
 
             let id = input.trim();
 
-            // LOGIC TO EXTRACT ID FROM FULL URL
-            try {
-                // If it's a URL, use URL API
-                if (id.startsWith('http') || id.includes('tracking.html')) {
-                    const urlObj = new URL(id.startsWith('http') ? id : `http://${id}`); // Add http if missing scheme
-                    const paramId = urlObj.searchParams.get('id');
-                    if (paramId) {
-                        id = paramId;
+            // LOGICA: Si pegan EL LINK ENTERO, extraer todo
+            if (id.includes('?id=') || id.includes('tracking.html')) {
+                console.log('🔍 Detectado Link Completo en el buscador');
+                try {
+                    const cleanUrl = id.startsWith('http') ? id : `https://${id}`;
+                    const urlObj = new URL(cleanUrl);
+                    id = urlObj.searchParams.get('id');
+                    const u = urlObj.searchParams.get('u');
+                    const k = urlObj.searchParams.get('k');
+
+                    if (u && k) {
+                        dynamicUrl = u;
+                        dynamicKey = k;
+                        initSupabase(); // Re-conectar con las nuevas llaves
                     }
-                }
-            } catch (e) {
-                // Fallback: Simple string split if URL parsing fails
-                if (id.includes('id=')) {
-                    id = id.split('id=')[1].split('&')[0];
+                } catch (e) {
+                    console.error('Error parseando URL pegada:', e);
                 }
             }
 
-            // Clean any trailing non-uuid chars
+            // Limpiar ID de caracteres extraños (solo para el ID final)
             id = id.replace(/[^a-zA-Z0-9-]/g, '');
 
             // Validar
-            if (id.length < 5) {
-                const msg = 'El código parece incorrecto. Asegúrate de copiar solo el ID o el enlace completo.';
+            if (id.length < 10) {
+                const msg = 'El ID parece demasiado corto. Pega el enlace completo de WhatsApp.';
                 document.getElementById('error-msg').innerText = msg;
                 document.getElementById('error-msg').style.display = 'block';
                 return;
@@ -451,7 +462,6 @@
 
             console.log('--- INICIO BÚSQUEDA ---');
             console.log('ID:', id);
-            console.log('Supabase URL:', SUPABASE_URL);
 
             try {
                 // CONSULTA A SUPABASE
