@@ -445,53 +445,74 @@ class RepairsUI {
                         <strong>${i18n.t('label_solution')}:</strong> ${this.escapeHtml(reparacion.solucion)}
                     </p>
                     ` : ''}
-                    <div class="price">${this.formatPrice(reparacion.precio)}</div>
                 </div>
-                <div class="card-footer" style="flex-wrap: wrap; gap: 8px;">
-                    <button class="btn btn-secondary btn-icon" onclick="repUI.sendWhatsAppPro('${reparacion.id}')" title="WhatsApp Pro (con fotos)" style="color: #25D366; border-color: #25D366; background: rgba(37, 211, 102, 0.1);">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                    </button>
-                    ${trackUrl ? `
-                    <button class="btn btn-secondary btn-icon" onclick="navigator.clipboard.writeText('${trackUrl}'); window.app.showToast(i18n.t('toast_link_copied'), 'success')" title="${i18n.t('title_copy_link')}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-                        </svg>
-                    </button>
-                    ` : ''}
-                    <button class="btn btn-secondary btn-icon btn-print" data-action="print" data-id="${reparacion.id}" title="Imprimir Ticket">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                            <rect x="6" y="14" width="12" height="8"></rect>
-                        </svg>
-                    </button>
-                    <button class="btn btn-secondary btn-status" data-action="status" data-id="${reparacion.id}" title="Cambiar Estado">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 11 12 14 22 4"></polyline>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                        </svg>
-                        Estado
-                    </button>
-                    <button class="btn btn-secondary btn-edit" data-action="edit" data-id="${reparacion.id}" title="Editar Reparación">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                        Editar
-                    </button>
-                    <button class="btn btn-icon btn-delete" data-action="delete" data-id="${reparacion.id}" title="${i18n.t('btn_delete')}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
+                <div class="card-footer" style="flex-wrap: wrap; gap: 8px; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                    <div class="price">${this.formatPrice(reparacion.precio_final || reparacion.precio)}</div>
+                    <div style="display: flex; gap: 6px;">
+                        ${trackUrl ? `
+                        <button class="btn btn-icon btn-sm" onclick="window.ui.repairs.copyTrackingLink('${reparacion.id}')" title="Copiar Enlace Seguimiento">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                            </svg>
+                        </button>` : ''}
+
+                        ${whatsappLink ? `
+                        <button class="btn btn-icon btn-sm btn-whatsapp" onclick="window.open('${whatsappLink}', '_blank')" title="Enviar WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>` : ''}
+
+                        <button class="btn btn-icon btn-sm" onclick="window.ui.repairs.editReparacion('${reparacion.id}')" title="Editar">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+
+                        <button class="btn btn-icon btn-sm btn-delete" data-action="delete" data-id="${reparacion.id}" title="Eliminar">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Copia el enlace de seguimiento
+     */
+    async copyTrackingLink(id) {
+        const reparacion = this.reparaciones.find(r => r.id === id);
+        if (!reparacion) return;
+
+        let trackUrl = '';
+        if (this.trackingUrl) {
+            const separator = this.trackingUrl.includes('?') ? '&' : '?';
+            trackUrl = `${this.trackingUrl}${separator}id=${reparacion.id}`;
+
+            const sUrl = window.supabaseClient?.url;
+            const sKey = window.supabaseClient?.anonKey;
+
+            if (sUrl && sKey) {
+                try {
+                    trackUrl += `&u=${encodeURIComponent(btoa(sUrl))}&k=${encodeURIComponent(btoa(sKey))}`;
+                } catch (e) {
+                    console.error("Encoding failed", e);
+                }
+            }
+        }
+
+        if (!trackUrl) return;
+
+        try {
+            await navigator.clipboard.writeText(trackUrl);
+            window.app.showToast("¡Enlace de seguimiento copiado! ✨", "success");
+        } catch (err) {
+            console.error('Error al copiar:', err);
+        }
     }
 
     /**
@@ -654,13 +675,11 @@ class RepairsUI {
 
                 if (id) {
                     // Modo edición
-                    title.textContent = i18n.t('rep_edit_title');
                     const reparacion = await db.getReparacion(id);
                     if (reparacion) {
                         document.getElementById('reparacion-id').value = reparacion.id;
                         document.getElementById('reparacion-cliente').value = reparacion.cliente_id;
 
-                        // Update SearchSelect value
                         if (this.clientSearchWidget) {
                             this.clientSearchWidget.setValue(reparacion.cliente_id);
                         }

@@ -521,8 +521,17 @@
         }
 
         function renderResult(rep) {
-            // Datos básicos
-            document.getElementById('dev-name').textContent = (rep.dispositivo || 'Dispositivo').toUpperCase();
+            // Mostrar datos
+            const deviceMap = {
+                'movil': 'Smartphone',
+                'tablet': 'Tablet',
+                'portatil': 'Portátil',
+                'consola': 'Consola',
+                'pc': 'Sobremesa',
+                'otros': 'Dispositivo'
+            };
+            const devLabel = deviceMap[rep.dispositivo] || rep.dispositivo || 'Dispositivo';
+            document.getElementById('dev-name').textContent = devLabel.toUpperCase();
             document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} - ${rep.problema || ''}`;
 
             // Fecha

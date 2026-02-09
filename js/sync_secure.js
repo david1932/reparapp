@@ -43,6 +43,11 @@ class SyncManager {
         this.updateSyncUI(true);
 
         try {
+            // AUTO-REPAIR: Corregir formatos de fecha antes de sincronizar
+            await this.repairLocalData();
+
+            // CLEANUP: Borrar datos antiguos de la nube (Política 10 días)
+            await this.cleanupOldData();
 
             // Paso 1: Descargar cambios del servidor
             const pullStats = await this.pullFromServer();
@@ -154,28 +159,43 @@ class SyncManager {
                 if (cliente.deleted) {
                     await supabaseClient.deleteCliente(cliente.id);
                 } else {
-                    const payload = { ...cliente };
-                    delete payload.user_id;
-                    if (payload.apellido) {
-                        if (!payload.nombre.includes(payload.apellido)) {
-                            payload.nombre = `${payload.nombre} ${payload.apellido}`.trim();
-                        }
-                        delete payload.apellido;
+                    // CONSTRUIR PAYLOAD LIMPIO (Solo campos que existen en Supabase)
+                    const payload = {
+                        id: cliente.id,
+                        nombre: cliente.nombre,
+                        telefono: cliente.telefono || '',
+                        email: cliente.email || '',
+                        direccion: cliente.direccion || '',
+                        notas: cliente.notas || '',
+                        // REVERT: Database expects BIGINT (numbers), not ISO Strings
+                        fecha_creacion: new Date(cliente.fecha_creacion).getTime(),
+                        ultima_modificacion: Date.now()
+                    };
+
+                    // Merge Apellido into Nombre if exists locally
+                    if (cliente.apellido && !payload.nombre.includes(cliente.apellido)) {
+                        payload.nombre = `${payload.nombre} ${cliente.apellido}`.trim();
                     }
-                    if (payload.dni) {
-                        if (!payload.nombre.includes(payload.dni)) {
-                            payload.nombre = `${payload.nombre} (DNI:${payload.dni})`;
-                        }
-                        delete payload.dni;
+
+                    // Merge DNI into Nombre if exists locally
+                    if (cliente.dni && !payload.nombre.includes(cliente.dni)) {
+                        payload.nombre = `${payload.nombre} (DNI:${cliente.dni})`;
                     }
-                    let addressParts = [];
-                    if (payload.direccion) addressParts.push(payload.direccion);
-                    if (payload.cp) addressParts.push(`CP:${payload.cp}`);
-                    if (payload.poblacion) addressParts.push(payload.poblacion);
-                    if (payload.provincia) addressParts.push(payload.provincia);
-                    if (addressParts.length > 0) payload.direccion = addressParts.join(', ');
-                    delete payload.cp;
-                    delete payload.poblacion;
+
+                    // Merge CP/City into Address
+                    let extraAddress = [];
+                    if (cliente.cp) extraAddress.push(`CP:${cliente.cp}`);
+                    if (cliente.poblacion) extraAddress.push(cliente.poblacion);
+                    if (cliente.provincia) extraAddress.push(cliente.provincia);
+
+                    if (extraAddress.length > 0) {
+                        const extraStr = extraAddress.join(', ');
+                        if (!payload.direccion.includes(extraStr)) {
+                            payload.direccion = payload.direccion ? `${payload.direccion}, ${extraStr}` : extraStr;
+                        }
+                    }
+
+                    await supabaseClient.upsertCliente(payload);
                     delete payload.provincia;
                     delete payload.fechaRegistro;
 
@@ -212,14 +232,25 @@ class SyncManager {
                     if (reparacion.marca) cleanPayload.marca = reparacion.marca;
                     if (reparacion.modelo) cleanPayload.modelo = reparacion.modelo;
                     if (reparacion.imei) cleanPayload.imei = reparacion.imei;
-                    if (reparacion.observaciones) cleanPayload.observaciones = reparacion.observaciones;
+                    // if (reparacion.observaciones) cleanPayload.observaciones = reparacion.observaciones; // Column does not exist
                     if (reparacion.solucion) cleanPayload.solucion = reparacion.solucion;
-                    if (reparacion.fecha_estimada) cleanPayload.fecha_estimada = reparacion.fecha_estimada;
+
+                    if (reparacion.fecha_estimada) {
+                        // Ensure proper date format for timestamptz column
+                        try {
+                            const d = new Date(reparacion.fecha_estimada);
+                            if (!isNaN(d.getTime())) cleanPayload.fecha_estimada = d.toISOString();
+                        } catch (e) { }
+                    }
+
                     if (reparacion.checklist) cleanPayload.checklist = reparacion.checklist;
                     if (reparacion.parts) cleanPayload.parts = reparacion.parts;
-                    // LITE SYNC: Exclude heavy media to save Supabase storage (Free Tier)
-                    // if (reparacion.photos) cleanPayload.photos = reparacion.photos;
-                    // if (reparacion.signature) cleanPayload.signature = reparacion.signature;
+
+                    // LITE SYNC: Sincronizar fotos para que el cliente las vea en la web
+                    if (reparacion.photos && reparacion.photos.length > 0) {
+                        // Limitamos a las primeras 3 fotos para ahorrar espacio si hay muchas
+                        cleanPayload.photos = reparacion.photos.slice(0, 3);
+                    }
 
                     await supabaseClient.upsertReparacion(cleanPayload);
                 }
@@ -319,6 +350,180 @@ class SyncManager {
         }
 
         return result;
+    }
+
+    /**
+     * REPARACIÓN DE DATOS (Data Doctor Integrado)
+     * Corrige formatos de fecha (String -> Number) antes de subir
+     */
+    async repairLocalData() {
+        console.log('👨‍⚕️ Ejecutando Doctor de Datos previo al sync...');
+        try {
+            const reparaciones = await db.getAllReparaciones();
+            let fixedCount = 0;
+
+            for (const r of reparaciones) {
+                let modified = false;
+
+                // Corregir fecha_creacion
+                if (typeof r.fecha_creacion === 'string') {
+                    r.fecha_creacion = new Date(r.fecha_creacion).getTime();
+                    modified = true;
+                }
+
+                // Corregir ultima_modificacion
+                if (typeof r.ultima_modificacion === 'string') {
+                    r.ultima_modificacion = new Date(r.ultima_modificacion).getTime();
+                    modified = true;
+                }
+
+                if (modified) {
+                    // Actualizar timestamp para forzar subida
+                    r.ultima_modificacion = Date.now();
+                    await db.saveReparacion(r);
+                    fixedCount++;
+                }
+            }
+            if (fixedCount > 0) {
+                console.log(`✅ Doctor: ${fixedCount} reparaciones corregidas.`);
+                // Show a small toast if repairs were made
+                if (window.app && window.app.showToast) {
+                    window.app.showToast(`Datos corregidos: ${fixedCount}`, 'info');
+                }
+            }
+        } catch (e) {
+            console.error('Error en Data Doctor:', e);
+        }
+    }
+
+    /**
+     * CLEANUP: Política de retención (10 días)
+     * Elimina de la nube las reparaciones entregadas hace más de 10 días
+     * para ahorrar espacio y privacidad. Mantiene copia local.
+     */
+    async cleanupOldData() {
+        console.log('🧹 Ejecutando limpieza de nube (Retention Policy)...');
+        try {
+            const reparaciones = await db.getAllReparaciones();
+            const RETENTION_DAYS = 10;
+            const cutoffDate = Date.now() - (RETENTION_DAYS * 24 * 60 * 60 * 1000);
+
+            let deletedCount = 0;
+
+            // Agrupar IDs para borrar
+            const idsToDelete = [];
+
+            for (const r of reparaciones) {
+                // Criterio: Entregada Y (Fecha Entrega o Creación > 10 días)
+                // Priorizamos fecha_creacion porque ultima_modificacion cambia al sincronizar
+                const dateVal = r.fecha_creacion || r.ultima_modificacion;
+                if (r.estado === 'entregada' && dateVal < cutoffDate) {
+                    idsToDelete.push(r.id);
+                }
+            }
+
+            if (idsToDelete.length > 0) {
+                console.log(`🧹 Encontradas ${idsToDelete.length} reparaciones caducadas para borrar de la nube.`);
+
+                // Borrar en lotes (batch) si es posible, o uno a uno
+                // Supabase permite IN filter para deletes massivos: DELETE FROM reparaciones WHERE id IN (...)
+                // Haremos uno a uno por seguridad de la librería actual o pequeño batch
+
+                // Borrar en paralelo para mayor velocidad
+                const deletePromises = idsToDelete.map(async (id) => {
+                    try {
+                        await supabaseClient.deleteReparacion(id);
+                        return true;
+                    } catch (e) {
+                        console.warn(`Error borrando reparación caducada ${id}:`, e);
+                        return false;
+                    }
+                });
+
+                const results = await Promise.all(deletePromises);
+                deletedCount = results.filter(r => r).length;
+            }
+
+            if (deletedCount > 0) {
+                console.log(`✅ Limpieza: ${deletedCount} reparaciones eliminadas de la nube.`);
+            }
+        } catch (e) {
+            console.error('Error en Cloud Cleanup:', e);
+        }
+    }
+
+    /**
+     * TEST: Verificar Política de Retención
+     */
+    async testRetentionPolicy() {
+        if (!confirm('Se va a crear una reparación de prueba con fecha antigua (20 días) y se intentará borrar automáticamente. ¿Continuar?')) return;
+
+        try {
+            const clients = await db.getAllClientes();
+            if (!clients || clients.length === 0) {
+                alert('Ve a Ajustes > Sincronización: Crea un cliente primero.');
+                return;
+            }
+            // 0. Ensure Client Exists in Cloud (Fix 409 Error)
+            const client = clients[0];
+            const clientPayload = {
+                id: client.id,
+                nombre: (client.nombre || '') + (client.apellido ? ' ' + client.apellido : ''),
+                telefono: client.telefono || '',
+                email: client.email || '',
+                direccion: client.direccion || '',
+                notas: client.notas || '',
+                fecha_creacion: typeof client.fecha_creacion === 'string' ? new Date(client.fecha_creacion).getTime() : (client.fecha_creacion || Date.now()),
+                ultima_modificacion: Date.now()
+            };
+            await supabaseClient.upsertCliente(clientPayload);
+
+            // 1. Mock Repair with VALID UUID (Supabase requires UUID)
+            const oldId = crypto.randomUUID();
+            const daysAgo = 20;
+            const pastDate = Date.now() - (daysAgo * 24 * 60 * 60 * 1000);
+
+            const oldRepair = {
+                id: oldId,
+                cliente_id: client.id,
+                descripcion: 'Test Retention Policy',
+                estado: 'entregada',
+                fecha_creacion: pastDate,
+                ultima_modificacion: pastDate,
+                precio: 0, precio_final: 0
+            };
+
+            await db.saveReparacion(oldRepair);
+
+            // Forzar fechas antiguas después del save (por si db.save las sobreescribe)
+            const forceOld = await db.getReparacion(oldId);
+            forceOld.fecha_creacion = pastDate;
+            forceOld.ultima_modificacion = pastDate;
+            await db.saveReparacion(forceOld);
+
+            // 2. Upload to Cloud
+            const repairPayload = { ...forceOld };
+            delete repairPayload.precio; delete repairPayload.precio_final;
+            await supabaseClient.upsertReparacion(repairPayload);
+
+            // 3. Run Cleanup
+            alert(`✅ Prueba subida.\nID: ${oldId}\n\nEjecutando limpieza...`);
+            await this.cleanupOldData();
+
+            // 4. Verify
+            const check = await supabaseClient.getReparacion(oldId);
+            await db.deleteReparacion(oldId); // Cleanup local
+
+            if (!check) {
+                alert('🎉 ¡ÉXITO! La reparación se borró de la nube.\n\nLa política de 10 días funciona correctamente.');
+            } else {
+                alert('❌ FALLO: Sigue en la nube.\n\nRevisa si la sección de Ajustes > Sincronización tiene errores.');
+            }
+
+        } catch (e) {
+            alert('Error: ' + (e.message || JSON.stringify(e)));
+            console.error(e);
+        }
     }
 }
 
