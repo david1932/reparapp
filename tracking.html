@@ -323,21 +323,38 @@
         async function searchRepair(input) {
             if (!input) return;
 
-            // Limpiar input (si pegan la URL completa)
             let id = input.trim();
-            if (id.includes('id=')) {
-                id = id.split('id=')[1].split('&')[0];
-            } else if (id.includes('/')) {
-                // Posible url tipo param
-                const parts = id.split('/');
-                id = parts[parts.length - 1]; // Última parte
+
+            // LOGIC TO EXTRACT ID FROM FULL URL
+            try {
+                // If it's a URL, use URL API
+                if (id.startsWith('http') || id.includes('tracking.html')) {
+                    const urlObj = new URL(id.startsWith('http') ? id : `http://${id}`); // Add http if missing scheme
+                    const paramId = urlObj.searchParams.get('id');
+                    if (paramId) {
+                        id = paramId;
+                    }
+                }
+            } catch (e) {
+                // Fallback: Simple string split if URL parsing fails
+                if (id.includes('id=')) {
+                    id = id.split('id=')[1].split('&')[0];
+                }
             }
+
+            // Clean any trailing non-uuid chars
+            id = id.replace(/[^a-zA-Z0-9-]/g, '');
 
             // Validar
             if (id.length < 5) {
-                alert('El código parece demasiado corto.');
+                const msg = 'El código parece incorrecto. Asegúrate de copiar solo el ID o el enlace completo.';
+                document.getElementById('error-msg').innerText = msg;
+                document.getElementById('error-msg').style.display = 'block';
                 return;
             }
+
+            // Update input to show clean UUID
+            document.getElementById('repair-id').value = id;
 
             // UI Reset
             card.style.display = 'none';
