@@ -297,11 +297,15 @@
                     <div class="step-label">Recibido</div>
                 </div>
                 <div class="step" id="step-diagnosis">
-                    <div class="step-bubble">🔬</div>
-                    <div class="step-label">Taller</div>
+                    <div class="step-bubble">🔍</div>
+                    <div class="step-label">Diagnóstico</div>
+                </div>
+                <div class="step" id="step-repairing">
+                    <div class="step-bubble">🔧</div>
+                    <div class="step-label">Reparando</div>
                 </div>
                 <div class="step" id="step-ready">
-                    <div class="step-bubble">✨</div>
+                    <div class="step-bubble">✅</div>
                     <div class="step-label">Listo</div>
                 </div>
             </div>
@@ -466,14 +470,24 @@
             if (['pendiente', 'recibido'].includes(st)) {
                 badge.textContent = 'Recibido';
                 badge.style.color = 'var(--warning)';
+            } else if (st === 'en_diagnostico' || st.includes('diagnostico')) {
+                badge.textContent = 'En Diagnóstico';
+                badge.style.color = 'var(--primary)';
+                document.getElementById('step-diagnosis').classList.add('active');
             } else if (['reparando', 'taller', 'proceso'].some(s => st.includes(s))) {
-                badge.textContent = 'En Taller';
+                badge.textContent = 'Reparando';
                 badge.style.color = 'var(--secondary)';
                 document.getElementById('step-diagnosis').classList.add('active');
+                document.getElementById('step-repairing').classList.add('active');
+            } else if (['cancelado', 'cancelled'].includes(st)) {
+                badge.textContent = 'Cancelado';
+                badge.style.color = '#f87171';
             } else {
+                // listo, terminado, entregado
                 badge.textContent = 'Listo';
                 badge.style.color = 'var(--success)';
                 document.getElementById('step-diagnosis').classList.add('active');
+                document.getElementById('step-repairing').classList.add('active');
                 document.getElementById('step-ready').classList.add('active');
             }
 
