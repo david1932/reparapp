@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Reparación - ReparApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <!-- WhatsApp & Social Media Preview (OG Tags) -->
+    <meta property="og:title" content="📱 Consulta tu Reparación">
+    <meta property="og:description" content="Pincha aquí para ver el estado en tiempo real.">
+    <meta property="og:type" content="website">
+    <!-- Placeholder image until hosted, or use a generic one if available -->
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/1055/1055666.png">
+    <meta name="theme-color" content="#22d3ee">
+
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --border-card: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --primary: #22d3ee;
+            --secondary: #818cf8;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            background-image:
+                radial-gradient(circle at 0% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(129, 140, 248, 0.15) 0%, transparent 50%);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-card);
+            border-radius: 28px;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+
+        .logo-placeholder {
+            width: 60px;
+            height: 60px;
+            background: var(--accent-gradient);
+            border-radius: 18px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 10px 20px rgba(6, 182, 212, 0.3);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to bottom, #fff, #94a3b8);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-box {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 6px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            font-size: 15px;
+            outline: none;
+            width: 100%;
+        }
+
+        #btn-search {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+        }
+
+        #btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(6, 182, 212, 0.4);
+        }
+
+        .status-card {
+            display: none;
+            margin-top: 32px;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .device-info {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .device-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .device-model {
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .modern-timeline {
+            margin: 40px 0;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modern-timeline::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1;
+        }
+
+        .step {
+            z-index: 2;
+            text-align: center;
+            width: 60px;
+        }
+
+        .step-bubble {
+            width: 34px;
+            height: 34px;
+            background: #1e293b;
+            border: 3px solid #334155;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .step.active .step-bubble {
+            background: var(--primary);
+            border-color: rgba(6, 182, 212, 0.3);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        .step-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .detail-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #error-msg {
+            color: #f87171;
+            background: rgba(220, 38, 38, 0.1);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            display: none;
+            margin-top: 16px;
+        }
+
+        .footer {
+            margin-top: 32px;
+            font-size: 12px;
+            color: var(--text-dim);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-placeholder">🔧</div>
+            <h1>Estado de Reparación</h1>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="repair-id" placeholder="ID de reparación..." maxlength="50">
+            <button id="btn-search">Buscar</button>
+        </div>
+
+        <div id="error-msg"></div>
+
+        <div id="result" class="status-card">
+            <div class="device-info">
+                <div id="dev-name" class="device-name">Cargando...</div>
+                <div id="dev-model" class="device-model">---</div>
+            </div>
+
+            <div class="modern-timeline">
+                <div class="step" id="step-received">
+                    <div class="step-bubble">📦</div>
+                    <div class="step-label">Recibido</div>
+                </div>
+                <div class="step" id="step-diagnosis">
+                    <div class="step-bubble">🔍</div>
+                    <div class="step-label">Diagnóstico</div>
+                </div>
+                <div class="step" id="step-repairing">
+                    <div class="step-bubble">🔧</div>
+                    <div class="step-label">Reparando</div>
+                </div>
+                <div class="step" id="step-ready">
+                    <div class="step-bubble">✅</div>
+                    <div class="step-label">Listo</div>
+                </div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Fecha Entrada</div>
+                    <div id="date-received" class="detail-value">--/--/--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Estado Actual</div>
+                    <div id="dev-badge" class="detail-value">---</div>
+                </div>
+            </div>
+
+            <div id="solution-container" class="detail-item"
+                style="margin-bottom: 24px; display: none; background: rgba(34, 211, 238, 0.05); border-color: rgba(34, 211, 238, 0.1);">
+                <div class="detail-label" style="color: var(--primary);">Informe Técnico</div>
+                <div id="solution-text" class="detail-value"
+                    style="font-weight: 400; line-height: 1.5; color: var(--text-dim); margin-top: 8px;"></div>
+            </div>
+
+            <div id="checklist-container" style="display: none; margin-bottom: 24px;">
+                <div class="detail-label" style="margin-bottom: 12px;">Puntos Verificados</div>
+                <div id="checklist-items"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;"></div>
+            </div>
+
+            <div id="photos-container" style="display: none;">
+                <div class="detail-label" style="margin-bottom: 12px;">Fotografías</div>
+                <div id="photos-gallery"
+                    style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: thin;">
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Powered by ReparApp
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN CENTRAL
+        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        // NOTA: Esta es la clave anónima pública, segura para usar en frontend
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let token = urlParams.get('t');
+        let dynamicUrl = urlParams.get('u');
+        let dynamicKey = urlParams.get('k');
+
+        function decodeSafe(str) {
+            if (!str) return null;
+            try {
+                if (str.includes('.') || str.startsWith('http')) return str;
+                return atob(str);
+            } catch (e) { return str; }
+        }
+
+        let _supabase = null;
+
+        function initSupabase() {
+            let finalUrl = SUPABASE_URL;
+            let finalKey = SUPABASE_KEY;
+            let idFromToken = null;
+
+            // Soporte para tokens universales (compatibilidad)
+            if (token) {
+                try {
+                    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+                    while (base64.length % 4) base64 += '=';
+                    const decoded = atob(base64);
+                    const parts = decoded.split('|');
+                    if (parts.length === 3) {
+                        idFromToken = parts[0];
+                        finalUrl = parts[1];
+                        finalKey = parts[2];
+                    }
+                } catch (e) { console.error('Token Error:', e); }
+            } else if (dynamicUrl && dynamicKey) {
+                finalUrl = decodeSafe(dynamicUrl);
+                finalKey = decodeSafe(dynamicKey);
+            }
+
+            if (!window.supabase || !window.supabase.createClient) return null;
+            _supabase = window.supabase.createClient(finalUrl, finalKey);
+
+            // --- STEALTH MODE ---
+            // Limpia la URL para que no se vean parámetros feos
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                if (url.searchParams.has('t') || url.searchParams.has('u') || url.searchParams.has('k')) {
+                    const cleanUrl = window.location.pathname + (url.searchParams.get('id') ? '?id=' + url.searchParams.get('id') : '');
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            }
+            return idFromToken;
+        }
+
+        const initialId = initSupabase();
+
+        // UI
+        const inputId = document.getElementById('repair-id');
+        const btnSearch = document.getElementById('btn-search');
+        const card = document.getElementById('result');
+        const errorMsg = document.getElementById('error-msg');
+
+        window.addEventListener('load', () => {
+            const id = urlParams.get('id') || initialId;
+            if (id) {
+                inputId.value = id;
+                searchRepair(id);
+            }
+        });
+
+        btnSearch.addEventListener('click', () => searchRepair(inputId.value.trim()));
+
+        async function searchRepair(input) {
+            if (!input) return;
+            let finalId = input.trim();
+
+            // Extraer ID si pegan URL completa
+            if (finalId.includes('?id=')) {
+                try {
+                    const u = new URL(finalId.startsWith('http') ? finalId : 'https://' + finalId);
+                    finalId = u.searchParams.get('id') || finalId;
+                } catch (e) { }
+            }
+
+            finalId = finalId.replace(/[^a-zA-Z0-9-]/g, '');
+            if (finalId.length < 10) return;
+
+            card.style.display = 'none';
+            errorMsg.style.display = 'none';
+            btnSearch.textContent = '⏳ ...';
+            btnSearch.disabled = true;
+
+            try {
+                const { data, error } = await _supabase.from('reparaciones').select('*').eq('id', finalId).single();
+                if (error || !data) throw new Error('Reparación no encontrada.');
+                renderResult(data);
+            } catch (e) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = `⚠️ No encontrado<br><small>Verifica el ID o contacta con el taller.</small>`;
+            } finally {
+                btnSearch.textContent = 'Buscar';
+                btnSearch.disabled = false;
+            }
+        }
+
+        function renderResult(rep) {
+            const deviceMap = { 'movil': 'Smartphone', 'tablet': 'Tablet', 'portatil': 'Portátil', 'consola': 'Consola', 'pc': 'PC', 'otros': 'Equipo' };
+            document.getElementById('dev-name').textContent = (deviceMap[rep.dispositivo] || 'Equipo').toUpperCase();
+            document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} - ${rep.problema || ''}`;
+            document.getElementById('date-received').textContent = new Date(rep.fecha_creacion).toLocaleDateString();
+
+            const badge = document.getElementById('dev-badge');
+            const st = (rep.estado || '').toLowerCase();
+
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step-received').classList.add('active');
+
+            if (['pendiente', 'recibido'].includes(st)) {
+                badge.textContent = 'Recibido';
+                badge.style.color = 'var(--warning)';
+            } else if (st === 'en_diagnostico' || st.includes('diagnostico')) {
+                badge.textContent = 'En Diagnóstico';
+                badge.style.color = 'var(--primary)';
+                document.getElementById('step-diagnosis').classList.add('active');
+            } else if (['reparando', 'taller', 'proceso'].some(s => st.includes(s))) {
+                badge.textContent = 'Reparando';
+                badge.style.color = 'var(--secondary)';
+                document.getElementById('step-diagnosis').classList.add('active');
+                document.getElementById('step-repairing').classList.add('active');
+            } else if (['cancelado', 'cancelled'].includes(st)) {
+                badge.textContent = 'Cancelado';
+                badge.style.color = '#f87171';
+            } else {
+                // listo, terminado, entregado
+                badge.textContent = 'Listo';
+                badge.style.color = 'var(--success)';
+                document.getElementById('step-diagnosis').classList.add('active');
+                document.getElementById('step-repairing').classList.add('active');
+                document.getElementById('step-ready').classList.add('active');
+            }
+
+            if (rep.solucion) {
+                document.getElementById('solution-text').textContent = rep.solucion;
+                document.getElementById('solution-container').style.display = 'block';
+            }
+
+            if (rep.photos && rep.photos.length > 0) {
+                document.getElementById('photos-gallery').innerHTML = rep.photos.map(p => `<img src="${p}" style="height:80px;border-radius:10px;cursor:pointer;" onclick="window.open('${p}','_blank')">`).join('');
+                document.getElementById('photos-container').style.display = 'block';
+            }
+
+            card.style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>
