@@ -212,19 +212,19 @@
     <script>
         // --- Error Boundary for Mobile Debugging ---
         window.onerror = function (msg, url, line) {
-            const log = document.getElementById('debug-log');
+            var log = document.getElementById('debug-log');
             if (log) log.innerHTML += `ERR: ${msg} (Ln: ${line})\n`;
             return false;
         };
 
-        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+        var SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const repairId = urlParams.get('id');
-        const isLocal = urlParams.get('local') === 'true';
+        var urlParams = new URLSearchParams(window.location.search);
+        var repairId = urlParams.get('id');
+        var isLocal = urlParams.get('local') === 'true';
 
-        let supabase = null;
+        var supabase = null;
         if (!isLocal && window.supabase) {
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -241,26 +241,26 @@
             document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>Error</h2><p>Enlace de firma inválido.</p></div>';
         }
 
-        const canvas = document.getElementById('sig-pad');
-        const ctx = canvas.getContext('2d');
-        const debugLog = document.getElementById('debug-log');
-        let isDrawing = false;
-        let lastPos = { x: 0, y: 0 };
-        let allStrokes = []; // Para guardarlos al final
-        let currentStroke = [];
+        var canvas = document.getElementById('sig-pad');
+        var ctx = canvas.getContext('2d');
+        var debugLog = document.getElementById('debug-log');
+        var isDrawing = false;
+        var lastPos = { x: 0, y: 0 };
+        var allStrokes = []; // Para guardarlos al final
+        var currentStroke = [];
 
         function logDebug(msg) {
             if (debugLog) debugLog.textContent = msg;
         }
 
         // --- Diagnóstico de Entrada ---
-        window.addEventListener('touchstart', () => {
+        window.addEventListener('touchstart', function () {
             // Si esto no cambia el fondo, el móvil no está enviando toques a la página
             // document.body.style.borderTop = "5px solid lime"; 
         }, { passive: true });
 
         function resize() {
-            const rect = canvas.getBoundingClientRect();
+            var rect = canvas.getBoundingClientRect();
             // Simplificamos: No usamos High DPI por ahora para descartar errores de escala
             canvas.width = rect.width;
             canvas.height = rect.height;
@@ -278,8 +278,8 @@
         setTimeout(resize, 500);
 
         function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            let clientX, clientY;
+            var rect = canvas.getBoundingClientRect();
+            var clientX, clientY;
 
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
@@ -298,7 +298,7 @@
         // --- Lógica de Dibujo Directa ---
         function start(e) {
             if (e.target === canvas) {
-                e.preventDefault();
+                if (e.cancelable) e.preventDefault();
             }
             isDrawing = true;
             lastPos = getPos(e);
@@ -309,16 +309,16 @@
             ctx.beginPath();
             ctx.fillStyle = "#000";
             ctx.fillRect(lastPos.x, lastPos.y, 2, 2);
-            logDebug("START: " + Math.round(lastPos.x) + "," + Math.round(lastPos.y));
+            // logDebug("START: " + Math.round(lastPos.x) + "," + Math.round(lastPos.y)); // Removed as per instruction
         }
 
         function move(e) {
             if (!isDrawing) return;
             if (e.target === canvas) {
-                e.preventDefault();
+                if (e.cancelable) e.preventDefault();
             }
 
-            const newPos = getPos(e);
+            var newPos = getPos(e);
 
             ctx.beginPath();
             ctx.moveTo(lastPos.x, lastPos.y);
@@ -327,13 +327,13 @@
 
             lastPos = newPos;
             currentStroke.push(lastPos);
-            logDebug("DIBUJANDO... (" + currentStroke.length + " pts)");
+            // logDebug("DIBUJANDO... (" + currentStroke.length + " pts)"); // Removed as per instruction
         }
 
         function stop(e) {
             if (!isDrawing) return;
             isDrawing = false;
-            logDebug("FIN: Firma guardada");
+            // logDebug("FIN: Firma guardada"); // Removed as per instruction
         }
 
         // Eventos Touch (Móviles) - Forzamos passive: false
@@ -350,10 +350,10 @@
         canvas.style.touchAction = 'none';
 
         // --- Interfaz ---
-        const rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
-        const submitBtn = document.getElementById('btn-submit');
+        var rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
+        var submitBtn = document.getElementById('btn-submit');
 
-        rgpdCheckbox.addEventListener('change', () => {
+        rgpdCheckbox.addEventListener('change', function () {
             if (rgpdCheckbox.checked) {
                 submitBtn.style.opacity = '1';
                 submitBtn.style.pointerEvents = 'auto';
@@ -363,57 +363,71 @@
             }
         });
 
-        document.getElementById('btn-clear').addEventListener('click', () => {
+        document.getElementById('btn-clear').addEventListener('click', function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             allStrokes = [];
             logDebug("Limpio");
         });
 
-        document.getElementById('btn-submit').addEventListener('click', async () => {
+        document.getElementById('btn-submit').addEventListener('click', function () {
             if (allStrokes.length === 0) {
                 alert('Por favor, firma antes de enviar.');
                 return;
             }
 
-            const statusMsg = document.getElementById('status-msg');
-            const btnSubmit = document.getElementById('btn-submit');
+            var statusMsg = document.getElementById('status-msg');
+            var btnSubmit = document.getElementById('btn-submit');
 
             statusMsg.style.display = 'block';
             statusMsg.textContent = '⏱️ Enviando firma...';
             btnSubmit.disabled = true;
 
-            try {
-                const dataUrl = canvas.toDataURL('image/png');
-                const payload = {
-                    id: repairId,
-                    signature: dataUrl,
-                    signatureStrokes: allStrokes,
-                    rgpd_accepted: true,
-                    rgpd_accepted_date: new Date().toISOString()
-                };
+            var dataUrl = canvas.toDataURL('image/png');
+            var payload = {
+                id: repairId,
+                signature: dataUrl,
+                signatureStrokes: allStrokes,
+                rgpd_accepted: true,
+                rgpd_accepted_date: new Date().toISOString()
+            };
 
-                if (isLocal) {
-                    // Send to local PC server
-                    const response = await fetch('/upload-signature', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+            if (isLocal) {
+                // Send to local PC server
+                fetch('/upload-signature', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(function (response) {
                     if (!response.ok) throw new Error('Error en servidor local');
-                } else {
-                    // Send to Supabase (Cloud)
-                    if (!supabase) throw new Error('Supabase no disponible');
-                    const { error } = await supabase
-                        .from('reparaciones')
-                        .update(payload)
-                        .eq('id', repairId);
-
-                    if (error) throw error;
+                    onSuccess();
+                }).catch(function (err) {
+                    onError(err);
+                });
+            } else {
+                // Send to Supabase (Cloud)
+                if (!supabase) {
+                    alert('Error: Supabase no disponible');
+                    btnSubmit.disabled = false;
+                    return;
                 }
+                supabase
+                    .from('reparaciones')
+                    .update(payload)
+                    .eq('id', repairId)
+                    .then(function (res) {
+                        if (res.error) throw res.error;
+                        onSuccess();
+                    }).catch(function (err) {
+                        onError(err);
+                    });
+            }
 
+            function onSuccess() {
                 document.getElementById('main-ui').style.display = 'none';
                 document.getElementById('success-screen').style.display = 'block';
-            } catch (err) {
+            }
+
+            function onError(err) {
                 console.error(err);
                 statusMsg.textContent = '❌ Error: ' + err.message;
                 btnSubmit.disabled = false;
