@@ -6,6 +6,7 @@
 class SettingsUI {
     constructor() {
         this.pin = null;
+        this.loadedTabs = new Set();
     }
 
     /**
@@ -18,6 +19,7 @@ class SettingsUI {
         const companyPhone = document.getElementById('company-phone').value;
         const companyEmail = document.getElementById('company-email').value;
         const trackingUrl = document.getElementById('company-tracking-url').value;
+        const posPrinterName = document.getElementById('pos-printer-name')?.value || '';
 
         // Tax values
         const taxIva = document.getElementById('company-tax-iva').value;
@@ -38,6 +40,7 @@ class SettingsUI {
 
             await db.saveConfig('company_email', companyEmail);
             await db.saveConfig('tracking_url', trackingUrl);
+            await db.saveConfig('pos_printer_name', posPrinterName);
 
             // Save Tax Config
             const taxEntity = document.getElementById('company-tax-entity').value;
@@ -194,11 +197,8 @@ class SettingsUI {
         // Listener Diagnóstico (Emergency)
         document.getElementById('btn-diagnose-data')?.addEventListener('click', () => this.handleDiagnoseData());
 
-        // Listeners Import/Export
-        document.getElementById('btn-export-backup')?.addEventListener('click', () => this.handleExportBackup());
+        // Listeners Import/Export (btn-export-backup and backup-input-json already registered above)
         document.getElementById('btn-export-universal')?.addEventListener('click', () => this.handleExportUniversal());
-
-        document.getElementById('backup-input-json')?.addEventListener('change', (e) => this.handleImportBackup(e));
     }
 
     /**
@@ -210,7 +210,7 @@ class SettingsUI {
         document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.settings-tab-content').forEach(content => content.classList.remove('active'));
 
-        // 2. Activar el botón clickado (usando el atributo data-tab)
+        // 2. Activar el botón clickado
         const activeBtn = document.querySelector(`.settings-tab-btn[data-tab="${tabId}"]`);
         if (activeBtn) activeBtn.classList.add('active');
 
@@ -218,13 +218,19 @@ class SettingsUI {
         const activeContent = document.getElementById(tabId);
         if (activeContent) activeContent.classList.add('active');
 
-        // Force refresh specific tabs
-        if (tabId === 'tab-security') {
-            this.renderStaffList();
-        }
-
-        if (tabId === 'tab-help') {
-            if (window.helpUI) window.helpUI.init();
+        // PERF: Carga bajo demanda (Lazy Load)
+        if (!this.loadedTabs.has(tabId)) {
+            console.log(`🚀 Lazy Loading tab: ${tabId}`);
+            if (tabId === 'tab-security') {
+                this.renderStaffList();
+            }
+            if (tabId === 'tab-help') {
+                if (window.helpUI) window.helpUI.init();
+            }
+            this.loadedTabs.add(tabId);
+        } else {
+            // Refresh fast but avoid full re-init if possible
+            if (tabId === 'tab-security') this.renderStaffList(); // Security always refresh for PIN safety
         }
     }
 
@@ -312,9 +318,13 @@ class SettingsUI {
 
 
         // Cargar Config Supabase
-        if (window.supabaseClient && window.supabaseClient.isConfigured) {
-            document.getElementById('supabase-url').value = window.supabaseClient.url || '';
-            document.getElementById('supabase-key').value = window.supabaseClient.anonKey || ''; // Mostrar key (puedes ocultarla si prefieres)
+        if (window.supabaseClient) {
+            // Preferir localStorage, sino usar defaults del cliente (hardcoded)
+            const url = window.supabaseClient.url || (typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG.url : '');
+            const key = window.supabaseClient.anonKey || (typeof SUPABASE_CONFIG !== 'undefined' ? SUPABASE_CONFIG.anonKey : '');
+
+            document.getElementById('supabase-url').value = url;
+            document.getElementById('supabase-key').value = key;
         }
 
         if (companyName) document.getElementById('company-name').value = companyName;
@@ -325,10 +335,24 @@ class SettingsUI {
         if (companyEmail) document.getElementById('company-email').value = companyEmail;
 
         // Cargar Tracking URL
-        const trackingUrl = await db.getConfig('tracking_url');
+        let trackingUrl = await db.getConfig('tracking_url');
+        if (!trackingUrl || trackingUrl.includes('reparapp.pages.dev')) {
+            trackingUrl = 'https://david1932.github.io/reparapp/tracking.html';
+            await db.saveConfig('tracking_url', trackingUrl);
+        }
+        // AUTO-FIX: Si la URL no incluye /tracking.html ni /tracking/, añadirlo
+        if (trackingUrl && !trackingUrl.includes('tracking.html') && !trackingUrl.includes('tracking/') && !trackingUrl.endsWith('/')) {
+            trackingUrl = trackingUrl.replace(/\/+$/, '') + '/tracking.html';
+            await db.saveConfig('tracking_url', trackingUrl);
+        }
         if (document.getElementById('company-tracking-url')) {
             document.getElementById('company-tracking-url').value = trackingUrl || '';
         }
+
+        // Cargar Nombre Impresora TPV
+        const posPrinterName = await db.getConfig('pos_printer_name');
+        const elPosPrinter = document.getElementById('pos-printer-name');
+        if (elPosPrinter) elPosPrinter.value = posPrinterName || '';
 
         // Cargar estado Bloqueo App
         const appLockEnabled = localStorage.getItem('app_locked_enabled') === 'true';
@@ -1224,6 +1248,27 @@ class SettingsUI {
      * Importar JSON Estricto
      * @param {File} file 
      */
+    async handleImportBackup(event, type) {
+        const fileInput = event.target;
+        const file = fileInput.files[0];
+
+        if (!file) return;
+
+        try {
+            if (type === 'json') {
+                await this.handleImportJson(file);
+            } else if (type === 'zip') {
+                await this.handleImportZip(file);
+            }
+        } catch (error) {
+            console.error('Error importing backup:', error);
+            app.showToast('Error al importar: ' + error.message, 'error');
+        }
+
+        // Reset input to allow selecting same file again
+        fileInput.value = '';
+    }
+
     async handleImportJson(file) {
         if (!file) return;
 
@@ -1693,6 +1738,7 @@ class SettingsUI {
             const rCount = json.data.reparaciones?.length || 0;
             const fCount = json.data.facturas?.length || 0;
 
+            console.log(`[Import] Detected Native Backup v${json.version}`);
             app.progress.show('Restaurando Copia de Seguridad');
             app.progress.update(0, 'Preparando datos...');
 
@@ -1709,23 +1755,35 @@ class SettingsUI {
         }
         // Caso 2: Estructura corregida en handleImportJson (sin version explicita pero con data)
         else if (json.data && (json.data.clientes || json.data.reparaciones)) {
+            console.log('[Import] Detected Nested Data Structure (No Version)');
             const cCount = json.data.clientes?.length || 0;
             const rCount = json.data.reparaciones?.length || 0;
             app.showToast(`Restaurando: ${cCount} Clientes, ${rCount} Reparaciones...`, 'info');
             await db.importData({ data: json.data });
         }
-        // Caso 3: Legacy (Importar desde JSON antiguo)
-        else if (json.clientes || json.reparaciones || json.facturas) {
+        // Caso 3: Legacy (Importar desde JSON antiguo directamente)
+        // La estructura es { clientes: [...], reparaciones: [...], facturas: [...] }
+        else if (Array.isArray(json.clientes) || Array.isArray(json.reparaciones) || Array.isArray(json.facturas)) {
+            console.log('[Import] Detected Legacy Flat Structure');
             const cCount = json.clientes?.length || 0;
             const rCount = json.reparaciones?.length || 0;
+            const fCount = json.facturas?.length || 0;
+
             app.showToast(`Restaurando Legacy: ${cCount} Clientes, ${rCount} Reparaciones...`, 'info');
+
             // Force await to ensure UI updates
             await new Promise(r => setTimeout(r, 100));
             await this.importLegacyData(json);
         }
         else {
-            console.error("Formato NO reconocido:", Object.keys(json));
-            app.showInfoModal({ type: 'error', title: 'Formato No Válido', message: 'El archivo no tiene un formato válido. No se encontraron clientes ni reparaciones.' });
+            console.error("Formato NO reconocido. Keys found:", Object.keys(json));
+            // Intentar detectar si es un array directo (algunos backups viejos)
+            if (Array.isArray(json)) {
+                console.log('[Import] Detected Array Root - Trying to wrap');
+                // Si es un array, asumimos que son clientes? No, mejor error.
+            }
+
+            app.showInfoModal({ type: 'error', title: 'Formato No Válido', message: 'El archivo no tiene un formato válido (JSON structure unknown).' });
             throw new Error("Formato de archivo no reconocido.");
         }
 
@@ -1745,14 +1803,63 @@ class SettingsUI {
     }
 
 
+    // --- MATRIX CHIVATO LOGGING ---
+    createMatrixLog() {
+        let logDiv = document.getElementById('matrix-log');
+        if (!logDiv) {
+            logDiv = document.createElement('div');
+            logDiv.id = 'matrix-log';
+            logDiv.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace;
+                z-index: 9999; padding: 20px; overflow-y: auto; white-space: pre-wrap;
+                font-size: 14px; pointer-events: none;
+            `;
+            document.body.appendChild(logDiv);
+
+            // Close button (enable pointer events for this)
+            const closeBtn = document.createElement('button');
+            closeBtn.textContent = 'CERRAR LOG';
+            closeBtn.style.cssText = `
+                position: fixed; top: 20px; right: 20px; pointer-events: auto;
+                background: #f00; color: white; border: none; padding: 10px 20px;
+                font-weight: bold; cursor: pointer; z-index: 10000;
+            `;
+            closeBtn.onclick = () => { document.body.removeChild(logDiv); document.body.removeChild(closeBtn); };
+            document.body.appendChild(closeBtn);
+        }
+        return logDiv;
+    }
+
+    logMatrix(msg) {
+        const logDiv = document.getElementById('matrix-log');
+        if (logDiv) {
+            const line = document.createElement('div');
+            line.textContent = `> ${msg}`;
+            logDiv.appendChild(line);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        console.log(msg); // Also log to console
+    }
+    // ------------------------------
+
     async importLegacyData(json) {
+        this.createMatrixLog();
+        this.logMatrix('[INIT] Iniciando Modo Matrix Chivato...');
+        this.logMatrix('[INIT] Analizando estructura JSON...');
 
         // Mapa para convertir IDs numéricos antiguos a UUIDs nuevos
         // Usamos String() para asegurar que coincidan tipos (ej: "12" vs 12)
         const clientMap = new Map(); // Old ID (String) -> New UUID
 
+        this.logMatrix(`[INFO] Clientes encontrados en archivo: ${json.clientes ? json.clientes.length : 0}`);
+        this.logMatrix(`[INFO] Reparaciones encontradas en archivo: ${json.reparaciones ? json.reparaciones.length : 0}`);
+        this.logMatrix(`[INFO] Facturas encontradas en archivo: ${json.facturas ? json.facturas.length : 0}`);
+
+
         // 1. Importar Clientes
         if (json.clientes) {
+            let processed = 0;
             for (const c of json.clientes) {
                 const newId = db.generateUUID();
                 const oldId = String(c.id); // Normalizar a string
@@ -1760,25 +1867,34 @@ class SettingsUI {
 
                 const newClient = {
                     id: newId,
+                    legacy_id: oldId, // Preserve Legacy ID
                     nombre: `${c.nombre || ''} ${c.apellido || ''}`.trim(),
                     telefono: c.telefono || c.phone || c.movil || '',
                     email: c.email || '',
                     dni: c.dni || '',
                     direccion: c.direccion || '',
-                    fecha_creacion: c.fechaRegistro || Date.now(),
+                    fecha_creacion: this.parseAndroidDate(c.fechaRegistro) || Date.now(),
                     ultima_modificacion: Date.now()
                 };
                 await db.saveCliente(newClient);
+                processed++;
             }
+            this.logMatrix(`[OK] Clientes procesados: ${processed}`);
         }
 
         // 2. Importar Reparaciones
         if (json.reparaciones) {
+            let processed = 0;
+            let skipped = 0;
             for (const r of json.reparaciones) {
                 const clientId = clientMap.get(String(r.clienteId));
 
                 // Si no encontramos el cliente por ID, saltamos
-                if (!clientId) continue;
+                if (!clientId) {
+                    this.logMatrix(`[WARN] Reparación saltada. ID Cliente no encontrado: ${r.clienteId}`);
+                    skipped++;
+                    continue;
+                }
 
                 // Mapeo de estados
                 let estado = 'pendiente';
@@ -1793,31 +1909,74 @@ class SettingsUI {
                 if (r.costoFinal) obs.push(`Costo Final: ${r.costoFinal}€`);
                 if (r.fechaEntrega) obs.push(`Entregado: ${new Date(r.fechaEntrega).toLocaleDateString()}`);
 
+                // Mapeo robusto de dispositivos
+                const deviceMap = {
+                    'MOVIL': 'movil',
+                    'SMARTPHONE': 'movil',
+                    'TELEFONO': 'movil',
+                    'TABLET': 'tablet',
+                    'IPAD': 'tablet',
+                    'ORDENADOR': 'ordenador',
+                    'PC': 'ordenador',
+                    'PORTATIL': 'ordenador',
+                    'LAPTOP': 'ordenador',
+                    'CONSOLA': 'videoconsola',
+                    'VIDEOCONSOLA': 'videoconsola',
+                    'PS4': 'videoconsola',
+                    'PS5': 'videoconsola',
+                    'XBOX': 'videoconsola',
+                    'NINTENDO': 'videoconsola'
+                };
+
+                const rawDevice = (r.tipoDispositivo || r.dispositivo || r.device || '').toUpperCase().trim();
+                const dispositivo = deviceMap[rawDevice] || rawDevice.toLowerCase() || 'otro';
+
+                // Debug device mapping
+                if (rawDevice && !deviceMap[rawDevice] && dispositivo === 'otro') {
+                    this.logMatrix(`[WARN] Dispositivo desconocido: "${rawDevice}" -> "otro"`);
+                }
+
+                const solucion = (r.descripcionSolucion || r.solucion || '').trim();
+                if (!solucion && (r.descripcionSolucion || r.solucion)) {
+                    this.logMatrix(`[WARN] Solución vacía tras trim. Original: "${r.descripcionSolucion || r.solucion}"`);
+                }
+
                 const newRepair = {
                     id: db.generateUUID(),
+                    legacy_id: String(r.id), // Preserve Legacy ID
                     cliente_id: clientId,
-                    dispositivo: r.tipoDispositivo || r.dispositivo || r.device || 'Dispositivo',
+                    dispositivo: dispositivo,
                     marca: r.marca || '',
                     modelo: r.modelo || '',
-                    averia: r.descripcionProblema || r.problema || r.problem || '',
+                    problema: r.descripcionProblema || r.problema || r.problem || '',
+                    solucion: solucion,
                     estado: estado,
-                    fecha_entrada: r.fechaAdmision || Date.now(),
-                    // Preferimos costoFinal si existe, si no estimado
-                    presupuesto: r.costoEstimado || 0,
+                    fecha_entrada: this.parseAndroidDate(r.fechaAdmision) || Date.now(),
+                    // Preferimos costoFinal si existe, si no estimado. UI uses 'precio'/'precio_final'
+                    precio: r.costoEstimado || 0,
+                    precio_final: r.costoFinal || r.costoEstimado || 0,
                     observaciones: obs.join('\n'),
                     patron: r.codigoPin || '',
-                    fecha_creacion: r.fechaAdmision || Date.now(),
+                    fecha_creacion: this.parseAndroidDate(r.fechaAdmision) || Date.now(),
                     ultima_modificacion: Date.now()
                 };
                 await db.saveReparacion(newRepair);
+                processed++;
             }
+            this.logMatrix(`[OK] Reparaciones procesadas: ${processed}. Saltadas: ${skipped}`);
         }
 
         // 3. Importar Facturas
         if (json.facturas) {
+            let processed = 0;
+            let skipped = 0;
             for (const f of json.facturas) {
                 const clientId = clientMap.get(String(f.clienteId));
-                if (!clientId) continue;
+                if (!clientId) {
+                    this.logMatrix(`[WARN] Factura saltada. ID Cliente no encontrado: ${f.clienteId}`);
+                    skipped++;
+                    continue;
+                }
 
                 // Parse items
                 let items = [];
@@ -1829,7 +1988,7 @@ class SettingsUI {
 
                     if (Array.isArray(sourceItems)) {
                         items = sourceItems.map(item => ({
-                            descripcion: item.description || 'Item',
+                            concepto: item.description || 'Item',
                             cantidad: item.quantity || 1,
                             precio: item.unitPrice || 0,
                             total: (item.quantity || 1) * (item.unitPrice || 0)
@@ -1855,20 +2014,29 @@ class SettingsUI {
 
                 const newInvoice = {
                     id: db.generateUUID(),
+                    legacy_id: String(f.id), // Preserve Legacy ID
                     cliente_id: clientId,
                     numero: f.numero || `FAC-${Date.now()}`,
-                    fecha: f.fecha || Date.now(),
-                    items: items,
-                    subtotal: subtotal,
+                    fecha: this.parseAndroidDate(f.fecha) || Date.now(),
+                    lineas: items, // Internal DB uses 'lineas', export uses 'itemsJson'
+                    base: subtotal,
                     iva: iva,
                     total: finalTotal,
                     notas: f.notes || '',
-                    fecha_creacion: f.fecha || Date.now(),
+                    fecha_creacion: this.parseAndroidDate(f.fecha) || Date.now(),
                     ultima_modificacion: Date.now()
                 };
                 await db.saveFactura(newInvoice);
+                processed++;
             }
+            this.logMatrix(`[OK] Facturas procesadas: ${processed}. Saltadas: ${skipped}`);
         }
+
+        this.logMatrix('[FIN] Importación Legacy Finalizada.');
+        this.logMatrix('Recargando aplicación en 5 segundos...');
+
+        // Esperar un poco para que el usuario lea antes de recargar
+        await new Promise(resolve => setTimeout(resolve, 5000));
     }
 
     downloadFile(content, fileName, contentType) {
