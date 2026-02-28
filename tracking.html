@@ -340,6 +340,12 @@
                     style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: thin;">
                 </div>
             </div>
+
+            <!-- Signature & RGPD Container -->
+            <div id="signature-container"
+                style="display: none; margin-top: 24px; padding: 16px; background: rgba(129, 140, 248, 0.05); border-radius: 16px; border: 1px solid rgba(129, 140, 248, 0.1);">
+                <!-- Dynamic Content -->
+            </div>
         </div>
 
         <div class="footer">
@@ -501,8 +507,36 @@
                 document.getElementById('photos-container').style.display = 'block';
             }
 
+            // Display Signature & RGPD
+            const sigContainer = document.getElementById('signature-container');
+            if (sigContainer) {
+                if (rep.signature || rep.rgpd_accepted) {
+                    let content = `<div class="detail-label" style="color: var(--secondary); margin-bottom: 12px;">Conformidad Repetición / RGPD</div>`;
+
+                    if (rep.rgpd_accepted) {
+                        content += `<div style="font-size: 11px; color: var(--success); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                            <span>✅</span> <span>Condiciones y RGPD aceptados el ${new Date(rep.rgpd_accepted_date || rep.fecha_creacion).toLocaleDateString()}</span>
+                        </div>`;
+                    }
+
+                    if (rep.signature) {
+                        content += `<div style="background: white; border-radius: 12px; padding: 10px; text-align: center;">
+                            <img src="${rep.signature}" style="max-width: 100%; height: auto; max-height: 100px; filter: grayscale(1) contrast(1.5);">
+                        </div>
+                        <div style="font-size: 9px; color: var(--text-dim); text-align: center; margin-top: 4px;">Firma Digital del Cliente</div>`;
+                    }
+
+                    sigContainer.innerHTML = content;
+                    sigContainer.style.display = 'block';
+                } else {
+                    sigContainer.style.display = 'none';
+                }
+            }
+
             card.style.display = 'block';
         }
+
+
     </script>
 </body>
 

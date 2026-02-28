@@ -16,6 +16,8 @@ class RepairsUI {
         this.partsSearchWidget = null;
         this.allProducts = []; // Cache for search
         this.stream = null; // Camera stream
+        this.itemsPerPage = 20;
+        this.displayedCount = 20;
     }
 
     /**
@@ -36,16 +38,18 @@ class RepairsUI {
         // Búsqueda
         document.getElementById('search-reparaciones')?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value;
+            this.displayedCount = this.itemsPerPage; // Reset pagination on search
             this.render();
         });
 
         // Filtro de estado
         document.getElementById('filter-estado')?.addEventListener('change', (e) => {
             this.filterEstado = e.target.value;
+            this.displayedCount = this.itemsPerPage; // Reset pagination on filter
             this.render();
         });
 
-        // Formulario
+        // Formulario (Submit)
         document.getElementById('form-reparacion')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveReparacion();
@@ -70,6 +74,20 @@ class RepairsUI {
 
         // Signature Pad initialization
         this.setupSignaturePad();
+
+        // RGPD Checkbox toggle — enable signature when accepted
+        document.getElementById('rgpd-accept-checkbox')?.addEventListener('change', (e) => {
+            const sigSection = document.getElementById('signature-section');
+            if (sigSection) {
+                if (e.target.checked) {
+                    sigSection.style.opacity = '1';
+                    sigSection.style.pointerEvents = 'auto';
+                } else {
+                    sigSection.style.opacity = '0.3';
+                    sigSection.style.pointerEvents = 'none';
+                }
+            }
+        });
 
         // Parts Search initialization
         this.initPartsSearch();
@@ -151,13 +169,20 @@ class RepairsUI {
             // Get Tracking URL with robust fallback/fix
             let tUrl = await db.getConfig('tracking_url');
 
-            // AUTO-FIX: Si no hay URL o es local (127.0.0.1), forzar la de GitHub
+            // AUTO-FIX: Si no hay URL o es local (127.0.0.1), forzar la de Cloudflare
             // Esto asegura que aunque el usuario no lo configure, funcione
-            if (!tUrl || tUrl.includes('127.0.0.1') || tUrl.includes('localhost')) {
-                console.warn('Tracking URL inválida detectada:', tUrl);
-                tUrl = 'https://david1932.github.io/reparapp/tracking.html';
+            if (!tUrl || tUrl.includes('127.0.0.1') || tUrl.includes('localhost') || tUrl.includes('github.io') || tUrl.includes('reparapp-gestion')) {
+                console.warn('Tracking URL antigua o local detectada:', tUrl);
+                tUrl = 'https://reparapp.pages.dev/tracking.html';
                 await db.saveConfig('tracking_url', tUrl);
                 console.log('Tracking URL corregida automáticamente a:', tUrl);
+            }
+
+            // AUTO-FIX: Si la URL no incluye /tracking.html, añadirlo
+            if (tUrl && !tUrl.includes('tracking.html') && !tUrl.includes('tracking/')) {
+                tUrl = tUrl.replace(/\/+$/, '') + '/tracking.html';
+                await db.saveConfig('tracking_url', tUrl);
+                console.log('Tracking URL corregida (faltaba /tracking.html):', tUrl);
             }
 
             this.trackingUrl = tUrl;
@@ -206,7 +231,23 @@ class RepairsUI {
             }
 
             empty.style.display = 'none';
-            grid.innerHTML = this.reparaciones.map(rep => this.renderCard(rep)).join('');
+
+            // PAGINACIÓN: Cortar la lista según lo que queremos mostrar
+            const toShow = this.reparaciones.slice(0, this.displayedCount);
+            grid.innerHTML = toShow.map(rep => this.renderCard(rep)).join('');
+
+            // Añadir botón "Cargar más" si hay más elementos
+            if (this.reparaciones.length > this.displayedCount) {
+                const loadMoreBtn = document.createElement('button');
+                loadMoreBtn.className = 'btn-load-more';
+                loadMoreBtn.style = 'grid-column: 1 / -1; margin-top: 20px; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--accent); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s;';
+                loadMoreBtn.textContent = `Mostrar más (${this.reparaciones.length - this.displayedCount} restantes)`;
+                loadMoreBtn.onclick = () => {
+                    this.displayedCount += this.itemsPerPage;
+                    this.render();
+                };
+                grid.appendChild(loadMoreBtn);
+            }
 
             // Event listeners para acciones
             this.attachCardListeners();
@@ -285,11 +326,11 @@ class RepairsUI {
     getDispositivoLabel(dispositivo) {
         if (window.i18n) {
             const keys = {
-                'movil': 'dev_movil',
-                'tablet': 'dev_tablet',
-                'ordenador': 'dev_ordenador',
-                'videoconsola': 'dev_videoconsola',
-                'otro': 'dev_otro'
+                'movil': 'rep_type_mobile',
+                'tablet': 'rep_type_tablet',
+                'ordenador': 'rep_type_pc',
+                'videoconsola': 'rep_type_console',
+                'otro': 'rep_type_other'
             };
             if (keys[dispositivo]) return i18n.t(keys[dispositivo]);
         }
@@ -394,7 +435,7 @@ class RepairsUI {
 
             // FINAL SAFETY CHECK: FORCE REPLACE LOCALHOST IF IT SLIPPED THROUGH
             if (message.includes('127.0.0.1') || message.includes('localhost')) {
-                const currentTracking = this.trackingUrl || 'https://david1932.github.io/reparapp/tracking.html';
+                const currentTracking = this.trackingUrl || 'https://reparapp.pages.dev';
                 message = message
                     .replace(/http:\/\/127\.0\.0\.1:\d+\/tracking\.html\?id=/g, `${currentTracking}?id=`)
                     .replace(/http:\/\/127\.0\.0\.1:\d+/g, currentTracking);
@@ -445,6 +486,15 @@ class RepairsUI {
                         <strong>${i18n.t('label_solution')}:</strong> ${this.escapeHtml(reparacion.solucion)}
                     </p>
                     ` : ''}
+                    ${reparacion.rgpd_accepted ? `
+                    <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--electric-cyan); background: rgba(0, 255, 198, 0.08); padding: 3px 8px; border-radius: 6px; margin-bottom: 8px;">
+                        ✅ RGPD Firmado${reparacion.signature ? ' ✍️' : ''}
+                    </div>
+                    ` : `
+                    <div style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.03); padding: 3px 8px; border-radius: 6px; margin-bottom: 8px;">
+                        ⚠️ Sin firma RGPD
+                    </div>
+                    `}
                 </div>
                 <div class="card-footer" style="flex-wrap: wrap; gap: 8px; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 15px;">
                     <div class="price">${this.formatPrice(reparacion.precio_final || reparacion.precio)}</div>
@@ -459,6 +509,14 @@ class RepairsUI {
                         <button class="btn btn-icon btn-sm btn-whatsapp-pro" data-action="whatsapp-pro" data-id="${reparacion.id}" title="Enviar WhatsApp (Pro)" style="color: #25D366;">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px; height:18px;">
                                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-13.1 8.38 8.38 0 0 1 3.8.9L21 3z"></path>
+                            </svg>
+                        </button>
+
+                        <button class="btn btn-icon btn-sm btn-print" data-action="print" data-id="${reparacion.id}" title="Imprimir Ticket">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
                             </svg>
                         </button>
 
@@ -490,26 +548,78 @@ class RepairsUI {
 
     /**
      * Copia el enlace de seguimiento
+     * Primero sube la reparación a Supabase para garantizar que el enlace funcione
      */
     async copyTrackingLink(id) {
         const reparacion = this.reparaciones.find(r => r.id === id);
         if (!reparacion) return;
 
-        let trackUrl = 'https://david1932.github.io/reparapp/tracking.html';
-        const sUrl = window.supabaseClient?.url;
-        const sKey = window.supabaseClient?.anonKey;
+        // 1. Push repair to Supabase FIRST (like Android does)
+        try {
+            if (window.supabaseClient?.isConfigured) {
+                window.app.showToast('☁️ Subiendo reparación a la nube...', 'info');
 
-        if (sUrl && sKey) {
-            // PRO MODE: El link es limpio, la web ya conoce las llaves
-            trackUrl += `?id=${reparacion.id}`;
-        } else {
-            trackUrl += `?id=${reparacion.id}`;
+                // Push client first (foreign key dependency)
+                const cliente = this.clientes.find(c => c.id === reparacion.cliente_id);
+                if (cliente) {
+                    const clientPayload = {
+                        id: cliente.id,
+                        nombre: (cliente.nombre || '') + (cliente.apellido ? ' ' + cliente.apellido : ''),
+                        telefono: cliente.telefono || '',
+                        email: cliente.email || '',
+                        direccion: cliente.direccion || '',
+                        notas: cliente.notas || '',
+                        fecha_creacion: new Date(cliente.fecha_creacion || Date.now()).getTime(),
+                        ultima_modificacion: Date.now()
+                    };
+                    await supabaseClient.upsertCliente(clientPayload);
+                }
+
+                // Push repair
+                const repairPayload = {
+                    id: reparacion.id,
+                    cliente_id: reparacion.cliente_id,
+                    descripcion: reparacion.descripcion || reparacion.problema || 'Sin descripción',
+                    estado: reparacion.estado || 'pendiente',
+                    precio: reparacion.precio || 0,
+                    precio_final: reparacion.precio_final || null,
+                    fecha_creacion: new Date(reparacion.fecha_creacion || Date.now()).getTime(),
+                    ultima_modificacion: Date.now()
+                };
+                if (reparacion.marca) repairPayload.marca = reparacion.marca;
+                if (reparacion.modelo) repairPayload.modelo = reparacion.modelo;
+                if (reparacion.imei) repairPayload.imei = reparacion.imei;
+                if (reparacion.solucion) repairPayload.solucion = reparacion.solucion;
+                if (reparacion.checklist) repairPayload.checklist = reparacion.checklist;
+                if (reparacion.parts) repairPayload.parts = reparacion.parts;
+
+                // Signature & RGPD Data
+                if (reparacion.signature) repairPayload.signature = reparacion.signature;
+                if (reparacion.signatureStrokes) repairPayload.signatureStrokes = reparacion.signatureStrokes;
+                if (reparacion.rgpd_accepted) {
+                    repairPayload.rgpd_accepted = reparacion.rgpd_accepted;
+                    repairPayload.rgpd_accepted_date = reparacion.rgpd_accepted_date || reparacion.fecha_creacion;
+                }
+
+                await supabaseClient.upsertReparacion(repairPayload);
+                console.log('✅ Reparación subida a la nube para tracking');
+            }
+        } catch (e) {
+            console.error('Error pushing repair for tracking:', e);
+            // Continue anyway — still copy the link
         }
 
+        // 2. Build and copy the tracking link
+        let trackUrl = this.trackingUrl || 'https://reparapp.pages.dev/tracking.html';
+        trackUrl += `?id=${reparacion.id}`;
 
         try {
             await navigator.clipboard.writeText(trackUrl);
-            window.app.showToast("¡Enlace de seguimiento copiado! ✨", "success");
+            if (window.supabaseClient?.isConfigured) {
+                window.app.showToast('📋 Enlace copiado ✅ (Datos sincronizados)', 'success');
+            } else {
+                window.app.showToast('📋 Enlace copiado (⚠️ Conecta la nube para que funcione)', 'warning');
+            }
         } catch (err) {
             console.error('Error al copiar:', err);
         }
@@ -752,6 +862,20 @@ class RepairsUI {
                 // Attach Paste Listener
                 this._pasteHandler = (e) => this.handlePaste(e);
                 window.addEventListener('paste', this._pasteHandler);
+
+                // Reset RGPD checkbox and signature section
+                const rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
+                const sigSection = document.getElementById('signature-section');
+                if (rgpdCheckbox) {
+                    // If editing and already accepted, keep checked
+                    if (id && currentRep && currentRep.rgpd_accepted) {
+                        rgpdCheckbox.checked = true;
+                        if (sigSection) { sigSection.style.opacity = '1'; sigSection.style.pointerEvents = 'auto'; }
+                    } else {
+                        rgpdCheckbox.checked = false;
+                        if (sigSection) { sigSection.style.opacity = '0.3'; sigSection.style.pointerEvents = 'none'; }
+                    }
+                }
             } catch (dataError) {
                 console.error('Error loading data for modal:', dataError);
                 selectCliente.innerHTML = `< option value = "" > ${i18n.t('err_loading_clients')}</option > `;
@@ -787,6 +911,7 @@ class RepairsUI {
     async saveReparacion() {
         try {
             const id = document.getElementById('reparacion-id').value;
+            // ...
             const precioFinalInput = document.getElementById('reparacion-precio-final');
 
             const checklist = {};
@@ -814,6 +939,8 @@ class RepairsUI {
                 photos: this.repairPhotos, // Save photos
                 signature: this.getSignatureData(), // Save DataURL for printing/preview
                 signatureStrokes: this.allStrokes && this.allStrokes.length > 0 ? this.allStrokes : null, // Save raw strokes for redrawing
+                rgpd_accepted: document.getElementById('rgpd-accept-checkbox')?.checked || false,
+                rgpd_accepted_date: document.getElementById('rgpd-accept-checkbox')?.checked ? new Date().toISOString() : null,
                 assigned_to_id: document.getElementById('reparacion-tecnico')?.value || null
             };
 
@@ -840,7 +967,7 @@ class RepairsUI {
             }
 
             if (!reparacion.cliente_id) {
-                app.showToast('Selecciona un cliente', 'error');
+                app.showToast('ERROR: Selecciona un cliente', 'error');
                 return;
             }
 
@@ -995,6 +1122,9 @@ class RepairsUI {
         document.getElementById('btn-clear-signature')?.addEventListener('click', () => {
             this.clearSignature();
         });
+
+        // NEW: Remote Signature Logic
+        this.setupRemoteSignature();
     }
 
     clearSignature() {
@@ -1017,6 +1147,151 @@ class RepairsUI {
         const isEmpty = !Array.from(pixels).some(channel => channel !== 0);
 
         return isEmpty ? null : canvas.toDataURL();
+    }
+
+    /**
+     * REMOTE SIGNATURE (QR FLOW)
+     */
+    setupRemoteSignature() {
+        document.getElementById('btn-remote-signature')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await this.startRemoteSignature();
+        });
+
+        document.getElementById('btn-cancel-remote-signature')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.stopRemoteSignaturePolling();
+            document.getElementById('remote-signature-qr-container').style.display = 'none';
+        });
+
+        document.getElementById('btn-copy-remote-link')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('reparacion-id').value;
+            const configUrl = await db.getConfig('tracking_url');
+            let baseUrl = configUrl || 'https://reparapp.pages.dev';
+            if (baseUrl.includes('/tracking.html')) baseUrl = baseUrl.replace('/tracking.html', '');
+            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+
+            const signUrl = `${baseUrl}/remote_sign.html?id=${id}`;
+            await navigator.clipboard.writeText(signUrl);
+            app.showToast('📋 Enlace de firma copiado', 'success');
+        });
+
+        // Ensure polling stops if modal is closed
+        const originalCloseModal = this.closeModal;
+        this.closeModal = () => {
+            this.stopRemoteSignaturePolling();
+            originalCloseModal.apply(this);
+        };
+    }
+
+    async startRemoteSignature() {
+        const qrContainer = document.getElementById('remote-signature-qr-container');
+        const qrContent = document.getElementById('remote-signature-qr');
+
+        // 1. Get or Generate ID
+        let id = document.getElementById('reparacion-id').value;
+        if (!id) {
+            // Use a valid UUID (required by Supabase)
+            id = window.crypto?.randomUUID ? crypto.randomUUID() : (typeof db.generateUUID === 'function' ? db.generateUUID() : Math.random().toString(36).substring(2, 15));
+            document.getElementById('reparacion-id').value = id;
+        }
+
+        // 2. Prepare UI
+        qrContainer.style.display = 'block';
+        qrContent.innerHTML = '<div style="padding: 20px;">Generando acceso...</div>';
+
+        try {
+            // Push initial record to cloud so it exists and can be updated by mobile
+            if (window.supabaseClient?.isConfigured) {
+                const payload = {
+                    id: id,
+                    cliente_id: document.getElementById('reparacion-cliente').value || 'pending',
+                    descripcion: (document.getElementById('reparacion-dispositivo')?.value || '') + ' ' + (document.getElementById('reparacion-problema')?.value || ''),
+                    marca: document.getElementById('reparacion-marca')?.value || '',
+                    modelo: document.getElementById('reparacion-modelo')?.value || '',
+                    estado: 'waiting_signature',
+                    fecha_creacion: Date.now(),
+                    ultima_modificacion: Date.now()
+                };
+                await supabaseClient.upsertReparacion(payload);
+            } else {
+                app.showToast('⚠️ No hay conexión a la nube configurada', 'warning');
+            }
+
+            // 3. Generate QR Link
+            const configUrl = await db.getConfig('tracking_url');
+            let baseUrl = configUrl || 'https://reparapp.pages.dev';
+
+            // Clean URL to point to directory base
+            if (baseUrl.includes('/tracking.html')) baseUrl = baseUrl.replace('/tracking.html', '');
+            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
+
+            const signUrl = `${baseUrl}/remote_sign.html?id=${id}`;
+
+            const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(signUrl)}`;
+
+            qrContent.innerHTML = `<img src="${qrImgUrl}" alt="QR Signature" style="display: block; width: 180px; height: 180px;">`;
+
+            // 4. Start Polling
+            this.pollRemoteSignature(id);
+
+        } catch (e) {
+            console.error('Remote signature error:', e);
+            qrContent.innerHTML = `<div style="color: var(--danger); padding: 10px;">Error al conectar con la nube.<br>${e.message}</div>`;
+        }
+    }
+
+    pollRemoteSignature(id) {
+        this.stopRemoteSignaturePolling();
+
+        this.remoteSignInterval = setInterval(async () => {
+            try {
+                if (!window.supabaseClient?.isConfigured) return;
+
+                const { data, error } = await supabaseClient.client
+                    .from('reparaciones')
+                    .select('signature, signatureStrokes, rgpd_accepted')
+                    .eq('id', id)
+                    .single();
+
+                if (data && data.signature) {
+                    // SUCCESS! Received signature from mobile
+                    this.stopRemoteSignaturePolling();
+                    document.getElementById('remote-signature-qr-container').style.display = 'none';
+
+                    // Update main canvas strokes
+                    this.allStrokes = data.signatureStrokes || [];
+                    if (typeof this.redrawSignature === 'function') {
+                        this.redrawSignature();
+                    }
+
+                    // Ensure local RGPD checkbox is checked
+                    const rgpdCheck = document.getElementById('rgpd-accept-checkbox');
+                    if (rgpdCheck) {
+                        rgpdCheck.checked = true;
+                        // Display the signature section (which might have been hidden/dimmed)
+                        const sigSection = document.getElementById('signature-section');
+                        if (sigSection) {
+                            sigSection.style.opacity = '1';
+                            sigSection.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    app.showToast('✅ ¡Firma recibida correctamente!', 'success');
+                }
+            } catch (e) {
+                // Ignore silent errors during polling
+                console.log('Polling remote sign...');
+            }
+        }, 3000);
+    }
+
+    stopRemoteSignaturePolling() {
+        if (this.remoteSignInterval) {
+            clearInterval(this.remoteSignInterval);
+            this.remoteSignInterval = null;
+        }
     }
 
     /**
@@ -1063,7 +1338,8 @@ class RepairsUI {
                 id: product.id,
                 nombre: product.nombre,
                 precio: product.precio_venta,
-                cantidad: 1
+                cantidad: 1,
+                sn: ''
             });
         }
 
@@ -1086,7 +1362,13 @@ class RepairsUI {
             totalParts += (part.precio * part.cantidad);
             const tr = document.createElement('tr');
             tr.innerHTML = `
-    < td style = "padding: 8px;" > ${this.escapeHtml(part.nombre)}</td >
+                <td style="padding: 8px;">${this.escapeHtml(part.nombre)}</td>
+                <td style="padding: 8px;">
+                    <input type="text" class="form-input" style="font-size: 0.75rem; padding: 4px; background: rgba(0,0,0,0.2);" 
+                        value="${this.escapeHtml(part.sn || '')}" 
+                        onchange="repUI.updatePartSN(${index}, this.value)" 
+                        placeholder="S/N o Lote">
+                </td>
                 <td style="text-align: center; padding: 8px;">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <button type="button" class="btn-qty" onclick="repUI.updatePartQty(${index}, -1)">-</button>
@@ -1107,7 +1389,7 @@ class RepairsUI {
         if (this.usedParts.length > 0) {
             const footerRow = document.createElement('tr');
             footerRow.innerHTML = `
-    < td colspan = "2" style = "text-align: right; font-weight: bold; padding: 8px;" > Total Repuestos:</td >
+                <td colspan="3" style="text-align: right; font-weight: bold; padding: 8px;">Total Repuestos:</td>
                 <td style="text-align: right; font-weight: bold; color: var(--warning); padding: 8px;">${app.formatPrice(totalParts)}</td>
                 <td></td>
 `;
@@ -1118,6 +1400,15 @@ class RepairsUI {
         const priceInput = document.getElementById('reparacion-precio');
         if (priceInput && (!priceInput.value || priceInput.value == "0")) {
             priceInput.value = totalParts;
+        }
+    }
+
+    updatePartSN(index, value) {
+        const part = this.usedParts[index];
+        if (part) {
+            part.sn = value;
+            // No need to re-render everything to avoid losing focus if editing, 
+            // usedParts is updated by reference.
         }
     }
 
@@ -1269,8 +1560,8 @@ class RepairsUI {
         const dispositivo = `${this.getDispositivoLabel(rep.dispositivo)} ${rep.marca || ''} ${rep.modelo || ''}`.trim();
         const imei = rep.imei || 'N/A';
 
-        // ANONYMOUS SMART LINK (GitHub Stable)
-        let trackUrl = 'https://david1932.github.io/reparapp/tracking.html';
+        // ANONYMOUS SMART LINK (Cloudflare Pages)
+        let trackUrl = this.trackingUrl || 'https://reparapp.pages.dev';
         const sUrl = window.supabaseClient?.url;
         const sKey = window.supabaseClient?.anonKey;
         if (sUrl && sKey) {

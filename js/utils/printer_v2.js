@@ -34,6 +34,30 @@ class Printer {
     }
 
     /**
+     * Envía comando de apertura al cajón portamonedas
+     */
+    async openDrawer() {
+        try {
+            const printerName = await db.getConfig('pos_printer_name');
+            if (!printerName) {
+                console.warn('Printer name for cash drawer not configured');
+                return;
+            }
+
+            if (window.api && window.api.printer) {
+                const result = await window.api.printer.openDrawer(printerName);
+                if (!result.success) {
+                    console.error('Failed to open drawer:', result.error);
+                }
+            } else {
+                console.warn('IPC Printer API not available');
+            }
+        } catch (error) {
+            console.error('Error in openDrawer:', error);
+        }
+    }
+
+    /**
      * Inyecta el HTML en el contenedor y lanza el diálogo de impresión
      */
     print(html) {
@@ -137,7 +161,19 @@ class Printer {
                         <img src="${qrUrl}" class="qr-img" alt="QR Estado">
                     </div>
                     
+                    ${rep.signature ? `
+                    <div style="margin-top: 4mm; border-top: 1px dashed #ccc; padding-top: 2mm;">
+                        <div style="font-size: 8px; color: #666; margin-bottom: 2mm; text-align: center;">FIRMA DEL CLIENTE</div>
+                        <div style="text-align: center;">
+                            <img src="${rep.signature}" style="max-width: 100%; height: auto; max-height: 25mm;">
+                        </div>
+                    </div>
+                    ` : ''}
+
                     <div class="legal-text">
+                        ${rep.rgpd_accepted ? `
+                        <div style="font-weight: bold; margin-bottom: 2mm;">✓ Consentimiento RGPD aceptado el ${this.formatDate(rep.rgpd_accepted_date || rep.fecha_creacion)}</div>
+                        ` : ''}
                         IMPORTANTE: Es imprescindible presentar este resguardo para retirar el equipo.
                         La garantía cubre únicamente la reparación efectuada por un plazo de 3 meses.
                         Pasados 30 días del aviso, se devengarán gastos de almacenaje (1€/día).
@@ -146,6 +182,7 @@ class Printer {
             </div>
         `;
     }
+
 
     /**
      * Plantilla Ticket Factura (Premium)
