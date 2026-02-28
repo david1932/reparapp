@@ -245,67 +245,43 @@
         const ctx = canvas.getContext('2d');
         const debugLog = document.getElementById('debug-log');
         let isDrawing = false;
-        let allStrokes = [];
+        let lastPos = { x: 0, y: 0 };
+        let allStrokes = []; // Para guardarlos al final
         let currentStroke = [];
 
         function logDebug(msg) {
             if (debugLog) debugLog.textContent = msg;
         }
 
-        function resizeInner() {
+        // --- Diagnóstico de Entrada ---
+        window.addEventListener('touchstart', () => {
+            // Si esto no cambia el fondo, el móvil no está enviando toques a la página
+            // document.body.style.borderTop = "5px solid lime"; 
+        }, { passive: true });
+
+        function resize() {
             const rect = canvas.getBoundingClientRect();
-            const ratio = window.devicePixelRatio || 1;
+            // Simplificamos: No usamos High DPI por ahora para descartar errores de escala
+            canvas.width = rect.width;
+            canvas.height = rect.height;
 
-            // Dimensiones internas (píxeles reales)
-            canvas.width = rect.width * ratio;
-            canvas.height = rect.height * ratio;
-
-            // Escalar el contexto para que las coordenadas CSS funcionen
-            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-            // Estilos por defecto
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#000';
+            ctx.strokeStyle = '#000000';
 
-            redraw();
-            logDebug(`DPI: ${ratio} | Init: ${Math.round(rect.width)}x${Math.round(rect.height)}`);
+            logDebug("Canvas: " + canvas.width + "x" + canvas.height);
         }
 
-        window.addEventListener('resize', resizeInner);
-        window.addEventListener('load', resizeInner);
-        setTimeout(resizeInner, 200);
-
-        function redraw() {
-            const ratio = window.devicePixelRatio || 1;
-            // Clear real pixels
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Re-apply ratio and styles
-            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-            ctx.lineWidth = 2.5;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#000';
-
-            allStrokes.forEach(stroke => {
-                if (stroke.length < 2) return;
-                ctx.beginPath();
-                ctx.moveTo(stroke[0].x, stroke[0].y);
-                for (let i = 1; i < stroke.length; i++) {
-                    ctx.lineTo(stroke[i].x, stroke[i].y);
-                }
-                ctx.stroke();
-            });
-        }
+        window.addEventListener('resize', resize);
+        window.addEventListener('load', resize);
+        setTimeout(resize, 500);
 
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             let clientX, clientY;
 
-            if (e.touches && e.touches[0]) {
+            if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
                 clientY = e.touches[0].clientY;
             } else {
@@ -319,63 +295,61 @@
             };
         }
 
-        // --- Core Drawing Functions ---
-        function startDrawing(e) {
-            if (e.cancelable) e.preventDefault();
+        // --- Lógica de Dibujo Directa ---
+        function start(e) {
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
             isDrawing = true;
-            const pos = getPos(e);
-            currentStroke = [pos];
+            lastPos = getPos(e);
+            currentStroke = [lastPos];
             allStrokes.push(currentStroke);
 
-            // Feedback visual inmediato
+            // Punto inicial
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 1, 0, Math.PI * 2);
-            ctx.fillStyle = '#000';
-            ctx.fill();
-
-            logDebug(`START: ${Math.round(pos.x)},${Math.round(pos.y)}`);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(lastPos.x, lastPos.y, 2, 2);
+            logDebug("START: " + Math.round(lastPos.x) + "," + Math.round(lastPos.y));
         }
 
-        function moveDrawing(e) {
+        function move(e) {
             if (!isDrawing) return;
-            if (e.cancelable) e.preventDefault();
+            if (e.target === canvas) {
+                e.preventDefault();
+            }
 
-            const pos = getPos(e);
-            const prev = currentStroke[currentStroke.length - 1];
-            currentStroke.push(pos);
+            const newPos = getPos(e);
 
-            // Dibujar segmento inmediato
             ctx.beginPath();
-            ctx.moveTo(prev.x, prev.y);
-            ctx.lineTo(pos.x, pos.y);
+            ctx.moveTo(lastPos.x, lastPos.y);
+            ctx.lineTo(newPos.x, newPos.y);
             ctx.stroke();
 
-            logDebug(`MOVE: ${currentStroke.length} pts`);
+            lastPos = newPos;
+            currentStroke.push(lastPos);
+            logDebug("DIBUJANDO... (" + currentStroke.length + " pts)");
         }
 
-        function stopDrawing(e) {
+        function stop(e) {
             if (!isDrawing) return;
             isDrawing = false;
-            redraw(); // Redibuja todo para antialiasing perfecto
-            logDebug(`STOP: Saved`);
+            logDebug("FIN: Firma guardada");
         }
 
-        // --- Unified Event Integration ---
-        if (window.PointerEvent) {
-            canvas.addEventListener('pointerdown', startDrawing);
-            canvas.addEventListener('pointermove', moveDrawing);
-            canvas.addEventListener('pointerup', stopDrawing);
-            canvas.addEventListener('pointercancel', stopDrawing);
-            canvas.style.touchAction = 'none';
-        } else {
-            canvas.addEventListener('touchstart', startDrawing, { passive: false });
-            canvas.addEventListener('touchmove', moveDrawing, { passive: false });
-            canvas.addEventListener('touchend', stopDrawing);
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', moveDrawing);
-            window.addEventListener('mouseup', stopDrawing);
-        }
+        // Eventos Touch (Móviles) - Forzamos passive: false
+        canvas.addEventListener('touchstart', start, { passive: false });
+        canvas.addEventListener('touchmove', move, { passive: false });
+        canvas.addEventListener('touchend', stop, { passive: false });
 
+        // Eventos Mouse (PC / Fallback)
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', stop);
+
+        // Bloqueo de scroll en el canvas
+        canvas.style.touchAction = 'none';
+
+        // --- Interfaz ---
         const rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
         const submitBtn = document.getElementById('btn-submit');
 
@@ -390,8 +364,9 @@
         });
 
         document.getElementById('btn-clear').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             allStrokes = [];
-            redraw();
+            logDebug("Limpio");
         });
 
         document.getElementById('btn-submit').addEventListener('click', async () => {
@@ -424,10 +399,10 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (!response.ok) throw new Error('Local server error');
+                    if (!response.ok) throw new Error('Error en servidor local');
                 } else {
                     // Send to Supabase (Cloud)
-                    if (!supabase) throw new Error('Supabase no disponible (¿Estás sin internet? Usa el modo Local)');
+                    if (!supabase) throw new Error('Supabase no disponible');
                     const { error } = await supabase
                         .from('reparaciones')
                         .update(payload)
