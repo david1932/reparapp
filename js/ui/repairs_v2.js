@@ -1204,12 +1204,28 @@ class RepairsUI {
     }
 
     async handleSignatureResult(data) {
-        document.getElementById('remote-signature-qr-container').style.display = 'none';
+        if (!data) return;
+        console.log('HANDLING SIGNATURE RESULT:', data);
+
+        // Visual Feedback: Unmistakable Toast or Alert
+        if (typeof app !== 'undefined' && app.showToast) {
+            app.showToast('🚀 FIRMA RECIBIDA: Dibujando en pantalla...', 'success');
+        } else if (window.app && window.app.showToast) {
+            window.app.showToast('🚀 FIRMA RECIBIDA: Dibujando en pantalla...', 'success');
+        } else {
+            alert('¡FIRMA RECIBIDA EN EL PC!');
+        }
+
+        const qrContainer = document.getElementById('remote-signature-qr-container');
+        if (qrContainer) qrContainer.style.display = 'none';
+
         this.stopRemoteSignaturePolling();
 
         if (data.signature) {
             const canvas = document.getElementById('signature-pad');
             if (canvas) {
+                // Change background to blue-tint to confirm receipt
+                canvas.style.background = '#e0f2fe';
                 const ctx = canvas.getContext('2d');
                 const img = new Image();
                 img.onload = () => {
