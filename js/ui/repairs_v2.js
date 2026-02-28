@@ -75,18 +75,28 @@ class RepairsUI {
         // Signature Pad initialization
         this.setupSignaturePad();
 
-        // RGPD Checkbox toggle — enable signature when accepted
+        // RGPD Checkbox toggle — enable signature pad when accepted
         document.getElementById('rgpd-accept-checkbox')?.addEventListener('change', (e) => {
-            const sigSection = document.getElementById('signature-section');
-            if (sigSection) {
+            const sigArea = document.getElementById('signature-canvas-area');
+            if (sigArea) {
                 if (e.target.checked) {
-                    sigSection.style.opacity = '1';
-                    sigSection.style.pointerEvents = 'auto';
+                    sigArea.style.opacity = '1';
+                    sigArea.style.pointerEvents = 'auto';
                 } else {
-                    sigSection.style.opacity = '0.3';
-                    sigSection.style.pointerEvents = 'none';
+                    sigArea.style.opacity = '0.3';
+                    sigArea.style.pointerEvents = 'none';
                 }
             }
+        });
+
+        // Botón Firma Local
+        document.getElementById('btn-local-signature')?.addEventListener('click', () => {
+            this.startLocalSignature();
+        });
+
+        // Botón Limpiar Firma
+        document.getElementById('btn-clear-signature')?.addEventListener('click', () => {
+            this.clearSignature();
         });
 
         // Parts Search initialization
@@ -865,20 +875,20 @@ class RepairsUI {
 
                 // Reset RGPD checkbox and signature section
                 const rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
-                const sigSection = document.getElementById('signature-section');
+                const sigArea = document.getElementById('signature-canvas-area');
                 if (rgpdCheckbox) {
                     // If editing and already accepted, keep checked
                     if (id && currentRep && currentRep.rgpd_accepted) {
                         rgpdCheckbox.checked = true;
-                        if (sigSection) { sigSection.style.opacity = '1'; sigSection.style.pointerEvents = 'auto'; }
+                        if (sigArea) { sigArea.style.opacity = '1'; sigArea.style.pointerEvents = 'auto'; }
                     } else {
                         rgpdCheckbox.checked = false;
-                        if (sigSection) { sigSection.style.opacity = '0.3'; sigSection.style.pointerEvents = 'none'; }
+                        if (sigArea) { sigArea.style.opacity = '0.3'; sigArea.style.pointerEvents = 'none'; }
                     }
                 }
             } catch (dataError) {
                 console.error('Error loading data for modal:', dataError);
-                selectCliente.innerHTML = `< option value = "" > ${i18n.t('err_loading_clients')}</option > `;
+                selectCliente.innerHTML = `<option value="">${i18n.t('err_loading_clients')}</option>`;
             }
 
         } catch (error) {
@@ -1123,8 +1133,15 @@ class RepairsUI {
             this.clearSignature();
         });
 
-        // NEW: Remote Signature Logic
-        this.setupRemoteSignature();
+        // Listen for signatures from local server (WiFi)
+        if (window.api?.signature) {
+            window.api.signature.onReceived((data) => {
+                const currentId = document.getElementById('reparacion-id')?.value;
+                if (data && data.id === currentId) {
+                    this.handleSignatureResult(data);
+                }
+            });
+        }
     }
 
     clearSignature() {
@@ -1133,6 +1150,7 @@ class RepairsUI {
         if (canvas) {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas.style.background = '#ffffff'; // Clear background
             this.signatureChanged = false;
         }
     }
@@ -1149,75 +1167,19 @@ class RepairsUI {
         return isEmpty ? null : canvas.toDataURL();
     }
 
-    /**
-     * REMOTE SIGNATURE (QR FLOW)
-     */
-    setupRemoteSignature() {
-        document.getElementById('btn-remote-signature')?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.startRemoteSignature();
-        });
-
-        document.getElementById('btn-local-signature')?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            await this.startLocalSignature();
-        });
-
-        document.getElementById('btn-cancel-remote-signature')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.stopRemoteSignaturePolling();
-            document.getElementById('remote-signature-qr-container').style.display = 'none';
-        });
-
-        document.getElementById('btn-copy-remote-link')?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('reparacion-id').value;
-            const configUrl = await db.getConfig('tracking_url');
-            let baseUrl = configUrl || 'https://david1932.github.io/reparapp';
-            if (baseUrl.includes('/tracking.html')) baseUrl = baseUrl.replace('/tracking.html', '');
-            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
-
-            const signUrl = `${baseUrl}/remote_sign.html?id=${id}`;
-            await navigator.clipboard.writeText(signUrl);
-            app.showToast('📋 Enlace de firma copiado', 'success');
-        });
-
-        // Listen for signatures from local server (WiFi)
-        if (window.api?.signature) {
-            window.api.signature.onReceived((data) => {
-                this.handleSignatureResult(data);
-            });
-        }
-
-        // Ensure polling stops if modal is closed
-        const originalCloseModal = this.closeModal;
-        this.closeModal = () => {
-            if (typeof this.stopRemoteSignaturePolling === 'function') {
-                this.stopRemoteSignaturePolling();
-            }
-            if (window.api?.signature) {
-                window.api.signature.stopServer();
-            }
-            originalCloseModal.apply(this);
-        };
-    }
-
     async handleSignatureResult(data) {
         if (!data) return;
 
         const qrContainer = document.getElementById('remote-signature-qr-container');
         if (qrContainer) qrContainer.style.display = 'none';
 
-        this.stopRemoteSignaturePolling();
-
         if (data.signature) {
             const canvas = document.getElementById('signature-pad');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
-
                 const img = new Image();
                 img.onload = () => {
-                    // Reset transform to draw image at physical pixel dimensions
+                    // 1. Draw Image First
                     ctx.save();
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1226,132 +1188,40 @@ class RepairsUI {
 
                     canvas.style.background = '#ffffff';
                     this.signatureChanged = true;
+
+                    // 2. Scale strokes and store for persistence (on top of image)
+                    if (data.signatureStrokes && data.canvasWidth && data.canvasHeight) {
+                        const logicalWidth = canvas.width / (window.devicePixelRatio || 1);
+                        const logicalHeight = canvas.height / (window.devicePixelRatio || 1);
+                        const scaleX = logicalWidth / data.canvasWidth;
+                        const scaleY = logicalHeight / data.canvasHeight;
+                        this.allStrokes = data.signatureStrokes.map(stroke =>
+                            stroke.map(p => ({ x: p.x * scaleX, y: p.y * scaleY }))
+                        );
+                    } else {
+                        this.allStrokes = data.signatureStrokes || [];
+                    }
+
+                    // 3. Update RGPD UI (Client accepted on their phone)
+                    const rgpdCheck = document.getElementById('rgpd-accept-checkbox');
+                    if (rgpdCheck) {
+                        rgpdCheck.checked = true;
+                        const sigArea = document.getElementById('signature-canvas-area');
+                        if (sigArea) {
+                            sigArea.style.opacity = '1';
+                            sigArea.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    app.showToast('✅ ¡Firma recibida correctamente!', 'success');
                 };
-                img.onerror = (e) => {
-                    console.error('Image LOAD ERROR:', e);
-                    if (typeof app !== 'undefined') app.showToast('❌ Error de imagen de firma', 'error');
+                img.onerror = () => {
+                    console.error('Signature image load error');
+                    app.showToast('❌ Error al cargar imagen de firma', 'error');
                 };
                 img.src = data.signature;
             }
-
-            // 2. Scale strokes for persistence/resize
-            // If mobile sent dimensions, we use them. 
-            // PC Strokes are stored in LOGICAL pixels (pre-scaling)
-            if (data.signatureStrokes && data.canvasWidth && data.canvasHeight) {
-                const logicalWidth = canvas.width / (window.devicePixelRatio || 1);
-                const logicalHeight = canvas.height / (window.devicePixelRatio || 1);
-
-                const scaleX = logicalWidth / data.canvasWidth;
-                const scaleY = logicalHeight / data.canvasHeight;
-
-                this.allStrokes = data.signatureStrokes.map(stroke =>
-                    stroke.map(p => ({
-                        x: p.x * scaleX,
-                        y: p.y * scaleY
-                    }))
-                );
-            } else {
-                this.allStrokes = data.signatureStrokes || [];
-            }
-
-            // Trigger a redraw of strokes to ensure they are in memory correctly
-            if (typeof this.redrawSignature === 'function') {
-                this.redrawSignature();
-            }
-
-            // 3. Update RGPD UI
-            const rgpdCheck = document.getElementById('rgpd-accept-checkbox');
-            if (rgpdCheck) {
-                rgpdCheck.checked = true;
-                const sigSection = document.getElementById('signature-section');
-                if (sigSection) {
-                    sigSection.style.opacity = '1';
-                    sigSection.style.pointerEvents = 'auto';
-                }
-            }
-
-            app.showToast('✅ ¡Firma recibida correctamente!', 'success');
         }
-    }
-
-    async startRemoteSignature() {
-        const qrContainer = document.getElementById('remote-signature-qr-container');
-        const qrContent = document.getElementById('remote-signature-qr');
-
-        // 1. Get or Generate ID
-        let id = document.getElementById('reparacion-id').value;
-        if (!id) {
-            // Use a valid UUID (required by Supabase)
-            id = window.crypto?.randomUUID ? crypto.randomUUID() : (typeof db.generateUUID === 'function' ? db.generateUUID() : Math.random().toString(36).substring(2, 15));
-            document.getElementById('reparacion-id').value = id;
-        }
-
-        // 2. Prepare UI
-        qrContainer.style.display = 'block';
-        qrContent.innerHTML = '<div style="padding: 20px;">Generando acceso...</div>';
-
-        try {
-            // Push initial record to cloud so it exists and can be updated by mobile
-            if (window.supabaseClient?.isConfigured) {
-                const payload = {
-                    id: id,
-                    cliente_id: document.getElementById('reparacion-cliente').value || 'pending',
-                    descripcion: (document.getElementById('reparacion-dispositivo')?.value || '') + ' ' + (document.getElementById('reparacion-problema')?.value || ''),
-                    marca: document.getElementById('reparacion-marca')?.value || '',
-                    modelo: document.getElementById('reparacion-modelo')?.value || '',
-                    estado: 'waiting_signature',
-                    fecha_creacion: Date.now(),
-                    ultima_modificacion: Date.now()
-                };
-                await supabaseClient.upsertReparacion(payload);
-            } else {
-                app.showToast('⚠️ No hay conexión a la nube configurada', 'warning');
-            }
-
-            // 3. Generate QR Link
-            const configUrl = await db.getConfig('tracking_url');
-            let baseUrl = configUrl || 'https://david1932.github.io/reparapp';
-
-            // Clean URL to point to directory base
-            if (baseUrl.includes('/tracking.html')) baseUrl = baseUrl.replace('/tracking.html', '');
-            if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
-
-            const signUrl = `${baseUrl}/remote_sign.html?id=${id}`;
-
-            const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(signUrl)}`;
-
-            qrContent.innerHTML = `<img src="${qrImgUrl}" alt="QR Signature" style="display: block; width: 180px; height: 180px;">`;
-
-            // 4. Start Polling
-            this.pollRemoteSignature(id);
-
-        } catch (e) {
-            console.error('Remote signature error:', e);
-            qrContent.innerHTML = `<div style="color: var(--danger); padding: 10px;">Error al conectar con la nube.<br>${e.message}</div>`;
-        }
-    }
-
-    pollRemoteSignature(id) {
-        this.stopRemoteSignaturePolling();
-
-        this.remoteSignInterval = setInterval(async () => {
-            try {
-                if (!window.supabaseClient?.isConfigured) return;
-
-                const { data, error } = await supabaseClient.client
-                    .from('reparaciones')
-                    .select('signature, signatureStrokes, rgpd_accepted')
-                    .eq('id', id)
-                    .single();
-
-                if (data && data.signature) {
-                    this.handleSignatureResult(data);
-                }
-            } catch (e) {
-                // Ignore silent errors during polling
-                console.log('Polling remote sign...');
-            }
-        }, 3000);
     }
 
     async startLocalSignature() {
