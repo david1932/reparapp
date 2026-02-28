@@ -198,6 +198,9 @@
         </div>
 
         <div id="status-msg">Enviando...</div>
+        <div id="debug-log"
+            style="font-size: 0.6rem; color: var(--text-dim); margin-top: 10px; font-family: monospace; white-space: pre-wrap; opacity: 0.5;">
+        </div>
     </div>
 
     <div class="container success-screen" id="success-screen">
@@ -207,6 +210,13 @@
     </div>
 
     <script>
+        // --- Error Boundary for Mobile Debugging ---
+        window.onerror = function (msg, url, line) {
+            const log = document.getElementById('debug-log');
+            if (log) log.innerHTML += `ERR: ${msg} (Ln: ${line})\n`;
+            return false;
+        };
+
         const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
 
@@ -219,7 +229,7 @@
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             } catch (e) {
-                console.warn('Supabase init failed, but might be offline local mode.');
+                console.warn('Supabase init failed');
             }
         }
 
@@ -233,14 +243,23 @@
 
         const canvas = document.getElementById('sig-pad');
         const ctx = canvas.getContext('2d');
+        const debugLog = document.getElementById('debug-log');
         let isDrawing = false;
         let allStrokes = [];
         let currentStroke = [];
 
+        function logDebug(msg) {
+            if (debugLog) {
+                debugLog.textContent = msg;
+            }
+        }
+
         function resizeInner() {
-            const rect = canvas.parentElement.getBoundingClientRect();
+            const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
+
+            // Re-apply styles
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -249,13 +268,13 @@
         }
 
         window.addEventListener('resize', resizeInner);
-        resizeInner();
+        window.addEventListener('load', resizeInner);
+        setTimeout(resizeInner, 100); // Hack for delayed layout
 
         function redraw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (allStrokes.length === 0) return;
 
-            // Re-apply styles after clear
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -274,46 +293,64 @@
 
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
-            // Soporta Mouse, Touch y Pointer Events
-            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            let x, y;
 
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
+            if (e.touches && e.touches[0]) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+
+            return { x, y };
         }
 
-        // --- Eventos de Dibujo (Touch + Mouse) ---
+        // --- Eventos de Dibujo ---
         function startDrawing(e) {
-            e.preventDefault();
+            // No llamar a e.preventDefault() en mousedown para evitar bloquear clicks en botones cercanos si hay lag
+            if (e.type === 'touchstart') e.preventDefault();
+
             isDrawing = true;
-            currentStroke = [getPos(e)];
+            const pos = getPos(e);
+            currentStroke = [pos];
             allStrokes.push(currentStroke);
+            logDebug(`Touch start at ${Math.round(pos.x)},${Math.round(pos.y)}`);
         }
 
         function moveDrawing(e) {
             if (!isDrawing) return;
-            e.preventDefault();
+            if (e.type === 'touchmove') e.preventDefault();
+
             const pos = getPos(e);
             currentStroke.push(pos);
+            logDebug(`Drawing... ${allStrokes.length} strokes`);
             redraw();
         }
 
-        function stopDrawing() {
+        function stopDrawing(e) {
+            if (!isDrawing) return;
             isDrawing = false;
+            logDebug(`Signature saved. Total points: ${allStrokes.reduce((acc, s) => acc + s.length, 0)}`);
         }
 
-        // Touch Listeners
-        canvas.addEventListener('touchstart', startDrawing, { passive: false });
-        canvas.addEventListener('touchmove', moveDrawing, { passive: false });
-        canvas.addEventListener('touchend', stopDrawing);
+        // Pointer Events (Moderno y unificado)
+        if (window.PointerEvent) {
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', moveDrawing);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointercancel', stopDrawing);
+            canvas.style.touchAction = 'none'; // CRITICAL for pointer events
+        } else {
+            // Fallback para navegadores antiguos
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', moveDrawing, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
 
-        // Mouse Listeners (Para pruebas en PC o tablets con ratón)
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', moveDrawing);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseleave', stopDrawing);
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', moveDrawing);
+            canvas.addEventListener('mouseup', stopDrawing);
+        }
 
         const rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
         const submitBtn = document.getElementById('btn-submit');
