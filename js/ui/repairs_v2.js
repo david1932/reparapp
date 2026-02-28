@@ -1185,7 +1185,6 @@ class RepairsUI {
         // Listen for signatures from local server (WiFi)
         if (window.api?.signature) {
             window.api.signature.onReceived((data) => {
-                console.log('Signature received from local device:', data);
                 this.handleSignatureResult(data);
             });
         }
@@ -1205,17 +1204,6 @@ class RepairsUI {
 
     async handleSignatureResult(data) {
         if (!data) return;
-        console.log('HANDLING SIGNATURE RESULT:', data);
-        const sigLen = data.signature ? data.signature.length : 0;
-
-        // Visual Feedback: Standard Toast + Data Info
-        if (typeof app !== 'undefined' && app.showToast) {
-            app.showToast(`🚀 Firma recibida (${sigLen} bytes). Dibujando...`, 'success');
-        } else if (window.app && window.app.showToast) {
-            window.app.showToast(`🚀 Firma recibida (${sigLen} bytes). Dibujando...`, 'success');
-        } else {
-            alert('¡FIRMA RECIBIDA! Longitud: ' + sigLen);
-        }
 
         const qrContainer = document.getElementById('remote-signature-qr-container');
         if (qrContainer) qrContainer.style.display = 'none';
@@ -1227,36 +1215,17 @@ class RepairsUI {
             if (canvas) {
                 const ctx = canvas.getContext('2d');
 
-                // DIAGNOSTIC 1: Force canvas to be visible and have size
-                canvas.style.display = 'block';
-                if (canvas.width === 0 || canvas.height === 0) {
-                    canvas.width = 400;
-                    canvas.height = 150;
-                }
-
-                // DIAGNOSTIC 2: Draw a big RED TEST RECTANGLE to prove canvas is working
-                ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = "red";
-                ctx.lineWidth = 5;
-                ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
-                console.log("Diagnostic rectangle drawn");
-
                 const img = new Image();
                 img.onload = () => {
-                    console.log('Image element loaded. Width:', img.width, 'Height:', img.height);
-
                     // Reset transform to draw image at physical pixel dimensions
                     ctx.save();
                     ctx.setTransform(1, 0, 0, 1, 0, 0);
-                    // Clear the red diagnostic rect and draw the signature
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     ctx.restore();
 
                     canvas.style.background = '#ffffff';
                     this.signatureChanged = true;
-                    console.log('Signature image rendered');
                 };
                 img.onerror = (e) => {
                     console.error('Image LOAD ERROR:', e);
