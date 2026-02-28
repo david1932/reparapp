@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Firmar Reparación - ReparApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --border-card: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --primary: #22d3ee;
+            --success: #34d399;
+            --danger: #f87171;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .terms-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-dim);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .signature-container {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            touch-action: none;
+        }
+
+        canvas {
+            width: 100%;
+            height: 250px;
+            display: block;
+            border-radius: 16px;
+            cursor: crosshair;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-clear {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--danger);
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: #000;
+        }
+
+        #status-msg {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-screen {
+            display: none;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="main-ui">
+        <div class="header">
+            <h1>✍️ Tu Firma</h1>
+            <p id="device-info" style="font-size: 0.9rem; opacity: 0.7;">Por favor, firma en el recuadro blanco</p>
+        </div>
+
+        <div class="terms-box">
+            <strong>CONDICIONES Y RGPD:</strong><br>
+            Acepto que mis datos sean tratados para la gestión de esta reparación. El cliente declara que el equipo
+            entregado es de su propiedad. La garantía de reparación es de 3 meses. He sido informado y acepto las
+            condiciones de servicio.
+        </div>
+
+        <div class="signature-container">
+            <canvas id="sig-pad"></canvas>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-clear" id="btn-clear">Limpiar</button>
+            <button class="btn btn-submit" id="btn-submit">Enviar Firma</button>
+        </div>
+
+        <div id="status-msg">Enviando...</div>
+    </div>
+
+    <div class="container success-screen" id="success-screen">
+        <div class="success-icon">✅</div>
+        <h2>¡Firma Enviada!</h2>
+        <p>Ya puedes cerrar esta ventana. Tu reparación se ha actualizado en el taller.</p>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+
+        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const repairId = urlParams.get('id');
+
+        if (!repairId) {
+            document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>Error</h2><p>Enlace de firma inválido.</p></div>';
+        }
+
+        const canvas = document.getElementById('sig-pad');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let allStrokes = [];
+        let currentStroke = [];
+
+        function resizeInner() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = '#000';
+            redraw();
+        }
+
+        window.addEventListener('resize', resizeInner);
+        resizeInner();
+
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            allStrokes.forEach(stroke => {
+                if (stroke.length < 2) return;
+                ctx.beginPath();
+                ctx.moveTo(stroke[0].x, stroke[0].y);
+                for (let i = 1; i < stroke.length; i++) {
+                    ctx.lineTo(stroke[i].x, stroke[i].y);
+                }
+                ctx.stroke();
+            });
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDrawing = true;
+            currentStroke = [getPos(e)];
+            allStrokes.push(currentStroke);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing) return;
+            e.preventDefault();
+            currentStroke.push(getPos(e));
+            redraw();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            allStrokes = [];
+            redraw();
+        });
+
+        document.getElementById('btn-submit').addEventListener('click', async () => {
+            if (allStrokes.length === 0) {
+                alert('Por favor, firma antes de enviar.');
+                return;
+            }
+
+            const statusMsg = document.getElementById('status-msg');
+            const btnSubmit = document.getElementById('btn-submit');
+
+            statusMsg.style.display = 'block';
+            statusMsg.textContent = '⏱️ Enviando firma...';
+            btnSubmit.disabled = true;
+
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+
+                // Actualizar en Supabase
+                const { error } = await supabase
+                    .from('reparaciones')
+                    .update({
+                        signature: dataUrl,
+                        signatureStrokes: allStrokes,
+                        rgpd_accepted: true,
+                        rgpd_accepted_date: new Date().toISOString()
+                    })
+                    .eq('id', repairId);
+
+                if (error) throw error;
+
+                document.getElementById('main-ui').style.display = 'none';
+                document.getElementById('success-screen').style.display = 'block';
+            } catch (err) {
+                console.error(err);
+                statusMsg.textContent = '❌ Error al enviar. Reintenta.';
+                btnSubmit.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
