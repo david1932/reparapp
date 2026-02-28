@@ -1206,14 +1206,15 @@ class RepairsUI {
     async handleSignatureResult(data) {
         if (!data) return;
         console.log('HANDLING SIGNATURE RESULT:', data);
+        const sigLen = data.signature ? data.signature.length : 0;
 
-        // Visual Feedback: Unmistakable Toast or Alert
+        // Visual Feedback: Standard Toast + Data Info
         if (typeof app !== 'undefined' && app.showToast) {
-            app.showToast('🚀 FIRMA RECIBIDA: Dibujando en pantalla...', 'success');
+            app.showToast(`🚀 Firma recibida (${sigLen} bytes). Dibujando...`, 'success');
         } else if (window.app && window.app.showToast) {
-            window.app.showToast('🚀 FIRMA RECIBIDA: Dibujando en pantalla...', 'success');
+            window.app.showToast(`🚀 Firma recibida (${sigLen} bytes). Dibujando...`, 'success');
         } else {
-            alert('¡FIRMA RECIBIDA EN EL PC!');
+            alert('¡FIRMA RECIBIDA! Longitud: ' + sigLen);
         }
 
         const qrContainer = document.getElementById('remote-signature-qr-container');
@@ -1224,24 +1225,55 @@ class RepairsUI {
         if (data.signature) {
             const canvas = document.getElementById('signature-pad');
             if (canvas) {
-                // Change background to blue-tint to confirm receipt
-                canvas.style.background = '#e0f2fe';
                 const ctx = canvas.getContext('2d');
+
+                // DIAGNOSTIC 1: Force canvas to be visible and have size
+                canvas.style.display = 'block';
+                if (canvas.width === 0 || canvas.height === 0) {
+                    canvas.width = 400;
+                    canvas.height = 150;
+                }
+
+                // DIAGNOSTIC 2: Draw a big RED TEST RECTANGLE to prove canvas is working
+                ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = "red";
+                ctx.lineWidth = 5;
+                ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+                console.log("Diagnostic rectangle drawn");
+
                 const img = new Image();
                 img.onload = () => {
-                    // 1. Draw image for perfect visual match
+                    console.log('Image element loaded. Width:', img.width, 'Height:', img.height);
+
+                    // Reset transform to draw image at physical pixel dimensions
+                    ctx.save();
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    // Clear the red diagnostic rect and draw the signature
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+
+                    canvas.style.background = '#ffffff';
                     this.signatureChanged = true;
+                    console.log('Signature image rendered');
+                };
+                img.onerror = (e) => {
+                    console.error('Image LOAD ERROR:', e);
+                    if (typeof app !== 'undefined') app.showToast('❌ Error de imagen de firma', 'error');
                 };
                 img.src = data.signature;
             }
 
             // 2. Scale strokes for persistence/resize
+            // If mobile sent dimensions, we use them. 
+            // PC Strokes are stored in LOGICAL pixels (pre-scaling)
             if (data.signatureStrokes && data.canvasWidth && data.canvasHeight) {
-                const canvasRect = document.getElementById('signature-pad').getBoundingClientRect();
-                const scaleX = canvasRect.width / data.canvasWidth;
-                const scaleY = canvasRect.height / data.canvasHeight;
+                const logicalWidth = canvas.width / (window.devicePixelRatio || 1);
+                const logicalHeight = canvas.height / (window.devicePixelRatio || 1);
+
+                const scaleX = logicalWidth / data.canvasWidth;
+                const scaleY = logicalHeight / data.canvasHeight;
 
                 this.allStrokes = data.signatureStrokes.map(stroke =>
                     stroke.map(p => ({
@@ -1251,6 +1283,11 @@ class RepairsUI {
                 );
             } else {
                 this.allStrokes = data.signatureStrokes || [];
+            }
+
+            // Trigger a redraw of strokes to ensure they are in memory correctly
+            if (typeof this.redrawSignature === 'function') {
+                this.redrawSignature();
             }
 
             // 3. Update RGPD UI

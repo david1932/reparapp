@@ -3204,8 +3204,14 @@
                                 🗑️ Limpiar
                             </button>
                             <button type="button" id="btn-remote-signature" class="btn btn-sm"
-                                style="color: var(--primary); background: rgba(34, 211, 238, 0.1);">
+                                style="color: var(--primary); background: rgba(34, 211, 238, 0.1);"
+                                title="Firma por Internet (QR)">
                                 📱 Móvil (QR)
+                            </button>
+                            <button type="button" id="btn-local-signature" class="btn btn-sm"
+                                style="color: var(--status-success); background: rgba(0, 255, 198, 0.1);"
+                                title="Firma sin Internet (Vía WiFi local)">
+                                📶 Local (Offline)
                             </button>
                             <span
                                 style="font-size: 0.75rem; color: var(--text-secondary); flex-grow: 1; text-align: right;">✍️
@@ -3918,7 +3924,7 @@
     <script src="js/sync_secure.js"></script>
     <script src="js/ui/navigation.js"></script>
     <script src="js/ui/clients.js"></script>
-    <script src="js/ui/repairs_v2.js?v=FIX_FINAL"></script> <!-- RENAMED -->
+    <script src="js/ui/repairs_v2.js?v=SYNC_FIX_2"></script> <!-- RENAMED -->
     <script src="js/ui/invoices.js"></script>
     <script src="js/ui/inventory.js"></script>
     <script src="js/ui/appointments.js"></script>

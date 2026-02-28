@@ -383,6 +383,9 @@
             btnSubmit.disabled = true;
 
             var dataUrl = canvas.toDataURL('image/png');
+            console.log("Sending signature, length:", dataUrl.length);
+            alert('Signature length: ' + dataUrl.length);
+
             var payload = {
                 id: repairId,
                 signature: dataUrl,
@@ -394,13 +397,13 @@
             };
 
             if (isLocal) {
-                // Send to local PC server
+                logDebug("🚀 Enviando a PC...");
                 fetch('/upload-signature', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 }).then(function (response) {
-                    if (!response.ok) throw new Error('Error en servidor local');
+                    if (!response.ok) throw new Error('Error local');
                     onSuccess();
                 }).catch(function (err) {
                     onError(err);
@@ -425,6 +428,7 @@
             }
 
             function onSuccess() {
+                logDebug("✅ RECIBIDO EN PC");
                 document.getElementById('main-ui').style.display = 'none';
                 document.getElementById('success-screen').style.display = 'block';
             }
