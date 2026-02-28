@@ -1168,7 +1168,7 @@ class RepairsUI {
             e.preventDefault();
             const id = document.getElementById('reparacion-id').value;
             const configUrl = await db.getConfig('tracking_url');
-            let baseUrl = configUrl || 'https://reparapp.pages.dev';
+            let baseUrl = configUrl || 'https://david1932.github.io/reparapp';
             if (baseUrl.includes('/tracking.html')) baseUrl = baseUrl.replace('/tracking.html', '');
             if (baseUrl.endsWith('/')) baseUrl = baseUrl.slice(0, -1);
 
