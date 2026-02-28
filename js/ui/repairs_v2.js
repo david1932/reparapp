@@ -1221,7 +1221,7 @@ class RepairsUI {
 
             // 3. Generate QR Link
             const configUrl = await db.getConfig('tracking_url');
-            let baseUrl = configUrl || 'https://reparapp.pages.dev';
+            let baseUrl = configUrl || 'https://david1932.github.io/reparapp';
 
             // Clean URL to point to directory base
             if (baseUrl.includes('/tracking.html')) baseUrl = baseUrl.replace('/tracking.html', '');
