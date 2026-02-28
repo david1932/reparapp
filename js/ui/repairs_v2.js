@@ -1158,6 +1158,11 @@ class RepairsUI {
             await this.startRemoteSignature();
         });
 
+        document.getElementById('btn-local-signature')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await this.startLocalSignature();
+        });
+
         document.getElementById('btn-cancel-remote-signature')?.addEventListener('click', (e) => {
             e.preventDefault();
             this.stopRemoteSignaturePolling();
@@ -1177,12 +1182,74 @@ class RepairsUI {
             app.showToast('📋 Enlace de firma copiado', 'success');
         });
 
+        // Listen for signatures from local server (WiFi)
+        if (window.api?.signature) {
+            window.api.signature.onReceived((data) => {
+                console.log('Signature received from local device:', data);
+                this.handleSignatureResult(data);
+            });
+        }
+
         // Ensure polling stops if modal is closed
         const originalCloseModal = this.closeModal;
         this.closeModal = () => {
-            this.stopRemoteSignaturePolling();
+            if (typeof this.stopRemoteSignaturePolling === 'function') {
+                this.stopRemoteSignaturePolling();
+            }
+            if (window.api?.signature) {
+                window.api.signature.stopServer();
+            }
             originalCloseModal.apply(this);
         };
+    }
+
+    async handleSignatureResult(data) {
+        document.getElementById('remote-signature-qr-container').style.display = 'none';
+        this.stopRemoteSignaturePolling();
+
+        if (data.signature) {
+            const canvas = document.getElementById('signature-pad');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.onload = () => {
+                    // 1. Draw image for perfect visual match
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    this.signatureChanged = true;
+                };
+                img.src = data.signature;
+            }
+
+            // 2. Scale strokes for persistence/resize
+            if (data.signatureStrokes && data.canvasWidth && data.canvasHeight) {
+                const canvasRect = document.getElementById('signature-pad').getBoundingClientRect();
+                const scaleX = canvasRect.width / data.canvasWidth;
+                const scaleY = canvasRect.height / data.canvasHeight;
+
+                this.allStrokes = data.signatureStrokes.map(stroke =>
+                    stroke.map(p => ({
+                        x: p.x * scaleX,
+                        y: p.y * scaleY
+                    }))
+                );
+            } else {
+                this.allStrokes = data.signatureStrokes || [];
+            }
+
+            // 3. Update RGPD UI
+            const rgpdCheck = document.getElementById('rgpd-accept-checkbox');
+            if (rgpdCheck) {
+                rgpdCheck.checked = true;
+                const sigSection = document.getElementById('signature-section');
+                if (sigSection) {
+                    sigSection.style.opacity = '1';
+                    sigSection.style.pointerEvents = 'auto';
+                }
+            }
+
+            app.showToast('✅ ¡Firma recibida correctamente!', 'success');
+        }
     }
 
     async startRemoteSignature() {
@@ -1256,35 +1323,55 @@ class RepairsUI {
                     .single();
 
                 if (data && data.signature) {
-                    // SUCCESS! Received signature from mobile
-                    this.stopRemoteSignaturePolling();
-                    document.getElementById('remote-signature-qr-container').style.display = 'none';
-
-                    // Update main canvas strokes
-                    this.allStrokes = data.signatureStrokes || [];
-                    if (typeof this.redrawSignature === 'function') {
-                        this.redrawSignature();
-                    }
-
-                    // Ensure local RGPD checkbox is checked
-                    const rgpdCheck = document.getElementById('rgpd-accept-checkbox');
-                    if (rgpdCheck) {
-                        rgpdCheck.checked = true;
-                        // Display the signature section (which might have been hidden/dimmed)
-                        const sigSection = document.getElementById('signature-section');
-                        if (sigSection) {
-                            sigSection.style.opacity = '1';
-                            sigSection.style.pointerEvents = 'auto';
-                        }
-                    }
-
-                    app.showToast('✅ ¡Firma recibida correctamente!', 'success');
+                    this.handleSignatureResult(data);
                 }
             } catch (e) {
                 // Ignore silent errors during polling
                 console.log('Polling remote sign...');
             }
         }, 3000);
+    }
+
+    async startLocalSignature() {
+        const qrContainer = document.getElementById('remote-signature-qr-container');
+        const qrContent = document.getElementById('remote-signature-qr');
+
+        if (!window.api?.signature) {
+            app.showToast('⚠️ No disponible en esta versión navegador', 'error');
+            return;
+        }
+
+        // 1. Get or Generate ID
+        let id = document.getElementById('reparacion-id').value;
+        if (!id) {
+            id = window.crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15);
+            document.getElementById('reparacion-id').value = id;
+        }
+
+        // 2. Prepare UI
+        qrContainer.style.display = 'block';
+        qrContent.innerHTML = '<div style="padding: 20px;">Iniciando servidor local...</div>';
+
+        try {
+            // 3. Start Local Server and Get IP
+            const port = await window.api.signature.startServer();
+            const ip = await window.api.signature.getLocalIp();
+
+            const signUrl = `http://${ip}:${port}/remote_sign.html?id=${id}&local=true`;
+            const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(signUrl)}`;
+
+            qrContent.innerHTML = `
+                <div style="margin-bottom: 10px; color: var(--status-success); font-size: 0.8rem; font-weight: bold;">📶 MODO OFFLINE (WiFi)</div>
+                <img src="${qrImgUrl}" alt="QR Signature" style="display: block; width: 180px; height: 180px; margin: 0 auto;">
+                <div style="font-size: 0.7rem; margin-top: 10px; opacity: 0.7;">IP: ${ip}:${port}</div>
+            `;
+
+            app.showToast('📶 Servidor local iniciado. Escanea con el tablet.', 'info');
+
+        } catch (e) {
+            console.error('Local signature error:', e);
+            qrContent.innerHTML = `<div style="color: var(--danger); padding: 10px;">Error al iniciar el servidor local.<br>${e.message}</div>`;
+        }
     }
 
     stopRemoteSignaturePolling() {
