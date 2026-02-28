@@ -136,20 +136,65 @@
             <p id="device-info" style="font-size: 0.9rem; opacity: 0.7;">Por favor, firma en el recuadro blanco</p>
         </div>
 
-        <div class="terms-box">
-            <strong>CONDICIONES Y RGPD:</strong><br>
-            Acepto que mis datos sean tratados para la gestión de esta reparación. El cliente declara que el equipo
-            entregado es de su propiedad. La garantía de reparación es de 3 meses. He sido informado y acepto las
-            condiciones de servicio.
+        <div class="terms-box" id="rgpd-legal-container">
+            <p style="color: var(--primary); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;">
+                🔒 PROTECCIÓN DE DATOS (RGPD)</p>
+            <p style="margin-bottom: 10px;">
+                De conformidad con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD),
+                le informamos de que los datos personales facilitados serán tratados por el responsable del
+                establecimiento con la finalidad de gestionar la reparación solicitada, facturación y
+                comunicaciones relacionadas con el servicio. Sus datos se conservarán mientras dure la relación
+                comercial y durante el plazo legalmente exigido. Puede ejercer sus derechos de acceso,
+                rectificación, supresión, portabilidad, limitación y oposición dirigiéndose al
+                establecimiento.
+            </p>
+
+            <p style="color: var(--success); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;">
+                🛡️ CONDICIONES DE GARANTÍA</p>
+            <p style="margin-bottom: 6px;">
+                1. La garantía de reparación cubre un período de <strong>3 meses</strong> sobre la mano de
+                obra y las piezas sustituidas.
+            </p>
+            <p style="margin-bottom: 6px;">
+                2. La garantía <strong>NO cubre</strong>: daños por golpes, líquidos, manipulación por
+                terceros, mal uso, o averías distintas a la reparada.
+            </p>
+            <p style="margin-bottom: 6px;">
+                3. El cliente dispone de un máximo de <strong>30 días naturales</strong> para recoger
+                el dispositivo tras la notificación.
+            </p>
+            <p style="margin-bottom: 6px;">
+                4. El establecimiento no se hace responsable de la pérdida de datos. Se recomienda copia de seguridad.
+            </p>
+
+            <p style="color: #a855f7; font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; margin-top: 12px;">
+                📄 CONSENTIMIENTO</p>
+            <p>
+                Con su firma, el cliente declara haber leído, comprendido y aceptado las presentes
+                condiciones de reparación, la política de garantía y el tratamiento de sus datos personales
+                conforme al RGPD.
+            </p>
         </div>
 
-        <div class="signature-container">
-            <canvas id="sig-pad"></canvas>
+        <!-- Acceptance Checkbox -->
+        <div
+            style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; padding: 12px; background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.2); border-radius: 12px;">
+            <input type="checkbox" id="rgpd-accept-checkbox"
+                style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary);">
+            <label for="rgpd-accept-checkbox"
+                style="font-size: 0.85rem; color: var(--text-main); cursor: pointer; line-height: 1.4;">
+                He leído y acepto las condiciones de reparación, la política de garantía y el tratamiento de mis datos.
+            </label>
+        </div>
+
+        <div class="signature-container" style="border: 2px solid var(--primary); overflow: hidden; background: #fff;">
+            <canvas id="sig-pad" style="background: #fff;"></canvas>
         </div>
 
         <div class="controls">
             <button class="btn btn-clear" id="btn-clear">Limpiar</button>
-            <button class="btn btn-submit" id="btn-submit">Enviar Firma</button>
+            <button class="btn btn-submit" id="btn-submit" style="opacity: 0.5; pointer-events: none;">Enviar
+                Firma</button>
         </div>
 
         <div id="status-msg">Enviando...</div>
@@ -165,9 +210,22 @@
         const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
 
-        const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
         const urlParams = new URLSearchParams(window.location.search);
         const repairId = urlParams.get('id');
+        const isLocal = urlParams.get('local') === 'true';
+
+        let supabase = null;
+        if (!isLocal && window.supabase) {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } catch (e) {
+                console.warn('Supabase init failed, but might be offline local mode.');
+            }
+        }
+
+        if (isLocal) {
+            document.getElementById('device-info').innerHTML = '📶 <strong style="color:var(--success)">MODO LOCAL (OFFLINE)</strong>';
+        }
 
         if (!repairId) {
             document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>Error</h2><p>Enlace de firma inválido.</p></div>';
@@ -232,6 +290,19 @@
 
         canvas.addEventListener('touchend', () => { isDrawing = false; });
 
+        const rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
+        const submitBtn = document.getElementById('btn-submit');
+
+        rgpdCheckbox.addEventListener('change', () => {
+            if (rgpdCheckbox.checked) {
+                submitBtn.style.opacity = '1';
+                submitBtn.style.pointerEvents = 'auto';
+            } else {
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.pointerEvents = 'none';
+            }
+        });
+
         document.getElementById('btn-clear').addEventListener('click', () => {
             allStrokes = [];
             redraw();
@@ -252,25 +323,38 @@
 
             try {
                 const dataUrl = canvas.toDataURL('image/png');
+                const payload = {
+                    id: repairId,
+                    signature: dataUrl,
+                    signatureStrokes: allStrokes,
+                    rgpd_accepted: true,
+                    rgpd_accepted_date: new Date().toISOString()
+                };
 
-                // Actualizar en Supabase
-                const { error } = await supabase
-                    .from('reparaciones')
-                    .update({
-                        signature: dataUrl,
-                        signatureStrokes: allStrokes,
-                        rgpd_accepted: true,
-                        rgpd_accepted_date: new Date().toISOString()
-                    })
-                    .eq('id', repairId);
+                if (isLocal) {
+                    // Send to local PC server
+                    const response = await fetch('/upload-signature', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error('Local server error');
+                } else {
+                    // Send to Supabase (Cloud)
+                    if (!supabase) throw new Error('Supabase no disponible (¿Estás sin internet? Usa el modo Local)');
+                    const { error } = await supabase
+                        .from('reparaciones')
+                        .update(payload)
+                        .eq('id', repairId);
 
-                if (error) throw error;
+                    if (error) throw error;
+                }
 
                 document.getElementById('main-ui').style.display = 'none';
                 document.getElementById('success-screen').style.display = 'block';
             } catch (err) {
                 console.error(err);
-                statusMsg.textContent = '❌ Error al enviar. Reintenta.';
+                statusMsg.textContent = '❌ Error: ' + err.message;
                 btnSubmit.disabled = false;
             }
         });
