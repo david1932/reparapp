@@ -980,8 +980,22 @@ class Database {
                 const local = localMap.get(item.id);
                 if (!local || item.ultima_modificacion > local.ultima_modificacion) {
                     const mergedItem = { ...item };
-                    if (storeName === 'reparaciones' && mergedItem.estado) {
-                        mergedItem.estado = cloudToLocalStatus(mergedItem.estado);
+                    if (storeName === 'reparaciones') {
+                        if (mergedItem.estado) {
+                            mergedItem.estado = cloudToLocalStatus(mergedItem.estado);
+                        }
+                        // Normalize IMEI/Serial so both are available locally
+                        const imeiVal = mergedItem.imei || mergedItem.imei_serial;
+                        if (imeiVal) {
+                            mergedItem.imei = imeiVal;
+                            mergedItem.imei_serial = imeiVal;
+                        }
+                        // Normalize problema and descripcion so both are available locally
+                        const probVal = mergedItem.problema || mergedItem.descripcion;
+                        if (probVal) {
+                            mergedItem.problema = probVal;
+                            mergedItem.descripcion = probVal;
+                        }
                     }
                     // Preservar datos de firma, fotos y RGPD que Supabase no almacena por privacidad/espacio
                     if (local) {

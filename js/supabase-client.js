@@ -195,17 +195,67 @@ class SupabaseClient {
     }
 
     /**
-     * Obtener sesión actual (valida expiración)
+     * Refresca el token JWT usando el refresh_token
+     */
+    async refreshSession() {
+        const refreshToken = localStorage.getItem('supabase_refresh_token');
+        if (!refreshToken) {
+            console.warn('⚠️ No refresh token available, clearing session');
+            this.clearSession();
+            return null;
+        }
+
+        try {
+            console.log('🔄 Refreshing expired JWT token...');
+            const response = await fetch(`${this.url}/auth/v1/token?grant_type=refresh_token`, {
+                method: 'POST',
+                headers: {
+                    'apikey': this.anonKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refresh_token: refreshToken })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('❌ Token refresh failed:', response.status, errorData);
+                this.clearSession();
+                return null;
+            }
+
+            const data = await response.json();
+            if (data.access_token) {
+                console.log('✅ Token refreshed successfully');
+                this.saveSession(data);
+                return {
+                    access_token: data.access_token,
+                    user: data.user
+                };
+            }
+
+            this.clearSession();
+            return null;
+        } catch (e) {
+            console.error('❌ Token refresh error:', e);
+            this.clearSession();
+            return null;
+        }
+    }
+
+    /**
+     * Obtener sesión actual (valida expiración, auto-refresca si es necesario)
      */
     async getSession() {
         const token = localStorage.getItem('supabase_access_token');
         if (!token) return null;
 
         const expiresAt = parseInt(localStorage.getItem('supabase_expires_at') || '0');
-        if (Date.now() / 1000 > expiresAt) {
-            // Token expirado, intentar refresh (simplificado: logout)
-            this.clearSession();
-            return null;
+        const now = Date.now() / 1000;
+
+        // Si el token expira en menos de 60 segundos o ya expiró, refrescar
+        if (now > expiresAt - 60) {
+            console.log('⏰ Token expired or expiring soon, attempting refresh...');
+            return await this.refreshSession();
         }
 
         return {
@@ -249,11 +299,11 @@ class SupabaseClient {
         return this.request('clientes?select=*');
     }
 
-    /**
-     * Obtiene clientes modificados después de un timestamp
-     */
-    async getClientesModifiedAfter(timestamp) {
-        return this.request(`clientes?select=*&ultima_modificacion=gt.${timestamp}`);
+    async getClientesModifiedAfter(timestamp, licenseKey = '', sucursalId = '') {
+        let query = `clientes?select=*&ultima_modificacion=gt.${timestamp}`;
+        if (licenseKey) query += `&licencia_key=eq.${licenseKey}`;
+        if (sucursalId) query += `&sucursal_id=eq.${sucursalId}`;
+        return this.request(query);
     }
 
     /**
@@ -288,16 +338,31 @@ class SupabaseClient {
 
     /**
      * Upsert cliente (crear o actualizar)
+     * Fallback: Si el POST falla por RLS, intenta PATCH
      */
     async upsertCliente(cliente) {
-        const result = await this.request('clientes', {
-            method: 'POST',
-            headers: {
-                'Prefer': 'resolution=merge-duplicates,return=representation'
-            },
-            body: JSON.stringify(cliente)
-        });
-        return result[0];
+        try {
+            const result = await this.request('clientes', {
+                method: 'POST',
+                headers: {
+                    'Prefer': 'resolution=merge-duplicates,return=representation'
+                },
+                body: JSON.stringify(cliente)
+            });
+            return result ? result[0] : null;
+        } catch (error) {
+            if (error.message && (error.message.includes('42501') || error.message.includes('row-level security') || error.message.includes('401') || error.message.includes('403'))) {
+                console.warn('⚠️ Upsert cliente failed (RLS), falling back to PATCH for id:', cliente.id);
+                const patchData = { ...cliente };
+                delete patchData.id;
+                const result = await this.request(`clientes?id=eq.${cliente.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(patchData)
+                });
+                return result ? result[0] : null;
+            }
+            throw error;
+        }
     }
 
     /**
@@ -319,11 +384,11 @@ class SupabaseClient {
         return this.request('reparaciones?select=*');
     }
 
-    /**
-     * Obtiene reparaciones modificadas después de un timestamp
-     */
-    async getReparacionesModifiedAfter(timestamp) {
-        return this.request(`reparaciones?select=*&ultima_modificacion=gt.${timestamp}`);
+    async getReparacionesModifiedAfter(timestamp, licenseKey = '', sucursalId = '') {
+        let query = `reparaciones?select=*&ultima_modificacion=gt.${timestamp}`;
+        if (licenseKey) query += `&licencia_key=eq.${licenseKey}`;
+        if (sucursalId) query += `&sucursal_id=eq.${sucursalId}`;
+        return this.request(query);
     }
 
     /**
@@ -365,16 +430,32 @@ class SupabaseClient {
 
     /**
      * Upsert reparación (crear o actualizar)
+     * Fallback: Si el POST falla por RLS, intenta PATCH
      */
     async upsertReparacion(reparacion) {
-        const result = await this.request('reparaciones', {
-            method: 'POST',
-            headers: {
-                'Prefer': 'resolution=merge-duplicates,return=representation'
-            },
-            body: JSON.stringify(reparacion)
-        });
-        return result[0];
+        try {
+            const result = await this.request('reparaciones', {
+                method: 'POST',
+                headers: {
+                    'Prefer': 'resolution=merge-duplicates,return=representation'
+                },
+                body: JSON.stringify(reparacion)
+            });
+            return result ? result[0] : null;
+        } catch (error) {
+            // Si falla por RLS (401/403) o conflicto, intentar PATCH
+            if (error.message && (error.message.includes('42501') || error.message.includes('row-level security') || error.message.includes('401') || error.message.includes('403'))) {
+                console.warn('⚠️ Upsert failed (RLS), falling back to PATCH for id:', reparacion.id);
+                const patchData = { ...reparacion };
+                delete patchData.id; // No enviar id en el body del PATCH
+                const result = await this.request(`reparaciones?id=eq.${reparacion.id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(patchData)
+                });
+                return result ? result[0] : null;
+            }
+            throw error; // Re-throw si es otro tipo de error
+        }
     }
 
     /**
@@ -410,11 +491,11 @@ class SupabaseClient {
         return this.request('facturas?select=*');
     }
 
-    /**
-     * Obtiene facturas modificadas después de un timestamp
-     */
-    async getFacturasModifiedAfter(timestamp) {
-        return this.request(`facturas?select=*&ultima_modificacion=gt.${timestamp}`);
+    async getFacturasModifiedAfter(timestamp, licenseKey = '', sucursalId = '') {
+        let query = `facturas?select=*&ultima_modificacion=gt.${timestamp}`;
+        if (licenseKey) query += `&licencia_key=eq.${licenseKey}`;
+        if (sucursalId) query += `&sucursal_id=eq.${sucursalId}`;
+        return this.request(query);
     }
 
     /**

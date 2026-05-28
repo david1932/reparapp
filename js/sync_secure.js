@@ -110,6 +110,29 @@ class SyncManager {
         this.updateSyncUI(true);
 
         try {
+            // Resolve license key and sucursal ID
+            let licenseKey = '';
+            if (window.licenseManager && window.licenseManager.licenseData) {
+                licenseKey = window.licenseManager.licenseData.licenseKey || '';
+            }
+
+            let sucursalId = await db.getConfig('sucursal_id');
+            if (!sucursalId || sucursalId === 'default') {
+                try {
+                    const sucursales = await supabaseClient.request('sucursales?select=*');
+                    if (sucursales && sucursales.length > 0) {
+                        sucursalId = sucursales[0].id;
+                        await db.setConfig('sucursal_id', sucursalId);
+                        console.log('Sync: Sucursal ID detectada desde la nube:', sucursalId);
+                    } else {
+                        sucursalId = 'default';
+                    }
+                } catch (e) {
+                    console.warn('Sync: No se pudo obtener sucursal, usando default:', e);
+                    sucursalId = 'default';
+                }
+            }
+
             // AUTO-REPAIR: Corregir formatos de fecha antes de sincronizar
             await this.repairLocalData();
 
@@ -117,10 +140,10 @@ class SyncManager {
             await this.cleanupOldData();
 
             // Paso 1: Descargar cambios del servidor
-            const pullStats = await this.pullFromServer();
+            const pullStats = await this.pullFromServer(licenseKey, sucursalId);
 
             // Paso 2: Subir cambios locales
-            const pushStats = await this.pushToServer();
+            const pushStats = await this.pushToServer(licenseKey, sucursalId);
 
             // Paso 3: Actualizar timestamp SOLO si no hubo errores graves
             // Si hubo errores, mantenemos el timestamp antiguo para reintentar la próxima vez
@@ -155,13 +178,13 @@ class SyncManager {
     /**
      * Descarga cambios del servidor
      */
-    async pullFromServer() {
+    async pullFromServer(licenseKey = '', sucursalId = '') {
 
         // Obtener datos modificados después de la última sincronización
         const [serverClientes, serverReparaciones, serverFacturas] = await Promise.all([
-            supabaseClient.getClientesModifiedAfter(this.lastSyncTimestamp),
-            supabaseClient.getReparacionesModifiedAfter(this.lastSyncTimestamp),
-            supabaseClient.getFacturasModifiedAfter(this.lastSyncTimestamp)
+            supabaseClient.getClientesModifiedAfter(this.lastSyncTimestamp, licenseKey, sucursalId),
+            supabaseClient.getReparacionesModifiedAfter(this.lastSyncTimestamp, licenseKey, sucursalId),
+            supabaseClient.getFacturasModifiedAfter(this.lastSyncTimestamp, licenseKey, sucursalId)
         ]);
 
 
@@ -181,7 +204,7 @@ class SyncManager {
     /**
      * Sube cambios locales al servidor
      */
-    async pushToServer() {
+    async pushToServer(licenseKey = '', sucursalId = '') {
 
         // Obtener usuario actual para asegurar propiedad
         const user = await supabaseClient.getUser();
@@ -234,6 +257,9 @@ class SyncManager {
                         email: cliente.email || '',
                         direccion: cliente.direccion || '',
                         notas: cliente.notas || '',
+                        dni: cliente.dni || '',
+                        sucursal_id: sucursalId,
+                        licencia_key: licenseKey,
                         // REVERT: Database expects BIGINT (numbers), not ISO Strings
                         fecha_creacion: new Date(cliente.fecha_creacion).getTime(),
                         ultima_modificacion: Date.now()
@@ -263,10 +289,6 @@ class SyncManager {
                     }
 
                     await supabaseClient.upsertCliente(payload);
-                    delete payload.provincia;
-                    delete payload.fechaRegistro;
-
-                    await supabaseClient.upsertCliente(payload);
                 }
                 stats.clientes++;
             } catch (error) {
@@ -289,18 +311,41 @@ class SyncManager {
                     const cleanPayload = {
                         id: reparacion.id,
                         cliente_id: reparacion.cliente_id || reparacion.clientId,
-                        descripcion: reparacion.descripcion || reparacion.problema || 'Sin descripción',
+                        problema: reparacion.problema || reparacion.descripcion || 'Sin descripción',
                         estado: localToCloudStatus(reparacion.estado || 'pendiente'),
                         precio: reparacion.precio || reparacion.coste || 0,
                         precio_final: reparacion.precio_final || null,
+                        sucursal_id: sucursalId,
+                        licencia_key: licenseKey,
                         fecha_creacion: new Date(reparacion.fecha_creacion || reparacion.fechaCreacion || Date.now()).getTime(),
-                        ultima_modificacion: Date.now()
+                        ultima_modificacion: Date.now(),
+                        dispositivo: reparacion.dispositivo || reparacion.tipoDispositivo || reparacion.tipo || 'otros',
+                        notas: reparacion.notas || '',
+                        contrasena: reparacion.contrasena || reparacion.pin || ''
                     };
                     if (reparacion.marca) cleanPayload.marca = reparacion.marca;
                     if (reparacion.modelo) cleanPayload.modelo = reparacion.modelo;
-                    if (reparacion.imei) cleanPayload.imei = reparacion.imei;
-                    // if (reparacion.observaciones) cleanPayload.observaciones = reparacion.observaciones; // Column does not exist
+                    
+                    const imeiVal = reparacion.imei || reparacion.imei_serial || null;
+                    if (imeiVal) {
+                        cleanPayload.imei = imeiVal;
+                        cleanPayload.imei_serial = imeiVal;
+                    }
+
                     if (reparacion.solucion) cleanPayload.solucion = reparacion.solucion;
+
+                    if (reparacion.garantia_meses !== undefined) {
+                        cleanPayload.garantia_meses = parseInt(reparacion.garantia_meses) || null;
+                    } else if (reparacion.garantia !== undefined) {
+                        cleanPayload.garantia_meses = parseInt(reparacion.garantia) || null;
+                    }
+
+                    if (reparacion.fecha_entrega) {
+                        try {
+                            const d = new Date(reparacion.fecha_entrega);
+                            if (!isNaN(d.getTime())) cleanPayload.fecha_entrega = d.getTime();
+                        } catch (e) {}
+                    }
 
                     if (reparacion.fecha_estimada) {
                         // Ensure proper date format for timestamptz column
@@ -339,7 +384,11 @@ class SyncManager {
                 if (factura.deleted) {
                     await supabaseClient.deleteFactura(factura.id);
                 } else {
-                    const payload = { ...factura };
+                    const payload = { 
+                        ...factura,
+                        sucursal_id: sucursalId,
+                        licencia_key: licenseKey
+                    };
                     delete payload.user_id;
 
                     // Usar POST con Prefer resolution=merge-duplicates para upsert
