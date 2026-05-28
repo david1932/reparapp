@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="auto">
 
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,7 @@
             background-color: var(--bg-deep);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -32,9 +32,13 @@
         }
 
         .container {
-            max-width: 500px;
-            margin: 0 auto;
             width: 100%;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
         }
 
         .header {
@@ -52,26 +56,30 @@
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 16px;
-            padding: 16px;
+            padding: 20px;
             margin-bottom: 20px;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: var(--text-dim);
-            max-height: 200px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            max-height: 350px;
             overflow-y: auto;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
         .signature-container {
             background: white;
             border-radius: 16px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             position: relative;
             touch-action: none;
+            flex-grow: 1;
+            min-height: 400px;
         }
 
         canvas {
             width: 100%;
-            height: 250px;
+            height: 100%;
+            min-height: 400px;
             display: block;
             border-radius: 16px;
             cursor: crosshair;
@@ -132,14 +140,16 @@
 <body>
     <div class="container" id="main-ui">
         <div class="header">
-            <h1>✍️ Tu Firma</h1>
-            <p id="device-info" style="font-size: 0.9rem; opacity: 0.7;">Por favor, firma en el recuadro blanco</p>
+            <h1 data-i18n="title">✍️ Tu Firma</h1>
+            <p id="device-info" style="font-size: 0.9rem; opacity: 0.7;" data-i18n="subtitle">Por favor, firma en el
+                recuadro blanco</p>
         </div>
 
         <div class="terms-box" id="rgpd-legal-container">
-            <p style="color: var(--primary); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;">
+            <p style="color: var(--primary); font-weight: 700; font-size: 1.1rem; margin-bottom: 12px;"
+                data-i18n="leg_rgpd_title">
                 🔒 PROTECCIÓN DE DATOS (RGPD)</p>
-            <p style="margin-bottom: 10px;">
+            <p style="margin-bottom: 10px;" data-i18n="leg_rgpd_text">
                 De conformidad con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD),
                 le informamos de que los datos personales facilitados serán tratados por el responsable del
                 establecimiento con la finalidad de gestionar la reparación solicitada, facturación y
@@ -149,27 +159,29 @@
                 establecimiento.
             </p>
 
-            <p style="color: var(--success); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;">
+            <p style="color: var(--success); font-weight: 700; font-size: 1.1rem; margin-top: 20px; margin-bottom: 12px;"
+                data-i18n="leg_warranty_title">
                 🛡️ CONDICIONES DE GARANTÍA</p>
-            <p style="margin-bottom: 6px;">
-                1. La garantía de reparación cubre un período de <strong>3 meses</strong> sobre la mano de
+            <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p1">
+                1. La garantía de reparación cubre un período de 3 meses sobre la mano de
                 obra y las piezas sustituidas.
             </p>
-            <p style="margin-bottom: 6px;">
-                2. La garantía <strong>NO cubre</strong>: daños por golpes, líquidos, manipulación por
+            <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p2">
+                2. La garantía NO cubre: daños por golpes, líquidos, manipulación por
                 terceros, mal uso, o averías distintas a la reparada.
             </p>
-            <p style="margin-bottom: 6px;">
-                3. El cliente dispone de un máximo de <strong>30 días naturales</strong> para recoger
+            <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p3">
+                3. El cliente dispone de un máximo de 30 días naturales para recoger
                 el dispositivo tras la notificación.
             </p>
-            <p style="margin-bottom: 6px;">
+            <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p4">
                 4. El establecimiento no se hace responsable de la pérdida de datos. Se recomienda copia de seguridad.
             </p>
 
-            <p style="color: #a855f7; font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; margin-top: 12px;">
-                📄 CONSENTIMIENTO</p>
-            <p>
+            <p style="color: #a855f7; font-weight: 700; font-size: 1.1rem; margin-bottom: 12px; margin-top: 20px;"
+                data-i18n="leg_consent_title">
+                📄 CONSENTEMENT</p>
+            <p data-i18n="leg_consent_text">
                 Con su firma, el cliente declara haber leído, comprendido y aceptado las presentes
                 condiciones de reparación, la política de garantía y el tratamiento de sus datos personales
                 conforme al RGPD.
@@ -178,26 +190,62 @@
 
         <!-- Acceptance Checkbox -->
         <div
-            style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; padding: 12px; background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.2); border-radius: 12px;">
+            style="display: flex; align-items: centre; gap: 15px; margin-bottom: 20px; padding: 20px; background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.3); border-radius: 16px;">
             <input type="checkbox" id="rgpd-accept-checkbox"
-                style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--primary);">
+                style="width: 30px; height: 30px; min-width: 30px; cursor: pointer; accent-color: var(--primary);">
             <label for="rgpd-accept-checkbox"
-                style="font-size: 0.85rem; color: var(--text-main); cursor: pointer; line-height: 1.4;">
-                He leído y acepto las condiciones de reparación, la política de garantía y el tratamiento de mis datos.
+                style="font-size: 1.1rem; font-weight: 600; color: var(--text-main); cursor: pointer; line-height: 1.4;"
+                data-i18n="leg_accept_checkbox">
+                He leído y acepto todas las condiciones y el tratamiento de mis datos.
             </label>
         </div>
 
-        <div class="signature-container" style="border: 2px solid var(--primary); overflow: hidden; background: #fff;">
-            <canvas id="sig-pad" style="background: #fff;"></canvas>
+        <!-- Pattern Lock - Visual Device Unlock Pattern -->
+        <div id="pattern-lock-section" style="margin-bottom: 20px; padding: 20px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span style="font-size: 1.1rem; color: #a855f7; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    🔐 Patrón Visual de Desbloqueo (Opcional)
+                </span>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 1rem; color: var(--text-dim); cursor: pointer; user-select: none;">
+                    <input type="checkbox" id="pattern-lock-toggle"
+                        style="accent-color: #a855f7; cursor: pointer; width: 20px; height: 20px;">
+                    Activar
+                </label>
+            </div>
+            <div id="pattern-lock-container"
+                style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px; text-align: center;">
+                <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 12px; font-style: italic;">
+                    💡 Dibuja el patrón de desbloqueo del dispositivo conectando los puntos
+                </p>
+                <div style="display: inline-block; position: relative;">
+                    <canvas id="pattern-lock-canvas" width="240" height="240"
+                        style="display: block; cursor: pointer; touch-action: none; border-radius: 12px; background: rgba(0,0,0,0.45); border: 1px solid rgba(168, 85, 247, 0.2);"></canvas>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px;">
+                    <button type="button" id="btn-clear-pattern" class="btn"
+                        style="max-width: 100px; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; color: var(--danger); background: rgba(248, 113, 113, 0.1); border: none; cursor: pointer;">
+                        🗑️ Limpiar
+                    </button>
+                    <span id="pattern-lock-status" style="font-size: 0.9rem; color: var(--text-dim);">
+                        Sin patrón
+                    </span>
+                </div>
+            </div>
         </div>
 
-        <div class="controls">
-            <button class="btn btn-clear" id="btn-clear">Limpiar</button>
-            <button class="btn btn-submit" id="btn-submit" style="opacity: 0.5; pointer-events: none;">Enviar
-                Firma</button>
+        <div id="signature-canvas-area" style="opacity: 0.3; pointer-events: none; transition: all 0.3s ease; display: flex; flex-direction: column; flex-grow: 1;">
+            <div class="signature-container" style="border: 2px solid var(--primary); overflow: hidden; background: #fff; border-radius: 16px; margin-bottom: 20px; position: relative; touch-action: none; min-height: 400px; display: flex; flex-direction: column; flex-grow: 1;">
+                <canvas id="sig-pad" style="background: #fff; border-radius: 16px; flex-grow: 1;"></canvas>
+            </div>
         </div>
 
-        <div id="status-msg">Enviando...</div>
+        <div class="controls" style="margin-bottom: 20px;">
+            <button class="btn btn-clear" id="btn-clear" style="padding: 18px;" data-i18n="btn_clear">Limpiar</button>
+            <button class="btn btn-submit" id="btn-submit" style="opacity: 0.5; pointer-events: none; padding: 18px;"
+                data-i18n="btn_submit">Confirmar y Enviar</button>
+        </div>
+
+        <div id="status-msg" data-i18n="status_sending">Enviando...</div>
         <div id="debug-log"
             style="font-size: 0.6rem; color: var(--text-dim); margin-top: 10px; font-family: monospace; white-space: pre-wrap; opacity: 0.5;">
         </div>
@@ -205,11 +253,149 @@
 
     <div class="container success-screen" id="success-screen">
         <div class="success-icon">✅</div>
-        <h2>¡Firma Enviada!</h2>
-        <p>Ya puedes cerrar esta ventana. Tu reparación se ha actualizado en el taller.</p>
+        <h2 data-i18n="success_title">¡Firma Enviada!</h2>
+        <p data-i18n="success_text">Ya puedes cerrar esta ventana. Tu reparación se ha actualizado en el taller.</p>
     </div>
 
     <script>
+        // TRADUCCIONES (Minimal i18n)
+        const translations = {
+            es: {
+                title: '✍️ Tu Firma',
+                subtitle: 'Por favor, firma en el recuadro blanco',
+                leg_rgpd_title: '🔒 PROTECCIÓN DE DATOS (RGPD)',
+                leg_rgpd_text: 'De conformidad con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD), le informamos de que los datos personales facilitados serán tratados por el responsable del establecimiento con la finalidad de gestionar la reparación solicitada, facturación y comunicaciones relacionadas con el servicio. Sus datos se conservarán mientras dure la relación comercial y durante el plazo legalmente exigido. Puede ejercer sus derechos de acceso, rectificación, supresión, portabilidad, limitación y oposición dirigiéndose al establecimiento.',
+                leg_warranty_title: '🛡️ CONDICIONES DE GARANTIA',
+                leg_warranty_p1: '1. La garantía de reparación cubre un período de 3 meses sobre la mano de obra y las piezas sustituidas.',
+                leg_warranty_p2: '2. La garantía NO cubre: daños por golpes, líquidos, manipulación por terceros, mal uso, o averías distintas a la reparada.',
+                leg_warranty_p3: '3. El cliente dispone de un máximo de 30 días naturales para recoger el dispositivo tras la notificación.',
+                leg_warranty_p4: '4. El establecimiento no se hace responsable de la pérdida de datos. Se recomienda copia de seguridad.',
+                leg_consent_title: '📄 CONSENTIMIENTO',
+                leg_consent_text: 'Con su firma, el cliente declara haber leído, comprendido y aceptado las presentes condiciones de reparación, la política de garantía y el tratamiento de sus datos personales conforme al RGPD.',
+                leg_accept_checkbox: 'He leído y acepto todas las condiciones y el tratamiento de mis datos.',
+                btn_clear: 'Limpiar',
+                btn_submit: 'Confirmar y Enviar',
+                status_sending: 'Enviando...',
+                status_ready: '⏱️ Enviando firma...',
+                status_error_supabase: '❌ Error: Supabase no disponible',
+                error_sign_first: 'Por favor, firma antes de enviar.',
+                success_title: '¡Firma Enviada!',
+                success_text: 'Ya puedes cerrar esta ventana. Tu reparación se ha actualizado en el taller.',
+                link_error_title: '❌ Error de Enlace',
+                link_error_text: 'Este enlace de firma no es válido o está incompleto.'
+            },
+            en: {
+                title: '✍️ Your Signature',
+                subtitle: 'Please sign in the white box',
+                leg_rgpd_title: '🔒 DATA PROTECTION (GDPR)',
+                leg_rgpd_text: 'In accordance with Regulation (EU) 2016/679 (GDPR), we inform you that the personal data provided will be processed by the person in charge of the establishment for the purpose of managing the requested repair, invoicing and communications related to the service. Your data will be kept for the duration of the business relationship and for the legally required period. You can exercise your rights of access, rectification, deletion, portability, limitation and opposition by contacting the establishment.',
+                leg_warranty_title: '🛡️ WARRANTY CONDITIONS',
+                leg_warranty_p1: '1. The repair warranty covers a period of 3 months on labor and replaced parts.',
+                leg_warranty_p2: '2. The warranty DOES NOT cover: damage due to impacts, liquids, handling by third parties, misuse, or failures other than the one repaired.',
+                leg_warranty_p3: '3. The customer has a maximum of 30 calendar days to collect the device after notification. After this period, the establishment is not responsible.',
+                leg_warranty_p4: '4. The establishment is not responsible for the loss of data. A backup is recommended.',
+                leg_consent_title: '📄 CONSENT',
+                leg_consent_text: 'By signing, the client declares to have read, understood and accepted these repair conditions, the warranty policy and the processing of their personal data in accordance with the GDPR.',
+                leg_accept_checkbox: 'I have read and accept all conditions and the processing of my data.',
+                btn_clear: 'Clear',
+                btn_submit: 'Confirm and Send',
+                status_sending: 'Sending...',
+                status_ready: '⏱️ Sending signature...',
+                status_error_supabase: '❌ Error: Supabase not available',
+                error_sign_first: 'Please sign before sending.',
+                success_title: 'Signature Sent!',
+                success_text: 'You can now close this window. Your repair has been updated in the shop.',
+                link_error_title: '❌ Link Error',
+                link_error_text: 'This signature link is invalid or incomplete.'
+            },
+            fr: {
+                title: '✍️ Votre Signature',
+                subtitle: 'Veuillez signer dans le cadre blanc',
+                leg_rgpd_title: '🔒 PROTECTION DES DONNÉES (RGPD)',
+                leg_rgpd_text: "Conformément au Règlement (UE) 2016/679 (RGPD), nous vous informons que les données personnelles fournies seront traitées par le responsable de l'établissement dans le but de gérer la réparation demandée, la facturation et les communications liées au service. Vos données seront conservées pendant la durée de la relation commerciale et pendant la période légalement requise. Vous pouvez exercer vos droits d'accès, de rectification, de suppression, de portabilité, de limitation et d'opposition en contactant l'établissement.",
+                leg_warranty_title: '🛡️ CONDITIONS DE GARANTIE',
+                leg_warranty_p1: "1. La garantie de réparation couvre une période de 3 mois sur la main-d'œuvre et les pièces remplacées.",
+                leg_warranty_p2: "2. La garantie NE COUVRE PAS : les dommages dus aux chocs, aux liquides, aux manipulations par des tiers, à la mauvaise utilisation, ou aux pannes autres que celle réparée.",
+                leg_warranty_p3: "3. Le client dispose d'un délai maximum de 30 jours calendaires pour récupérer l'appareil après notification.",
+                leg_warranty_p4: "4. L'établissement n'est pas responsable de la perte des données. Une sauvegarde est recommandée.",
+                leg_consent_title: '📄 CONSENTEMENT',
+                leg_consent_text: "Par sa signature, le client déclare avoir lu, compris et accepté les présentes conditions de réparation, la politique de garantie et le traitement de ses données personnelles conformément au RGPD.",
+                leg_accept_checkbox: "J'ai lu et j'accepte toutes les conditions et le traitement de mes données.",
+                btn_clear: 'Effacer',
+                btn_submit: 'Confirmer et Envoyer',
+                status_sending: 'Envoi...',
+                status_ready: '⏱️ Envoi de la signature...',
+                status_error_supabase: '❌ Erreur : Supabase non disponible',
+                error_sign_first: 'Veuillez signer avant d\'envoyer.',
+                success_title: 'Signature Envoyée !',
+                success_text: 'Vous pouvez maintenant fermer cette fenêtre. Votre réparation a été mise à jour dans l\'atelier.',
+                link_error_title: '❌ Erreur de Lien',
+                link_error_text: 'Ce lien de signature est invalide ou incomplet.'
+            },
+            pt: {
+                title: '✍️ Sua Assinatura',
+                subtitle: 'Por favor, assine no quadro branco',
+                leg_rgpd_title: '🔒 PROTEÇÃO DE DADOS (RGPD)',
+                leg_rgpd_text: 'De acordo com o Regulamento (UE) 2016/679 (RGPD), informamos que os dados pessoais fornecidos serão tratados pelo responsável do estabelecimento com o objetivo de gerir a reparação solicitada, faturação e comunicações relacionadas com o serviço. Os seus dados serão conservados durante a vigência da relação comercial e pelo período legalmente exigido. Pode exercer os seus direitos de acesso, retificação, eliminação, portabilidade, limitação e oposição contactando o estabelecimento.',
+                leg_warranty_title: '🛡️ CONDIÇÕES DE GARANTIA',
+                leg_warranty_p1: '1. A garantia de reparação cobre um período de 3 meses na mão de obra e peças substituídas.',
+                leg_warranty_p2: '2. A garantia NÃO COBRE: danos por impactos, líquidos, manipulação por terceiros, má utilização, ou avarias diferentes da reparada.',
+                leg_warranty_p3: '3. O cliente dispõe de um prazo máximo de 30 dias seguidos para levantar o dispositivo após notificação.',
+                leg_warranty_p4: '4. O estabelecimento não se responsabiliza pela perda de dados. Recomenda-se cópia de segurança.',
+                leg_consent_title: '📄 CONSENTIMENTO',
+                leg_consent_text: 'Com a sua assinatura, o cliente declara ter lido, compreendido e aceitado as presentes condições de reparação, a política de garantia e o tratamento dos seus dados pessoais de acordo com o RGPD.',
+                leg_accept_checkbox: 'Li e aceito todas as condições e o tratamento dos meus dados.',
+                btn_clear: 'Limpar',
+                btn_submit: 'Confirmar e Enviar',
+                status_sending: 'Enviando...',
+                status_ready: '⏱️ Enviando assinatura...',
+                status_error_supabase: '❌ Erro: Supabase não disponível',
+                error_sign_first: 'Por favor, assine antes de enviar.',
+                success_title: 'Assinatura Enviada!',
+                success_text: 'Já pode fechar esta janela. Sua reparação foi atualizada na oficina.',
+                link_error_title: '❌ Erro de Link',
+                link_error_text: 'Este link de assinatura é inválido ou incompleto.'
+            },
+            de: {
+                title: '✍️ Ihre Unterschrift',
+                subtitle: 'Bitte im weissen Feld unterschreiben',
+                leg_rgpd_title: '🔒 DATENSCHUTZ (DSGVO)',
+                leg_rgpd_text: 'Gemäß der Verordnung (EU) 2016/679 (DSGVO) informieren wir Sie, dass die bereitgestellten personenbezogenen Daten vom Verantwortlichen des Betriebs zum Zwecke der Verwaltung der angeforderten Reparatur, der Rechnungsstellung und der Kommunikation im Zusammenhang mit dem Dienst verarbeitet werden. Ihre Daten werden für die Dauer der Geschäftsbeziehung und für den gesetzlich vorgeschriebenen Zeitraum aufbewahrt. Sie können Ihre Rechte auf Auskunft, Berichtigung, Löschung, Übertragbarkeit, Einschränkung und Widerspruch ausüben, indem Sie sich an den Betrieb wenden.',
+                leg_warranty_title: '🛡️ GARANTIEBEDINGUNGEN',
+                leg_warranty_p1: '1. Die Reparaturgarantie erstreckt sich über einen Zeitraum von 3 Monaten auf Arbeitszeit und ersetzte Teile.',
+                leg_warranty_p2: '2. Die Garantie deckt NICHT ab: Schäden durch Stöße, Flüssigkeiten, Manipulationen durch Dritte, Missbrauch oder andere als die reparierten Fehler.',
+                leg_warranty_p3: '3. Der Kunde hat maximal 30 Kalendertage Zeit, das Gerät nach der Benachrichtigung abzuholen. Nach diesem Zeitraum übernimmt der Betrieb keine Haftung.',
+                leg_warranty_p4: '4. Der Betrieb haftet nicht für Datenverlust. Eine Datensicherung wird empfohlen.',
+                leg_consent_title: '📄 EINWILLIGUNG',
+                leg_consent_text: 'Mit seiner Unterschrift erklärt der Kunde, diese Reparaturbedingungen, die Garantierichtlinien und die Verarbeitung seiner personenbezogenen Daten gemäß der DSGVO gelesen, verstanden und akzeptiert zu haben.',
+                leg_accept_checkbox: 'Ich habe alle Bedingungen und die Verarbeitung meiner Daten gelesen und akzeptiere sie.',
+                btn_clear: 'Löschen',
+                btn_submit: 'Bestätigen und Senden',
+                status_sending: 'Senden...',
+                status_ready: '⏱️ Unterschrift wird gesendet...',
+                status_error_supabase: '❌ Fehler: Supabase nicht verfügbar',
+                error_sign_first: 'Bitte unterschreiben Sie vor dem Absenden.',
+                success_title: 'Unterschrift gesendet!',
+                success_text: 'Sie können dieses Fenster jetzt schließen. Ihre Reparatur wurde in der Werkstatt aktualisiert.',
+                link_error_title: '❌ Link-Fehler',
+                link_error_text: 'Dieser Signatur-Link ist unbekannt oder unvollständig.'
+            }
+        };
+
+        const currentLang = ['es', 'en', 'fr', 'pt', 'de'].includes(navigator.language.split('-')[0]) ? navigator.language.split('-')[0] : 'es';
+        const t = translations[currentLang];
+
+        function updateUI() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.textContent = t[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (t[key]) el.placeholder = t[key];
+            });
+        }
+
         // --- Error Boundary for Mobile Debugging ---
         window.onerror = function (msg, url, line) {
             var log = document.getElementById('debug-log');
@@ -238,8 +424,14 @@
         }
 
         if (!repairId) {
-            document.body.innerHTML = '<div style="text-align:center; padding: 50px;"><h2>Error</h2><p>Enlace de firma inválido.</p></div>';
+            document.body.innerHTML = '<div style="text-align:center; padding: 50px; font-family: Outfit, sans-serif; background: var(--bg-deep); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">' +
+                `<h2 style="color: var(--danger);">${t.link_error_title}</h2>` +
+                `<p>${t.link_error_text}</p>` +
+                '</div>';
+            /* return; */ // Removed return from template literal logic
         }
+
+        window.addEventListener('load', updateUI);
 
         var canvas = document.getElementById('sig-pad');
         var ctx = canvas.getContext('2d');
@@ -352,16 +544,265 @@
         // --- Interfaz ---
         var rgpdCheckbox = document.getElementById('rgpd-accept-checkbox');
         var submitBtn = document.getElementById('btn-submit');
+        var sigArea = document.getElementById('signature-canvas-area');
 
         rgpdCheckbox.addEventListener('change', function () {
             if (rgpdCheckbox.checked) {
                 submitBtn.style.opacity = '1';
                 submitBtn.style.pointerEvents = 'auto';
+                if (sigArea) {
+                    sigArea.style.opacity = '1';
+                    sigArea.style.pointerEvents = 'auto';
+                }
             } else {
                 submitBtn.style.opacity = '0.5';
                 submitBtn.style.pointerEvents = 'none';
+                if (sigArea) {
+                    sigArea.style.opacity = '0.3';
+                    sigArea.style.pointerEvents = 'none';
+                }
             }
         });
+
+        // --- Pattern Lock Logic ---
+        var patternSequence = [];
+        var patternCanvas = document.getElementById('pattern-lock-canvas');
+        var patternCtx = patternCanvas ? patternCanvas.getContext('2d') : null;
+        var patternLockInitialized = false;
+
+        function setupPatternLock() {
+            if (!patternCanvas || patternLockInitialized) return;
+
+            var padding = 40;
+            var spacing = 80;
+            var dotRadius = 14;
+            var hitRadius = 32;
+
+            // 3x3 grid dot positions
+            var dots = [];
+            for (var row = 0; row < 3; row++) {
+                for (var col = 0; col < 3; col++) {
+                    dots.push({
+                        x: padding + col * spacing,
+                        y: padding + row * spacing,
+                        index: row * 3 + col
+                    });
+                }
+            }
+
+            var isDrawingPattern = false;
+            var currentPosPattern = null;
+
+            function redrawPattern() {
+                if (!patternCtx) return;
+                patternCtx.clearRect(0, 0, patternCanvas.width, patternCanvas.height);
+
+                // Draw connecting lines between selected dots
+                if (patternSequence.length > 1) {
+                    patternCtx.beginPath();
+                    patternCtx.strokeStyle = 'rgba(168, 85, 247, 0.85)';
+                    patternCtx.lineWidth = 5;
+                    patternCtx.lineCap = 'round';
+                    patternCtx.lineJoin = 'round';
+                    patternCtx.shadowColor = 'rgba(168, 85, 247, 0.5)';
+                    patternCtx.shadowBlur = 8;
+
+                    var first = dots[patternSequence[0]];
+                    patternCtx.moveTo(first.x, first.y);
+                    for (var i = 1; i < patternSequence.length; i++) {
+                        var dot = dots[patternSequence[i]];
+                        patternCtx.lineTo(dot.x, dot.y);
+                    }
+                    patternCtx.stroke();
+                    patternCtx.shadowBlur = 0;
+                }
+
+                // Draw dashed line to cursor while dragging
+                if (isDrawingPattern && currentPosPattern && patternSequence.length > 0) {
+                    var last = dots[patternSequence[patternSequence.length - 1]];
+                    patternCtx.beginPath();
+                    patternCtx.strokeStyle = 'rgba(168, 85, 247, 0.35)';
+                    patternCtx.lineWidth = 3;
+                    patternCtx.setLineDash([6, 4]);
+                    patternCtx.moveTo(last.x, last.y);
+                    patternCtx.lineTo(currentPosPattern.x, currentPosPattern.y);
+                    patternCtx.stroke();
+                    patternCtx.setLineDash([]);
+                }
+
+                // Draw dots
+                dots.forEach(function (dot) {
+                    var isActive = patternSequence.indexOf(dot.index) !== -1;
+                    var orderIdx = patternSequence.indexOf(dot.index);
+
+                    if (isActive) {
+                        // Outer glow ring
+                        patternCtx.beginPath();
+                        patternCtx.arc(dot.x, dot.y, dotRadius + 10, 0, Math.PI * 2);
+                        patternCtx.fillStyle = 'rgba(168, 85, 247, 0.12)';
+                        patternCtx.fill();
+
+                        // Active circle with gradient
+                        patternCtx.beginPath();
+                        patternCtx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+                        var grad = patternCtx.createRadialGradient(dot.x, dot.y, 2, dot.x, dot.y, dotRadius);
+                        grad.addColorStop(0, 'rgba(200, 140, 255, 1)');
+                        grad.addColorStop(1, 'rgba(168, 85, 247, 0.9)');
+                        patternCtx.fillStyle = grad;
+                        patternCtx.fill();
+
+                        // Order number (white on purple)
+                        patternCtx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                        patternCtx.font = 'bold 11px Outfit, sans-serif';
+                        patternCtx.textAlign = 'center';
+                        patternCtx.textBaseline = 'middle';
+                        patternCtx.fillText(String(orderIdx + 1), dot.x, dot.y);
+                    } else {
+                        // Inactive outer ring
+                        patternCtx.beginPath();
+                        patternCtx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
+                        patternCtx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+                        patternCtx.fill();
+                        patternCtx.strokeStyle = 'rgba(168, 85, 247, 0.35)';
+                        patternCtx.lineWidth = 2;
+                        patternCtx.stroke();
+
+                        // Center dot
+                        patternCtx.beginPath();
+                        patternCtx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
+                        patternCtx.fillStyle = 'rgba(168, 85, 247, 0.45)';
+                        patternCtx.fill();
+                    }
+                });
+
+                // Update status text
+                var statusEl = document.getElementById('pattern-lock-status');
+                if (statusEl) {
+                    if (patternSequence.length >= 2) {
+                        statusEl.textContent = '✅ Patrón: ' + patternSequence.length + ' puntos';
+                        statusEl.style.color = '#a855f7';
+                    } else if (patternSequence.length === 1) {
+                        statusEl.textContent = 'Conecta más puntos...';
+                        statusEl.style.color = 'var(--text-dim)';
+                    } else {
+                        statusEl.textContent = 'Sin patrón';
+                        statusEl.style.color = 'var(--text-dim)';
+                    }
+                }
+            }
+
+            var getPatternPos = function (e) {
+                var rect = patternCanvas.getBoundingClientRect();
+                var scaleX = patternCanvas.width / rect.width;
+                var scaleY = patternCanvas.height / rect.height;
+                var clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            };
+
+            var findPatternDot = function (pos) {
+                for (var i = 0; i < dots.length; i++) {
+                    var dot = dots[i];
+                    var dx = pos.x - dot.x;
+                    var dy = pos.y - dot.y;
+                    if (Math.sqrt(dx * dx + dy * dy) <= hitRadius) {
+                        return dot;
+                    }
+                }
+                return null;
+            };
+
+            var startPattern = function (e) {
+                if (e.cancelable) e.preventDefault();
+                var pos = getPatternPos(e);
+                var dot = findPatternDot(pos);
+                if (dot) {
+                    patternSequence = [dot.index];
+                    isDrawingPattern = true;
+                    currentPosPattern = pos;
+                    redrawPattern();
+                }
+            };
+
+            var movePattern = function (e) {
+                if (!isDrawingPattern) return;
+                if (e.cancelable) e.preventDefault();
+                var pos = getPatternPos(e);
+                currentPosPattern = pos;
+                var dot = findPatternDot(pos);
+                if (dot && patternSequence.indexOf(dot.index) === -1) {
+                    patternSequence.push(dot.index);
+                }
+                redrawPattern();
+            };
+
+            var stopPattern = function () {
+                if (!isDrawingPattern) return;
+                isDrawingPattern = false;
+                currentPosPattern = null;
+                if (patternSequence.length < 2) {
+                    patternSequence = [];
+                }
+                redrawPattern();
+            };
+
+            // Mouse events
+            patternCanvas.addEventListener('mousedown', startPattern);
+            patternCanvas.addEventListener('mousemove', movePattern);
+            window.addEventListener('mouseup', stopPattern);
+
+            // Touch events
+            patternCanvas.addEventListener('touchstart', startPattern, { passive: false });
+            patternCanvas.addEventListener('touchmove', movePattern, { passive: false });
+            patternCanvas.addEventListener('touchend', stopPattern);
+
+            // Clear pattern button
+            var btnClearPattern = document.getElementById('btn-clear-pattern');
+            if (btnClearPattern) {
+                btnClearPattern.addEventListener('click', function () {
+                    patternSequence = [];
+                    redrawPattern();
+                });
+            }
+
+            redrawPattern();
+            patternLockInitialized = true;
+            window.redrawPatternGlobal = redrawPattern;
+        }
+
+        function getPatternImage() {
+            if (!patternSequence || patternSequence.length < 2) return null;
+            if (!patternCanvas) return null;
+            return patternCanvas.toDataURL('image/png');
+        }
+
+        // Toggle visibility handler
+        var patternToggle = document.getElementById('pattern-lock-toggle');
+        var patternContainer = document.getElementById('pattern-lock-container');
+        if (patternToggle && patternContainer) {
+            patternToggle.addEventListener('change', function (e) {
+                if (e.target.checked) {
+                    patternContainer.style.display = 'block';
+                    setupPatternLock();
+                    setTimeout(function () {
+                        if (window.redrawPatternGlobal) window.redrawPatternGlobal();
+                    }, 100);
+                } else {
+                    patternContainer.style.display = 'none';
+                    patternSequence = [];
+                    if (window.redrawPatternGlobal) window.redrawPatternGlobal();
+                }
+            });
+        }
 
         document.getElementById('btn-clear').addEventListener('click', function () {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -375,6 +816,11 @@
                 return;
             }
 
+            if (patternToggle && patternToggle.checked && patternSequence.length < 2) {
+                alert('Por favor, dibuja un patrón de al menos 2 puntos o desactiva la opción.');
+                return;
+            }
+
             var statusMsg = document.getElementById('status-msg');
             var btnSubmit = document.getElementById('btn-submit');
 
@@ -384,7 +830,6 @@
 
             var dataUrl = canvas.toDataURL('image/png');
             console.log("Sending signature, length:", dataUrl.length);
-            alert('Signature length: ' + dataUrl.length);
 
             var payload = {
                 id: repairId,
@@ -393,7 +838,9 @@
                 canvasWidth: canvas.width,
                 canvasHeight: canvas.height,
                 rgpd_accepted: true,
-                rgpd_accepted_date: new Date().toISOString()
+                rgpd_accepted_date: new Date().toISOString(),
+                patron_puntos: (patternToggle && patternToggle.checked && patternSequence.length >= 2) ? patternSequence : null,
+                patron_puntos_image: (patternToggle && patternToggle.checked && patternSequence.length >= 2) ? getPatternImage() : null
             };
 
             if (isLocal) {
@@ -411,7 +858,7 @@
             } else {
                 // Send to Supabase (Cloud)
                 if (!supabase) {
-                    alert('Error: Supabase no disponible');
+                    statusMsg.textContent = '❌ Error: Supabase no disponible';
                     btnSubmit.disabled = false;
                     return;
                 }

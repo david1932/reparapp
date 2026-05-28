@@ -6,7 +6,8 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
-    "dist": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis",
+    "obfuscate": "node scripts/obfuscate.js"
   },
   "keywords": [
     "gestion",
@@ -24,18 +25,42 @@
     },
     "files": [
       "**/*",
-      "!**/*.ps1",
-      "!**/*.log",
       "!.git/**",
       "!.github/**",
       "!tests/**",
-      "!temp_**",
-      "!src/**",
       "!dist/**",
+      "!node_modules/.cache/**",
+      "!temp_backup_check/**",
+      "!temp_zip_analysis/**",
+      "!**/*.ps1",
+      "!**/*.log",
+      "!**/*.sql",
+      "!scripts/**",
       "!keygen_tool.html",
+      "!gen_keys.js",
       "!audit_tool.js",
+      "!audit_report.txt",
+      "!debug_*.html",
+      "!debug_*.js",
+      "!js/debug-overlay.js",
+      "!test_*.html",
+      "!test_*.js",
+      "!nuke.html",
+      "!nuke_data.js",
+      "!doctor_data.js",
       "!clean_logs.js",
+      "!analyze_zip.js",
+      "!force_sync_specific_repair.js",
+      "!verify_repair_data.js",
+      "!verify_repair_remote.js",
+      "!verify_whatsapp_message.js",
+      "!Reparappantigua.json",
+      "!backup_reparalo.zip",
       "!MARKET_RESEARCH.md",
+      "!RELEASE_GUIDE.md",
+      "!GUIA_VENDEDOR.md",
+      "!GUIA_NUBE.md",
+      "!ENLACE_WEB.txt",
       "!implementation_plan.md"
     ],
     "win": {
@@ -43,7 +68,9 @@
     }
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "electron": "^28.0.0",
-    "electron-builder": "^24.9.0"
+    "electron-builder": "^24.9.0",
+    "javascript-obfuscator": "^4.2.2"
   }
 }

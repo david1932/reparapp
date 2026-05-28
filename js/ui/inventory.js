@@ -9,6 +9,8 @@ class InventoryUI {
         this.searchQuery = '';
         this.html5QrcodeScanner = null;
         this.isScanning = false;
+        this.itemsPerPage = 20;
+        this.displayedCount = 20;
     }
 
     /**
@@ -28,6 +30,7 @@ class InventoryUI {
         // Búsqueda
         document.getElementById('search-inventory')?.addEventListener('input', (e) => {
             this.searchQuery = e.target.value.toLowerCase();
+            this.displayedCount = this.itemsPerPage; // Reset
             this.render();
         });
 
@@ -134,7 +137,22 @@ class InventoryUI {
             return;
         }
         empty.style.display = 'none';
-        grid.innerHTML = filtered.map(p => this.renderCard(p)).join('');
+
+        // PAGINACIÓN
+        const toShow = filtered.slice(0, this.displayedCount);
+        grid.innerHTML = toShow.map(p => this.renderCard(p)).join('');
+
+        if (filtered.length > this.displayedCount) {
+            const loadMoreBtn = document.createElement('button');
+            loadMoreBtn.className = 'btn-load-more';
+            loadMoreBtn.style = 'grid-column: 1 / -1; margin-top: 20px; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--accent); border-radius: var(--radius-md); cursor: pointer;';
+            loadMoreBtn.textContent = `Mostrar más resultados (${filtered.length - this.displayedCount})`;
+            loadMoreBtn.onclick = () => {
+                this.displayedCount += this.itemsPerPage;
+                this.render();
+            };
+            grid.appendChild(loadMoreBtn);
+        }
         this.attachCardListeners();
     }
 
@@ -208,33 +226,40 @@ class InventoryUI {
             return;
         }
         empty.style.display = 'none';
-        grid.innerHTML = products.map(p => this.renderCard(p)).join('');
+
+        // PAGINACIÓN
+        const toShow = products.slice(0, this.displayedCount);
+        grid.innerHTML = toShow.map(p => this.renderCard(p)).join('');
+
+        if (products.length > this.displayedCount) {
+            const loadMoreBtn = document.createElement('button');
+            loadMoreBtn.className = 'btn-load-more';
+            loadMoreBtn.style = 'grid-column: 1 / -1; margin-top: 20px; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--accent); border-radius: var(--radius-md); cursor: pointer;';
+            loadMoreBtn.textContent = `Mostrar más productos (${products.length - this.displayedCount})`;
+            loadMoreBtn.onclick = () => {
+                this.displayedCount += this.itemsPerPage;
+                this.render();
+            };
+            grid.appendChild(loadMoreBtn);
+        }
+
         this.attachCardListeners();
     }
 
     renderFolderCard(category, count, specialType = null) {
         let icon = this.getCategoryIcon(category);
         let customClass = '';
-        // Note: Styles for specific/dynamic backgrounds (like low-stock) 
-        // should ideally be classes too, but inline is okay for dynamic colors if strictly necessary.
-        // However, we can use a class 'card-low-stock' 
 
-        let extraStyle = '';
         if (specialType === 'low-stock') {
             icon = '⚠️';
-            customClass = 'stock-low-card'; // We will define this in CSS
-            // Fallback/Override inline just in case specific colors are needed
-            extraStyle = 'background: rgba(255, 59, 48, 0.1); border: 1px solid var(--status-pending);';
+            customClass = 'stock-low-card';
         }
 
         return `
-            <div class="inventory-folder-card ${customClass}" data-category="${specialType || category}" style="${extraStyle}">
+            <div class="inventory-folder-card ${customClass}" data-category="${specialType || category}">
                 <div class="folder-icon">${icon}</div>
-                <div class="folder-name" ${specialType === 'low-stock' ? 'style="color: var(--status-pending);"' : ''}>${category}</div>
+                <div class="folder-name">${category}</div>
                 <div class="folder-count">${count} items</div>
-                
-                <!-- Hover Effect Overlay -->
-                <div class="folder-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; background: linear-gradient(45deg, rgba(var(--electric-blue-rgb), 0.1), transparent); opacity: 0; transition: opacity 0.2s;"></div>
             </div>
         `;
     }
@@ -265,6 +290,8 @@ class InventoryUI {
                 const grid = document.getElementById('inventory-grid');
                 const empty = document.getElementById('empty-inventory');
 
+                this.displayedCount = this.itemsPerPage; // RESET PAGINATION
+
                 if (category === 'low-stock') {
                     // Filter low stock products
                     const lowStockProducts = this.products.filter(p => p.stock < 3 && p.type !== 'service');
@@ -276,8 +303,7 @@ class InventoryUI {
                     const filtered = this.products.filter(p => !p.category || p.category.trim() === '');
                     this.renderProductGrid(filtered, grid, empty);
                     this.updateHeader(`Inventario > ${this.currentCategory}`, true);
-                }
-                else {
+                } else {
                     this.currentCategory = category;
                     const filtered = this.products.filter(p => p.category === category);
                     this.renderProductGrid(filtered, grid, empty);

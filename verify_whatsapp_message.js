@@ -18,12 +18,10 @@ let template = `Hola {CLIENTE}, su {DISPOSITIVO} está listo.
 Seguimiento: http://127.0.0.1:5500/tracking.html?id={ID}
 Gracias.`;
 
-// --- LOGIC FROM repairs_v2.js ---
-
 // 1. Robust Config Fix Logic (Simulated)
 if (!trackUrl || trackUrl.includes('127.0.0.1') || trackUrl.includes('localhost')) {
     console.log('[LOGIC] Bad Tracking URL detected. Forcing GitHub URL.');
-    trackUrl = 'https://david1932.github.io/reparapp/tracking.html?id=' + reparacion.id;
+    trackUrl = 'https://www.reparappremium.es/track.html?id=' + reparacion.id;
 }
 
 // 2. Message Generation
@@ -36,18 +34,18 @@ let message = template
 if (message.includes('127.0.0.1') || message.includes('localhost')) {
     console.log('[LOGIC] Localhost found in message body. Applying nuclear fix.');
     message = message
-        .replace(/http:\/\/127\.0\.0\.1:\d+\/tracking\.html\?id=/g, 'https://david1932.github.io/reparapp/tracking.html?id=') // Specific path
-        .replace(/http:\/\/127\.0\.0\.1:\d+/g, 'https://david1932.github.io/reparapp/tracking.html'); // General domain
+        .replace(/http:\/\/127\.0\.0\.1:\d+\/(?:tracking|track)\.html\?id=/g, 'https://www.reparappremium.es/track.html?id=') // Specific path
+        .replace(/http:\/\/127\.0\.0\.1:\d+/g, 'https://www.reparappremium.es/track.html'); // General domain
 }
 
 console.log('\n--- FINAL GENERATED MESSAGE ---');
 console.log(message);
 console.log('-------------------------------');
 
-if (message.includes('david1932.github.io')) {
-    console.log('VERIFICATION SUCCESS: GitHub URL is present.');
+if (message.includes('reparappremium.es')) {
+    console.log('VERIFICATION SUCCESS: Premium URL is present.');
 } else {
-    console.error('VERIFICATION FAILED: GitHub URL missing.');
+    console.error('VERIFICATION FAILED: Premium URL missing.');
 }
 
 if (!message.includes('127.0.0.1')) {

@@ -3,6 +3,22 @@
  * Gestión de la interfaz de autenticación
  */
 
+// Global function for tab switching
+window.authSwitch = function (mode) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-view').forEach(v => v.classList.remove('active-view'));
+
+    if (mode === 'admin') {
+        document.getElementById('tab-admin').classList.add('active');
+        document.getElementById('view-admin').classList.add('active-view');
+    } else {
+        document.getElementById('tab-employee').classList.add('active');
+        document.getElementById('view-employee').classList.add('active-view');
+        // Reset PIN when switching
+        /* Logic handled in UI class if needed */
+    }
+};
+
 class AuthUI {
     constructor() {
         this.isLoginMode = true;
@@ -30,8 +46,11 @@ class AuthUI {
         document.getElementById('btn-toggle-register')?.addEventListener('click', (e) => this.toggleMode(e));
 
         // Listeners Empleado (Keypad)
+        // Listeners Empleado (Keypad) - Use mousedown for instant response
         document.querySelectorAll('.key').forEach(key => {
-            key.addEventListener('click', () => {
+            const handleKey = (e) => {
+                // Remove preventDefault to allow native active state / touch feedback
+                // e.preventDefault(); 
                 if (key.classList.contains('delete')) {
                     this.currentPin = this.currentPin.slice(0, -1);
                 } else if (key.dataset.val) {
@@ -40,7 +59,12 @@ class AuthUI {
                     }
                 }
                 this.updatePinDisplay();
-            });
+
+                // Visual feedback managed by CSS for raw speed
+            };
+
+            key.addEventListener('mousedown', handleKey);
+            key.addEventListener('touchstart', handleKey, { passive: false });
         });
 
         // Listener PIN input invisible (para teclado físico)
@@ -88,7 +112,7 @@ class AuthUI {
 
         // Auto-submit if 4 digits
         if (this.currentPin.length === 4) {
-            setTimeout(() => this.handleAuthEmpleado(), 300);
+            setTimeout(() => this.handleAuthEmpleado(), 50);
         }
     }
 
@@ -101,7 +125,9 @@ class AuthUI {
         if (employeeSession) {
             try {
                 const user = JSON.parse(employeeSession);
-                await navigation.setRole(user.role || 'employee');
+                let role = user.role || 'employee';
+                if (user.nombre === 'Jefe (Rescate)') role = 'admin';
+                await navigation.setRole(role);
                 this.updateCurrentUserDisplay(user.nombre || 'Técnico');
             } catch (e) {
                 console.error('Error parsing session:', e);
@@ -158,21 +184,22 @@ class AuthUI {
         if (e && e.preventDefault) e.preventDefault();
         this.isLoginMode = !this.isLoginMode;
 
-        const title = document.querySelector('#auth-form-jefe h3');
-        const subtitle = document.querySelector('#auth-form-jefe p');
-        const btnText = document.querySelector('#auth-form-jefe .btn-primary');
+        // Selectors updated for Single Card Layout
+        const title = document.querySelector('#view-admin .auth-brand');
+        const subtitle = document.querySelector('#view-admin .auth-subtitle');
+        const btnSubmit = document.querySelector('#auth-form-jefe .btn-auth-primary');
         const toggleBtn = document.getElementById('btn-toggle-register');
 
         if (this.isLoginMode) {
-            title.textContent = i18n.t('auth_admin_title');
-            subtitle.textContent = i18n.t('auth_admin_subtitle');
-            btnText.textContent = i18n.t('auth_login_admin');
-            toggleBtn.textContent = i18n.t('auth_register_link');
+            if (title) title.textContent = i18n.t('auth_admin_title') || 'BIENVENIDO';
+            if (subtitle) subtitle.textContent = i18n.t('auth_admin_subtitle') || 'Inicia sesión para gestionar';
+            if (btnSubmit) btnSubmit.textContent = i18n.t('auth_login_admin') || 'ENTRAR';
+            if (toggleBtn) toggleBtn.textContent = i18n.t('auth_register_link') || 'Crear cuenta';
         } else {
-            title.textContent = i18n.t('auth_create_account');
-            subtitle.textContent = i18n.t('auth_register_subtitle');
-            btnText.textContent = i18n.t('auth_create_account');
-            toggleBtn.textContent = i18n.t('auth_login_link');
+            if (title) title.textContent = i18n.t('auth_create_account') || 'REGISTRO';
+            if (subtitle) subtitle.textContent = i18n.t('auth_register_subtitle') || 'Crea tu cuenta de administrador';
+            if (btnSubmit) btnSubmit.textContent = i18n.t('auth_create_account') || 'REGISTRARME';
+            if (toggleBtn) toggleBtn.textContent = i18n.t('auth_login_link') || 'Ya tengo cuenta';
         }
 
         // Foco al cambiar de modo
@@ -255,10 +282,8 @@ class AuthUI {
             i18n.t('auth_logout_confirm_msg'),
             async () => {
                 try {
-                    // Limpiar sesión Cloud si existe
-                    if (window.supabaseClient) {
-                        await supabaseClient.signOut();
-                    }
+                    // Mantenemos la sesión de Supabase (Cloud) activa para que la sincronización en segundo plano siga funcionando.
+                    // Solo se cierra la sesión local del empleado.
 
                     // Limpiar storage local
                     localStorage.removeItem('employee_session');

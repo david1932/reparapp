@@ -641,6 +641,19 @@ class RepairsUI {
             if (window.supabaseClient?.isConfigured) {
                 window.app.showToast('☁️ Subiendo reparación a la nube...', 'info');
 
+                let licenseKey = '';
+                if (window.licenseManager && window.licenseManager.licenseData) {
+                    licenseKey = window.licenseManager.licenseData.licenseKey || '';
+                }
+                if (licenseKey === 'DAVID-REPARAPP-OWNER-2026-TOKEN') {
+                    licenseKey = 'DAVID-MASTER-PRO-2026';
+                }
+
+                let sucursalId = await db.getConfig('sucursal_id');
+                if (!sucursalId || sucursalId === 'default') {
+                    sucursalId = 'default';
+                }
+
                 // Push client first (foreign key dependency)
                 const cliente = this.clientes.find(c => c.id === reparacion.cliente_id);
                 if (cliente) {
@@ -651,6 +664,9 @@ class RepairsUI {
                         email: cliente.email || '',
                         direccion: cliente.direccion || '',
                         notas: cliente.notas || '',
+                        dni: cliente.dni || '',
+                        sucursal_id: sucursalId,
+                        licencia_key: licenseKey,
                         fecha_creacion: new Date(cliente.fecha_creacion || Date.now()).getTime(),
                         ultima_modificacion: Date.now()
                     };
@@ -662,9 +678,11 @@ class RepairsUI {
                     id: reparacion.id,
                     cliente_id: reparacion.cliente_id,
                     problema: reparacion.problema || reparacion.descripcion || 'Sin descripción',
-                    estado: reparacion.estado || 'pendiente',
+                    estado: localToCloudStatus(reparacion.estado || 'pendiente'),
                     precio: reparacion.precio || 0,
                     precio_final: reparacion.precio_final || null,
+                    sucursal_id: sucursalId,
+                    licencia_key: licenseKey,
                     fecha_creacion: new Date(reparacion.fecha_creacion || Date.now()).getTime(),
                     ultima_modificacion: Date.now()
                 };

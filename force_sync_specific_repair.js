@@ -67,7 +67,7 @@ async function run() {
         });
 
         console.log('✅ REPAIR SYNCED SUCCESSFULLY!');
-        console.log(`Tracking Link: https://david1932.github.io/reparapp/tracking.html?id=${REPAIR_ID}`);
+        console.log(`Tracking Link: https://www.reparappremium.es/track.html?id=${REPAIR_ID}`);
 
     } catch (error) {
         console.error('❌ FATAL ERROR:', error);

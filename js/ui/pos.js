@@ -12,6 +12,8 @@ class POSUI {
         this.categoryFilter = '';
         this.currentCategory = null; // New state for folder navigation
         this.isShiftOpen = false;
+        this.currentShiftId = null;
+        this.initialCash = 0;
     }
 
     async init() {
@@ -54,6 +56,39 @@ class POSUI {
                 payMethods.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.updatePayUI(btn.dataset.method);
+            });
+        });
+
+        // Control de Caja Button
+        document.getElementById('btn-pos-control-caja')?.addEventListener('click', () => {
+            if (this.isShiftOpen) {
+                this.openModalCloseShift();
+            } else {
+                this.openModalOpenShift();
+            }
+        });
+
+        // Check Shift Status
+        await this.checkShiftStatus();
+
+        // Manual Movement Listeners
+        document.getElementById('btn-pos-manual-mov')?.addEventListener('click', () => {
+            if (!this.isShiftOpen) {
+                app.showToast(i18n.t('pos_toast_need_open'), 'warning');
+                return;
+            }
+            this.openModalManualMov();
+        });
+
+        document.querySelectorAll('[data-close-modal="modal-pos-manual-mov"]').forEach(btn => {
+            btn.addEventListener('click', () => document.getElementById('modal-pos-manual-mov').classList.remove('active'));
+        });
+
+        const movOptions = document.querySelectorAll('#modal-pos-manual-mov .segmented-option');
+        movOptions.forEach(btn => {
+            btn.addEventListener('click', () => {
+                movOptions.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
             });
         });
 
@@ -101,7 +136,7 @@ class POSUI {
 
                 // If 'CLIENTE_GENERAL' is not in the list (e.g. not synced yet), add it manually or fallback
                 if (!clientSelect.value) {
-                    clientSelect.insertAdjacentHTML('afterbegin', `<option value="${defaultId}" selected>Cliente General</option>`);
+                    clientSelect.insertAdjacentHTML('afterbegin', `<option value="${defaultId}" selected>${i18n.t('pos_client_general')}</option>`);
                 }
             }
 
@@ -116,7 +151,7 @@ class POSUI {
         if (!select) return;
 
         const currentVal = select.value;
-        select.innerHTML = '<option value="">Todas</option>';
+        select.innerHTML = `<option value="">${i18n.t('pos_filter_all')}</option>`;
         this.categories.forEach(cat => {
             select.innerHTML += `<option value="${cat}">${cat}</option>`;
         });
@@ -132,7 +167,7 @@ class POSUI {
         // 1. Handling Search (Flat List) - Bypasses folders
         if (this.searchQuery) {
             this.renderFlatList(grid);
-            this.updateHeader('Caja (Búsqueda)', true);
+            this.updateHeader(i18n.t('pos_search_title'), true);
             return;
         }
 
@@ -140,11 +175,11 @@ class POSUI {
         if (this.currentCategory) {
             const filtered = this.products.filter(p => p.category === this.currentCategory);
             this.renderProductGrid(filtered, grid);
-            this.updateHeader(`Caja > ${this.currentCategory}`, true);
+            this.updateHeader(`${i18n.t('nav_pos')} > ${this.currentCategory}`, true);
         } else {
             // ROOT LEVEL: Show Categories (Folders) + Uncategorized Items
             this.renderRootLevel(grid);
-            this.updateHeader('Caja / TPV', false);
+            this.updateHeader(i18n.t('nav_pos'), false);
         }
     }
 
@@ -176,7 +211,7 @@ class POSUI {
             });
         }
 
-        grid.innerHTML = html || '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No hay productos en el inventario</div>';
+        grid.innerHTML = html || `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">${i18n.t('pos_empty_inventory')}</div>`;
         this.attachFolderListeners();
     }
 
@@ -192,7 +227,7 @@ class POSUI {
         });
 
         if (filtered.length === 0) {
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No se encontraron productos</div>';
+            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">${i18n.t('pos_no_results')}</div>`;
             return;
         }
 
@@ -212,7 +247,7 @@ class POSUI {
                 <div style="font-weight: 600; font-size: 0.95rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${p.name}</div>
                 <div>
                      <div style="font-size: 0.8rem; color: ${isOOS ? 'var(--danger)' : (isLow ? 'var(--status-pending)' : 'var(--text-secondary)')}; margin-bottom: 5px;">
-                        ${p.type === 'service' ? 'SERVICIO' : (isOOS ? 'AGOTADO' : `Stock: ${stock}`)}
+                        ${p.type === 'service' ? i18n.t('pos_type_service') : (isOOS ? i18n.t('pos_type_oos') : `Stock: ${stock}`)}
                     </div>
                     <div style="font-weight: bold; color: var(--electric-cyan); font-size: 1.1rem;">${app.formatPrice(price)}</div>
                 </div>
@@ -338,7 +373,7 @@ class POSUI {
         if (this.cart.length === 0) {
             container.innerHTML = `
                 <div id="pos-empty-cart" style="text-align: center; color: var(--text-muted); padding-top: 50px;">
-                    <p>Rejilla vacía</p>
+                    <p>${i18n.t('pos_empty_cart')}</p>
                 </div>`;
             this.updateTotals();
             return;
@@ -476,7 +511,7 @@ class POSUI {
                 impuestos: window.app_tax_rate || 21,
                 tax_label: window.app_tax_label || 'IVA',
                 estado: 'pagada',
-                notas: `Venta TPV - ${this.paymentMethod.toUpperCase()}`,
+                notas: `${i18n.t('pos_sale_note')} - ${this.paymentMethod.toUpperCase()}`,
                 lineas: this.cart.map(item => ({
                     concepto: item.product.name,
                     cantidad: item.qty,
@@ -503,9 +538,14 @@ class POSUI {
                 await db.addCajaMovement({
                     tipo: 'IN',
                     importe: this.currentTotal,
-                    concepto: `Venta Ticket ${nextNum}`,
+                    concepto: `${i18n.t('pos_sale_ticket')} ${nextNum}`,
                     fecha: Date.now()
                 });
+
+                // OPEN CASH DRAWER
+                if (window.printer && window.printer.openDrawer) {
+                    window.printer.openDrawer();
+                }
             }
 
             this.lastInvoiceId = invoiceId; // Save for printing
@@ -536,7 +576,7 @@ class POSUI {
     async printLastTicket() {
         if (!this.lastInvoiceId) {
             console.error('POSUI: No last invoice ID to print');
-            app.showToast('No hay venta reciente para imprimir', 'warning');
+            app.showToast(i18n.t('pos_no_recent_sale'), 'warning');
             return;
         }
         try {
@@ -544,10 +584,10 @@ class POSUI {
             const savedFactura = await db.getFactura(this.lastInvoiceId);
 
             if (!savedFactura) {
-                throw new Error('Factura no encontrada en DB');
+                throw new Error(i18n.t('pos_invoice_not_found'));
             }
 
-            const client = this.lastClientId ? await db.getCliente(this.lastClientId) : { nombre: 'Cliente General' };
+            const client = this.lastClientId ? await db.getCliente(this.lastClientId) : { nombre: i18n.t('pos_client_general') };
             console.log('POSUI: Factura loaded', savedFactura);
 
             if (window.printer) {
@@ -555,11 +595,171 @@ class POSUI {
                 window.printer.printInvoiceTicket(savedFactura, client);
             } else {
                 console.error('POSUI: window.printer is undefined');
-                app.showToast('Error: Servicio de impresión no disponible', 'error');
+                app.showToast(i18n.t('pos_printer_unavailable'), 'error');
             }
         } catch (e) {
             console.error('POSUI: Print Error', e);
-            app.showToast('Error al imprimir: ' + e.message, 'error');
+            app.showToast(i18n.t('pos_toast_print_error', { error: e.message }), 'error');
+        }
+    }
+    async checkShiftStatus() {
+        const movements = await db.getCajaMovements();
+        // Sort by date desc to find the last OPEN/CLOSE
+        const sorted = movements.sort((a, b) => b.fecha - a.fecha);
+        const lastAction = sorted.find(m => m.tipo === 'OPEN' || m.tipo === 'CLOSE');
+
+        if (lastAction && lastAction.tipo === 'OPEN') {
+            this.isShiftOpen = true;
+            this.currentShiftId = lastAction.id;
+            this.initialCash = lastAction.importe || 0;
+        } else {
+            this.isShiftOpen = false;
+            this.currentShiftId = null;
+        }
+
+        this.renderShiftStatus();
+    }
+
+    renderShiftStatus() {
+        const statusBadge = document.getElementById('pos-shift-status');
+        const controlText = document.getElementById('pos-control-text');
+        const overlay = document.getElementById('pos-closed-overlay');
+
+        if (this.isShiftOpen) {
+            if (statusBadge) {
+                statusBadge.textContent = i18n.t('pos_shift_status_open');
+                statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+                statusBadge.style.color = '#10b981';
+            }
+            if (controlText) controlText.textContent = i18n.t('pos_control_close');
+            if (overlay) overlay.style.display = 'none';
+        } else {
+            if (statusBadge) {
+                statusBadge.textContent = i18n.t('pos_shift_status_closed');
+                statusBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusBadge.style.color = '#ef4444';
+            }
+            if (controlText) controlText.textContent = i18n.t('pos_control_open');
+            if (overlay) overlay.style.display = 'flex';
+        }
+    }
+
+    openModalOpenShift() {
+        document.getElementById('pos-open-amount').value = "0.00";
+        document.getElementById('modal-pos-open-shift').classList.add('active');
+    }
+
+    async openShift() {
+        const amount = parseFloat(document.getElementById('pos-open-amount').value) || 0;
+        try {
+            await db.addCajaMovement({
+                tipo: 'OPEN',
+                importe: amount,
+                concepto: i18n.t('pos_shift_open_concept'),
+                fecha: Date.now()
+            });
+            app.showToast(i18n.t('pos_toast_open_success'), 'success');
+            document.getElementById('modal-pos-open-shift').classList.remove('active');
+            await this.checkShiftStatus();
+        } catch (e) {
+            app.showToast(i18n.t('pos_toast_open_error', { error: e.message }), 'error');
+        }
+    }
+
+    async openModalCloseShift() {
+        // Calculate Expected Cash
+        const movements = await db.getCajaMovements();
+        // Find movements since the last OPEN
+        const sorted = movements.sort((a, b) => b.fecha - a.fecha);
+        const lastOpen = sorted.find(m => m.tipo === 'OPEN');
+        if (!lastOpen) return;
+
+        const sinceOpen = movements.filter(m => m.fecha >= lastOpen.fecha);
+
+        const initial = lastOpen.importe || 0;
+        const salesIn = sinceOpen.filter(m => m.tipo === 'IN').reduce((acc, m) => acc + m.importe, 0);
+        const others = sinceOpen.filter(m => m.tipo !== 'OPEN' && m.tipo !== 'IN' && m.tipo !== 'CLOSE' && m.tipo !== 'OUT_FIX')
+            .reduce((acc, m) => acc + (m.tipo === 'OUT' ? -m.importe : m.importe), 0);
+
+        // Manual withdrawals (OUT)
+        const withdrawals = sinceOpen.filter(m => m.tipo === 'OUT').reduce((acc, m) => acc + m.importe, 0);
+
+        const expected = initial + salesIn - withdrawals;
+
+        document.getElementById('arqueo-fondo-inicial').textContent = app.formatPrice(initial);
+        document.getElementById('arqueo-ventas-cash').textContent = app.formatPrice(salesIn);
+        document.getElementById('arqueo-otros-movs').textContent = app.formatPrice(-withdrawals);
+        document.getElementById('arqueo-esperado').textContent = app.formatPrice(expected);
+
+        const closeInput = document.getElementById('pos-close-amount');
+        closeInput.value = "";
+
+        // Listen for diff calc
+        const diffCont = document.getElementById('arqueo-diff-container');
+        const diffVal = document.getElementById('arqueo-diff-value');
+
+        closeInput.oninput = () => {
+            const actual = parseFloat(closeInput.value) || 0;
+            const diff = actual - expected;
+            diffCont.style.display = 'block';
+            diffVal.textContent = app.formatPrice(diff);
+            diffCont.style.background = diff === 0 ? 'rgba(16, 185, 129, 0.1)' : (diff > 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)');
+            diffVal.style.color = diff === 0 ? '#10b981' : (diff > 0 ? '#10b981' : '#ef4444');
+        };
+
+        document.getElementById('modal-pos-close-shift').classList.add('active');
+    }
+
+    async closeShift() {
+        const actualAmount = parseFloat(document.getElementById('pos-close-amount').value);
+        if (isNaN(actualAmount)) {
+            app.showToast(i18n.t('pos_toast_close_amount_error'), 'warning');
+            return;
+        }
+
+        const notes = document.getElementById('pos-close-notes').value;
+        try {
+            await db.addCajaMovement({
+                tipo: 'CLOSE',
+                importe: actualAmount,
+                concepto: i18n.t('pos_shift_close_concept') + ': ' + notes,
+                fecha: Date.now()
+            });
+            app.showToast(i18n.t('pos_toast_close_success'), 'success');
+            document.getElementById('modal-pos-close-shift').classList.remove('active');
+            await this.checkShiftStatus();
+        } catch (e) {
+            app.showToast(i18n.t('pos_toast_close_error', { error: e.message }), 'error');
+        }
+    }
+
+    openModalManualMov() {
+        document.getElementById('pos-mov-amount').value = "";
+        document.getElementById('pos-mov-concept').value = "";
+        document.getElementById('modal-pos-manual-mov').classList.add('active');
+    }
+
+    async saveManualMovement() {
+        const amount = parseFloat(document.getElementById('pos-mov-amount').value);
+        const concept = document.getElementById('pos-mov-concept').value.trim();
+        const type = document.querySelector('#modal-pos-manual-mov .segmented-option.active').dataset.type;
+
+        if (isNaN(amount) || amount <= 0 || !concept) {
+            app.showToast(i18n.t('pos_toast_form_error'), 'warning');
+            return;
+        }
+
+        try {
+            await db.addCajaMovement({
+                tipo: type, // IN or OUT
+                importe: amount,
+                concepto: '[Manual] ' + concept,
+                fecha: Date.now()
+            });
+            app.showToast(i18n.t('pos_toast_manual_mov_success'), 'success');
+            document.getElementById('modal-pos-manual-mov').classList.remove('active');
+        } catch (e) {
+            app.showToast('Error: ' + e.message, 'error');
         }
     }
 }

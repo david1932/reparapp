@@ -77,7 +77,7 @@ class SearchSelect {
             value: opt.value,
             text: opt.text,
             search: opt.text.toLowerCase()
-        })).filter(opt => opt.value !== ''); // Exclude placeholders if empty value
+        })).filter(opt => opt.value !== '' && opt.value !== 'CLIENTE_GENERAL'); // Exclude placeholders and system client
     }
 
     setOptions(data) {

@@ -31,7 +31,7 @@ class Navigation {
 
                 // Verificar si tiene permiso para esta vista
                 if (!this.hasPermission(view)) {
-                    app.showToast('No tienes permiso para acceder a Ajustes', 'error');
+                    app.showToast(i18n.t('toast_no_permission'), 'error');
                     return;
                 }
 
@@ -46,9 +46,20 @@ class Navigation {
      * Verifica si el usuario tiene permiso para una vista
      */
     hasPermission(viewName) {
-        if (this.userRole === 'admin') return true;
+        // Soporte para Administradores Reales y Usuario de Rescate
+        const role = String(this.userRole).toLowerCase();
+        if (role === 'admin') return true;
 
-        // Vistas restringidas para empleados
+        // Bypass especial para el usuario de rescate inicial
+        const employeeSession = localStorage.getItem('employee_session');
+        if (employeeSession) {
+            try {
+                const user = JSON.parse(employeeSession);
+                if (user.nombre === 'Jefe (Rescate)') return true;
+            } catch (e) { }
+        }
+
+        // Vistas restringidas para empleados estándar
         const restricted = ['settings', 'gestor'];
         return !restricted.includes(viewName);
     }

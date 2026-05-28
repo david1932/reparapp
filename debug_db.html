@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DB Debugger</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #222;
+            color: #0f0;
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            padding: 10px;
+        }
+
+        h2 {
+            color: #fff;
+            border-bottom: 1px solid #444;
+        }
+
+        .record {
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        .warning {
+            color: #f00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Database Diagnostic Tool</h1>
+    <div id="output">Loading...</div>
+
+    <script>
+        const DB_NAME = 'GestionAppDB';
+        const log = (msg, isWarning) => {
+            const el = document.createElement('div');
+            el.innerHTML = msg;
+            if (isWarning) el.className = 'warning';
+            document.getElementById('output').appendChild(el);
+            console.log(msg.replace(/<[^>]*>/g, ''));
+        };
+
+        async function run() {
+            document.getElementById('output').innerHTML = '';
+            log(`Opening DB: ${DB_NAME}...`);
+
+            const request = indexedDB.open(DB_NAME);
+
+            request.onerror = (e) => log(`Error opening DB: ${e.target.error}`, true);
+
+            request.onsuccess = (e) => {
+                const db = e.target.result;
+                log(`DB Version: ${db.version}`);
+                log(`Object Stores: ${Array.from(db.objectStoreNames).join(', ')}`);
+
+                checkStore(db, 'clientes');
+                checkStore(db, 'reparaciones');
+            };
+        }
+
+        function checkStore(db, storeName) {
+            if (!db.objectStoreNames.contains(storeName)) {
+                log(`Store ${storeName} not found!`, true);
+                return;
+            }
+
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const all = request.result;
+                log(`<h2>${storeName} (${all.length} total records)</h2>`);
+
+                let active = 0;
+                let softDeleted = 0;
+                let undefinedDeleted = 0;
+                let weirdDeleted = 0;
+
+                const sample = [];
+
+                all.forEach(r => {
+                    if (r.deleted === 0) active++;
+                    else if (r.deleted === 1) softDeleted++;
+                    else if (r.deleted === undefined || r.deleted === null) undefinedDeleted++;
+                    else weirdDeleted++;
+
+                    if (sample.length < 5) sample.push(r);
+                });
+
+                log(`Active (deleted=0): ${active}`);
+                log(`Soft Deleted (deleted=1): ${softDeleted}`);
+                log(`Undefined deleted: ${undefinedDeleted} <span class="${undefinedDeleted > 0 ? 'warning' : ''}">(Should be 0)</span>`);
+                log(`Weird deleted (not 0 or 1): ${weirdDeleted} <span class="${weirdDeleted > 0 ? 'warning' : ''}">(Should be 0)</span>`);
+
+                if (all.length > 0) {
+                    log(`<h3>Sample Data (first 5):</h3>`);
+                    sample.forEach(r => {
+                        log(`<div class="record">ID: ${r.id}, Name: ${r.nombre || r.device || 'N/A'}, Deleted: ${r.deleted} (Type: ${typeof r.deleted})</div>`);
+                    });
+                }
+            };
+
+            request.onerror = (e) => log(`Error reading ${storeName}: ${e.target.error}`, true);
+        }
+
+        run();
+    </script>
+</body>
+
+</html>

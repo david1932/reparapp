@@ -27,6 +27,8 @@
     <!-- PWA -->
     <link rel="apple-touch-icon" href="icon-192.png">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
     <!-- Charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -56,7 +58,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <span class="nav-label">General</span>
+
                 <a href="#" class="nav-item active" data-view="dashboard">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -68,7 +70,7 @@
                     <span data-i18n="nav_dashboard">Dashboard</span>
                 </a>
 
-                <span class="nav-label" style="margin-top: 10px;">Gestión</span>
+
                 <a href="#" class="nav-item" data-view="clientes">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -124,7 +126,7 @@
                     <span class="nav-icon">🛒</span>
                     <span data-i18n="nav_pos">Caja / TPV</span>
                 </a>
-                <span class="nav-label" style="margin-top: 10px;">Configuración</span>
+
                 <a href="#" class="nav-item" data-view="gestor" id="nav-gestor">
                     <span class="nav-icon">💼</span>
                     <span data-i18n="nav_gestor">Gestor</span>
@@ -169,6 +171,9 @@
                     </svg>
                     <span data-i18n="nav_logout">Cerrar Sesión</span>
                 </button>
+                <div style="text-align: center; margin-top: 10px; opacity: 0.3; font-size: 0.65rem;">
+                    <a href="#" id="btn-open-terminal" style="color: var(--text-secondary); text-decoration: none;" onclick="document.getElementById('debug-terminal-overlay').style.display = 'flex'; return false;">⚡ Dev Terminal (Ctrl+~)</a>
+                </div>
             </div>
 
         </aside>
@@ -800,7 +805,8 @@
                                 <button id="btn-ocr-webcam" class="btn btn-primary"
                                     style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; height: auto;">
                                     <span style="font-size: 1.5rem; margin-bottom: 5px;">📷</span>
-                                    <span id="txt-ocr-webcam" style="font-weight: 600;">Tomar Foto</span>
+                                    <span id="txt-ocr-webcam" style="font-weight: 600;"
+                                        data-i18n="mod_expense_btn_take_photo">Tomar Foto</span>
                                 </button>
 
                                 <!-- Botón Derecha: Seleccionar Foto (Archivo) -->
@@ -808,7 +814,8 @@
                                     style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; height: auto; background: var(--success-color); border-color: var(--success-color); color: white;"
                                     onclick="document.getElementById('ocr-file-input').click()">
                                     <span style="font-size: 1.5rem; margin-bottom: 5px;">📂</span>
-                                    <span style="font-weight: 600;">Seleccionar Foto</span>
+                                    <span style="font-weight: 600;" data-i18n="mod_expense_btn_select_photo">Seleccionar
+                                        Foto</span>
                                 </button>
                             </div>
 
@@ -817,7 +824,7 @@
                             <!-- Status -->
                             <div id="ocr-status"
                                 style="border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; font-weight: bold; font-size: 0.85rem; color: var(--accent-color); text-align: center; min-height: 40px; display: flex; align-items: center; justify-content: center;">
-                                Esperando acción...
+                                <span data-i18n="mod_expense_status_waiting">Esperando acción...</span>
                             </div>
                             <div id="ocr-debug" style="display: none;">
                             </div>
@@ -853,23 +860,23 @@
                             <!-- Fila 2: Trimestre y Año (auto) -->
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                 <div class="form-group">
-                                    <label class="form-label">Trimestre</label>
+                                    <label class="form-label" data-i18n="mod_income_quarter">Trimestre</label>
                                     <select id="ingreso-trimestre" class="form-select">
-                                        <option value="1T">1T (Ene-Mar)</option>
-                                        <option value="2T">2T (Abr-Jun)</option>
-                                        <option value="3T">3T (Jul-Sep)</option>
-                                        <option value="4T">4T (Oct-Dic)</option>
+                                        <option value="1T" data-i18n="mod_income_q1">1T (Ene-Mar)</option>
+                                        <option value="2T" data-i18n="mod_income_q2">2T (Abr-Jun)</option>
+                                        <option value="3T" data-i18n="mod_income_q3">3T (Jul-Sep)</option>
+                                        <option value="4T" data-i18n="mod_income_q4">4T (Oct-Dic)</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Año</label>
+                                    <label class="form-label" data-i18n="mod_income_year">Año</label>
                                     <input type="number" id="ingreso-anio" class="form-input">
                                 </div>
                             </div>
 
                             <!-- Cliente -->
                             <div class="form-group">
-                                <label class="form-label">Cliente</label>
+                                <label class="form-label" data-i18n="mod_income_client">Cliente</label>
                                 <input type="text" id="ingreso-cliente" class="form-input"
                                     placeholder="Nombre o razón social"
                                     data-i18n-placeholder="mod_income_client_placeholder" required>
@@ -877,7 +884,7 @@
 
                             <!-- NIF/CIF Cliente -->
                             <div class="form-group">
-                                <label class="form-label">NIF/CIF Cliente</label>
+                                <label class="form-label" data-i18n="mod_income_nif">NIF/CIF Cliente</label>
                                 <input type="text" id="ingreso-nif" class="form-input"
                                     placeholder="12345678A o B12345678"
                                     data-i18n-placeholder="mod_income_nif_placeholder">
@@ -885,7 +892,7 @@
 
                             <!-- Concepto -->
                             <div class="form-group">
-                                <label class="form-label">Concepto / Descripción</label>
+                                <label class="form-label" data-i18n="mod_income_concept">Concepto / Descripción</label>
                                 <input type="text" id="ingreso-concepto" class="form-input"
                                     placeholder="Reparación móvil, Servicio técnico..."
                                     data-i18n-placeholder="mod_income_concept_placeholder" required>
@@ -894,12 +901,14 @@
                             <!-- Desglose Económico -->
                             <div
                                 style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(34, 197, 94, 0.1)); padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid rgba(34, 197, 94, 0.2);">
-                                <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; color: #10b981;">💰 Desglose
+                                <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; color: #10b981;"
+                                    data-i18n="mod_income_breakdown">💰 Desglose
                                     Económico</h4>
 
                                 <!-- Base Imponible -->
                                 <div class="form-group">
-                                    <label class="form-label">Base Imponible (sin IVA)</label>
+                                    <label class="form-label" data-i18n="mod_income_base">Base Imponible (sin
+                                        IVA)</label>
                                     <input type="number" step="0.01" id="ingreso-base" class="form-input"
                                         placeholder="0.00" required>
                                 </div>
@@ -907,28 +916,33 @@
                                 <!-- Tipo IVA -->
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                     <div class="form-group">
-                                        <label class="form-label">Tipo IVA Repercutido</label>
+                                        <label class="form-label" data-i18n="mod_income_vat_type">Tipo IVA
+                                            Repercutido</label>
                                         <select id="ingreso-iva-type" class="form-select">
-                                            <option value="21">21% (General)</option>
-                                            <option value="10">10% (Reducido)</option>
-                                            <option value="4">4% (Superreducido)</option>
-                                            <option value="0">0% (Exento)</option>
+                                            <option value="21" data-i18n="mod_income_vat_21">21% (General)</option>
+                                            <option value="10" data-i18n="mod_income_vat_10">10% (Reducido)</option>
+                                            <option value="4" data-i18n="mod_income_vat_4">4% (Superreducido)</option>
+                                            <option value="0" data-i18n="mod_income_vat_0">0% (Exento)</option>
                                         </select>
                                     </div>
                                     <div
                                         style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #666;">
-                                        <span>Base Imponible:</span> <b id="ingreso-calc-base">0.00 €</b>
-                                        <span>Cuota IVA:</span> <b id="ingreso-calc-iva">0.00 €</b>
+                                        <span data-i18n="mod_income_calc_base">Base Imponible:</span> <b
+                                            id="ingreso-calc-base">0.00 €</b>
+                                        <span data-i18n="mod_income_calc_vat">Cuota IVA:</span> <b
+                                            id="ingreso-calc-iva">0.00 €</b>
                                     </div>
                                     <div
                                         style="margin-top: 10px; text-align: right; font-size: 1.1rem; font-weight: bold;">
-                                        Total: <span id="ingreso-calc-total" style="color: #10b981;">0.00 €</span>
+                                        <span data-i18n="mod_income_calc_total">Total:</span> <span
+                                            id="ingreso-calc-total" style="color: #10b981;">0.00 €</span>
                                     </div>
                                 </div>
 
                                 <div style="margin-top: 20px; text-align: right;">
                                     <button type="submit" class="btn"
-                                        style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600;">Guardar
+                                        style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600;"
+                                        data-i18n="mod_income_btn_save">Guardar
                                         Ingreso</button>
                                 </div>
                         </form>
@@ -1099,8 +1113,11 @@
                     <option value="" data-i18n="filter_all">Todos</option>
                     <option value="recibido" data-i18n="st_recibido">Recibido</option>
                     <option value="diagnostico" data-i18n="st_diagnostico">En Diagnóstico</option>
-                    <option value="reparando" data-i18n="st_reparando">Reparando</option>
+                    <option value="en_proceso" data-i18n="st_en_proceso">En Proceso</option>
+                    <option value="en_reparacion" data-i18n="st_en_reparacion">En Reparación</option>
                     <option value="listo" data-i18n="st_listo">Listo</option>
+                    <option value="entregado" data-i18n="st_entregado">Entregado</option>
+                    <option value="garantia" data-i18n="st_garantia">Garantía</option>
                     <option value="cancelado" data-i18n="st_cancelado">Cancelado</option>
                 </select>
                 <div class="view-mode-toggle">
@@ -1369,9 +1386,51 @@
                             <polyline points="12 19 5 12 12 5"></polyline>
                         </svg>
                     </button>
-                    <h1 class="page-title" id="pos-header-title">Caja / TPV</h1>
+                    <h1 class="page-title" id="pos-header-title" data-i18n="nav_pos">Caja / TPV</h1>
                     <span id="pos-shift-status" class="status-badge"
-                        style="background: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">Cerrada</span>
+                        style="background: rgba(255, 255, 255, 0.1); color: var(--text-secondary);"
+                        data-i18n="pos_shift_status_closed">Cerrada</span>
+                </div>
+                <!-- Control de Caja Button -->
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-pos-manual-mov" class="btn btn-secondary btn-sm"
+                        data-i18n-title="pos_manual_mov_title" title="Entrada/Salida Manual"
+                        style="width: 38px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <path d="M16 3h5v5"></path>
+                            <path d="M8 21H3v-5"></path>
+                            <path d="M21 3l-7 7"></path>
+                            <path d="M3 21l7-7"></path>
+                        </svg>
+                    </button>
+                    <button id="btn-pos-control-caja" class="btn btn-secondary btn-sm" style="gap: 8px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span id="pos-control-text" data-i18n="pos_control_open">Abrir Caja</span>
+                    </button>
+                </div>
+                <div style="display: flex; gap: var(--spacing-sm); align-items: center;">
+                    <button class="btn btn-secondary" onclick="app.toggleFullscreen()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
+                            </path>
+                        </svg>
+                    </button>
+                    <button class="btn btn-secondary" id="btn-cerrar-caja" onclick="window.posUI.showCerrarCajaModal()"
+                        style="display:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        Cerrar Caja / Arqueo
+                    </button>
                 </div>
             </div>
         </header>
@@ -1428,10 +1487,10 @@
                 <!-- Cart Header -->
                 <div
                     style="padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                    <h3 style="margin: 0;">Ticket Actual</h3>
+                    <h3 style="margin: 0;" data-i18n="pos_ticket_title">Ticket Actual</h3>
                     <button id="btn-pos-clear" class="btn btn-sm"
                         style="color: var(--danger); background: rgba(255, 71, 87, 0.1);">
-                        🗑️ Limpiar
+                        <span data-i18n="pos_btn_clear">🗑️ Limpiar</span>
                     </button>
                 </div>
 
@@ -1439,7 +1498,7 @@
                 <div id="pos-cart-items" style="flex: 1; overflow-y: auto; padding: 10px;">
                     <!-- Items injected here -->
                     <div id="pos-empty-cart" style="text-align: center; color: var(--text-muted); padding-top: 50px;">
-                        <p>Rejilla vacía</p>
+                        <p data-i18n="pos_empty_cart">Rejilla vacía</p>
                     </div>
                 </div>
 
@@ -1447,23 +1506,23 @@
                 <div style="padding: 20px; background: var(--bg-card); border-top: 1px solid var(--border-color);">
                     <div
                         style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: var(--text-secondary);">
-                        <span>Subtotal</span>
+                        <span data-i18n="pos_subtotal">Subtotal</span>
                         <span id="pos-total-subtotal">0.00 €</span>
                     </div>
                     <div
                         style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-secondary);">
-                        <span>Impuestos</span>
+                        <span data-i18n="pos_taxes">Impuestos</span>
                         <span id="pos-total-tax">0.00 €</span>
                     </div>
                     <div
                         style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.5rem; font-weight: bold; color: var(--electric-cyan);">
-                        <span>TOTAL</span>
+                        <span data-i18n="pos_total">TOTAL</span>
                         <span id="pos-total-total">0.00 €</span>
                     </div>
 
                     <button id="btn-pos-pay" class="btn btn-primary"
                         style="width: 100%; padding: 15px; font-size: 1.1rem; justify-content: center;">
-                        💳 Cobrar / Finalizar
+                        <span data-i18n="pos_btn_pay">💳 Cobrar / Finalizar</span>
                     </button>
                 </div>
             </div>
@@ -1540,6 +1599,215 @@
                         onclick="document.getElementById('modal-pos-pay').classList.remove('active')">Cancelar</button>
                     <button class="btn btn-primary" onclick="window.posUI.finalizeSale()">Confirmar
                         Venta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ABRIR CAJA -->
+    <div class="modal-overlay" id="modal-pos-open-shift">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="pos_shift_open_title">Apertura de Caja</h2>
+                <button class="modal-close" data-close-modal="modal-pos-open-shift">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="pos_initial_cash">Fondo de Caja Inicial</label>
+                    <div style="position: relative;">
+                        <span
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">€</span>
+                        <input type="number" id="pos-open-amount" class="form-input" style="padding-left: 30px;"
+                            value="0.00" step="0.01">
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;"
+                        data-i18n="pos_initial_cash_desc">Introduce el efectivo
+                        disponible en caja al comenzar.</p>
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary"
+                        onclick="document.getElementById('modal-pos-open-shift').classList.remove('active')">Cancelar</button>
+                    <button class="btn btn-primary" onclick="window.posUI.openShift()">Abrir Turno</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CERRAR CAJA / ARQUEO -->
+    <div class="modal-overlay" id="modal-pos-close-shift">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="pos_shift_close_title">Cierre de Caja y Arqueo</h2>
+                <button class="modal-close" data-close-modal="modal-pos-close-shift">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="arqueo-summary"
+                    style="background: var(--bg-secondary); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span data-i18n="pos_fondo_inicial">Fondo Inicial:</span>
+                        <span id="arqueo-fondo-inicial">0.00 €</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span data-i18n="pos_ventas_cash">Ventas en Efectivo:</span>
+                        <span id="arqueo-ventas-cash">0.00 €</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                        <span data-i18n="pos_otros_movs">Entradas/Salidas:</span>
+                        <span id="arqueo-otros-movs" style="color: var(--status-warning);">0.00 €</span>
+                    </div>
+                    <div
+                        style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 10px; font-size: 1.1rem; color: var(--electric-cyan);">
+                        <span data-i18n="pos_expected_cash">Efectivo Esperado:</span>
+                        <span id="arqueo-esperado">0.00 €</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" data-i18n="pos_actual_cash">Efectivo Real en Caja (Contado)</label>
+                    <div style="position: relative;">
+                        <span
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">€</span>
+                        <input type="number" id="pos-close-amount" class="form-input"
+                            style="padding-left: 30px; font-size: 1.2rem;" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+
+                <div id="arqueo-diff-container"
+                    style="display: none; padding: 10px; border-radius: 8px; margin-top: 10px; text-align: center; font-weight: bold;">
+                    <span data-i18n="pos_diff">Diferencia</span>: <span id="arqueo-diff-value">0.00 €</span>
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label" data-i18n="pos_close_notes">Notas de Cierre (Opcional)</label>
+                    <textarea id="pos-close-notes" class="form-input" style="min-height: 60px;"
+                        data-i18n-placeholder="pos_close_notes"
+                        placeholder="Cualquier incidencia con el arqueo..."></textarea>
+                </div>
+
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" data-i18n="dlg_cancel"
+                        onclick="document.getElementById('modal-pos-close-shift').classList.remove('active')">Cancelar</button>
+                    <button class="btn btn-primary" style="background: var(--danger); border-color: var(--danger);"
+                        data-i18n="pos_control_close" onclick="window.posUI.closeShift()">Cerrar Caja</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAY CAJA CERRADA -->
+    <div id="pos-closed-overlay"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="font-size: 4rem; margin-bottom: 20px;">🔒</div>
+        <h2 style="color: white; margin-bottom: 10px;" data-i18n="pos_closed_overlay_title">Caja Cerrada</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;" data-i18n="pos_closed_overlay_desc">Debes abrir
+            caja para realizar ventas.</p>
+        <button class="btn btn-primary" onclick="window.posUI.openModalOpenShift()"
+            style="padding: 12px 30px; font-size: 1.1rem;" data-i18n="pos_btn_open_now">
+            Abrir Caja Ahora
+        </button>
+    </div>
+
+    <!-- MODAL MOVIMIENTO MANUAL CAJA -->
+    <div class="modal-overlay" id="modal-pos-manual-mov">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="pos_manual_mov_title">Entrada / Salida de Efectivo</h2>
+                <button class="modal-close" data-close-modal="modal-pos-manual-mov">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" data-i18n="pos_mov_type">Tipo de Movimiento</label>
+                    <div class="segmented-control">
+                        <button type="button" class="segmented-option active" data-type="IN" id="btn-mov-in">
+                            <span data-i18n="pos_mov_in">📥 Entrada</span>
+                        </button>
+                        <button type="button" class="segmented-option" data-type="OUT" id="btn-mov-out">
+                            <span data-i18n="pos_mov_out">📤 Salida</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="pos_mov_amount">Importe</label>
+                    <div style="position: relative;">
+                        <span
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">€</span>
+                        <input type="number" id="pos-mov-amount" class="form-input" style="padding-left: 30px;"
+                            placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="pos_mov_concept">Concepto / Motivo</label>
+                    <input type="text" id="pos-mov-concept" class="form-input" data-i18n-placeholder="pos_mov_concept"
+                        placeholder="Ej: Pago proveedor, Cambio, etc.">
+                </div>
+                <div class="modal-buttons">
+                    <button class="btn btn-secondary" data-i18n="dlg_cancel"
+                        onclick="document.getElementById('modal-pos-manual-mov').classList.remove('active')">Cancelar</button>
+                    <button class="btn btn-primary" data-i18n="pos_manual_mov_btn"
+                        onclick="window.posUI.saveManualMovement()">Registrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORTADOR UNIVERSAL CSV -->
+    <div class="modal-overlay" id="modal-universal-import">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Asistente de Importación Universal (CSV)</h2>
+                <button class="modal-close" data-close-modal="modal-universal-import">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Select Import Type -->
+                <div id="import-step-1">
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        Selecciona el tipo de datos que deseas importar desde tu archivo CSV:
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <button class="btn btn-secondary" id="btn-import-type-clients" style="flex-direction: column; padding: 25px 15px; gap: 12px; font-size: 1.1rem; border-color: rgba(0, 255, 204, 0.2);">
+                            <span style="font-size: 2.5rem;">👥</span>
+                            <span>Clientes</span>
+                        </button>
+                        <button class="btn btn-secondary" id="btn-import-type-stock" style="flex-direction: column; padding: 25px 15px; gap: 12px; font-size: 1.1rem; border-color: rgba(0, 255, 204, 0.2);">
+                            <span style="font-size: 2.5rem;">📦</span>
+                            <span>Inventario / Stock</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Mapping Wizard -->
+                <div id="import-step-2" style="display: none;">
+                    <div style="background: rgba(0, 0, 0, 0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;">
+                        <span style="color: var(--accent-color); font-weight: 600; font-size: 0.85rem;" id="import-detected-format">Formato Detectado: CSV estándar</span>
+                    </div>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.85rem;">
+                        Asocia las columnas de tu archivo CSV con los campos requeridos de la aplicación:
+                    </p>
+                    <div id="import-mapping-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;">
+                        <!-- Mapping rows dynamically injected here -->
+                    </div>
+                    <div class="modal-buttons" style="margin-top: 15px;">
+                        <button class="btn btn-secondary" id="btn-import-prev">Atrás</button>
+                        <button class="btn btn-primary" id="btn-import-confirm" style="background: var(--accent-color); color: black;">Iniciar Importación</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Progress & Success -->
+                <div id="import-step-3" style="display: none; text-align: center; padding: 20px 0;">
+                    <h3 id="import-progress-title" style="margin-bottom: 15px;">Importando datos...</h3>
+                    <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden; margin-bottom: 15px;">
+                        <div id="import-progress-bar" style="width: 0%; height: 100%; background: var(--accent-color); transition: width 0.1s ease;"></div>
+                    </div>
+                    <span id="import-progress-percent" style="font-weight: bold; font-size: 1.2rem; color: var(--accent-color);">0%</span>
+                    
+                    <!-- Success status icon -->
+                    <div id="import-success-icon" style="display: none; margin-top: 15px;">
+                        <div style="font-size: 3.5rem; margin-bottom: 10px;">✅</div>
+                        <h3 style="color: var(--status-completed); margin-bottom: 15px;">¡Importación Completada!</h3>
+                        <p id="import-success-message" style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.90rem;"></p>
+                        <button class="btn btn-primary" data-close-modal="modal-universal-import" style="margin: 0 auto;">Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1686,11 +1954,13 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <select id="app-language-selector" class="form-select" onchange="i18n.setLocale(this.value)">
-                            <option value="es" data-i18n="lang_es">Español</option>
-                            <option value="en" data-i18n="lang_en">Inglés</option>
-                            <option value="fr" data-i18n="lang_fr">Francés</option>
-                            <option value="pt" data-i18n="lang_pt">Portugués</option>
+                        <select id="app-language-selector" class="form-select" onchange="i18n.setLocale(this.value)"
+                            style="font-family: 'Outfit', 'Noto Color Emoji', sans-serif;">
+                            <option value="es" data-i18n="lang_es">🇪🇸 Español</option>
+                            <option value="en" data-i18n="lang_en">🇬🇧 Inglés</option>
+                            <option value="fr" data-i18n="lang_fr">🇫🇷 Francés</option>
+                            <option value="pt" data-i18n="lang_pt">🇵🇹 Portugués</option>
+                            <option value="de" data-i18n="lang_de">🇩🇪 Alemán</option>
                         </select>
                     </div>
                 </div>
@@ -1890,17 +2160,18 @@
                             <div class="form-group" style="margin-top: 15px; margin-bottom: var(--spacing-sm);">
                                 <label class="form-label" style="font-size: 0.85rem;"
                                     data-i18n="set_field_currency">Moneda del Negocio</label>
-                                <select id="company-currency" class="form-select" style="padding: 8px;">
-                                    <option value="EUR" data-i18n="set_curr_eur">Euro (€)</option>
-                                    <option value="USD" data-i18n="set_curr_usd">Dólar ($)</option>
-                                    <option value="GBP" data-i18n="set_curr_gbp">Libra (£)</option>
-                                    <option value="MXN" data-i18n="set_curr_mxn">Peso Mexicano (MXN)</option>
-                                    <option value="BRL" data-i18n="set_curr_brl">Real Brasileño (R$)</option>
-                                    <option value="CLP" data-i18n="set_curr_clp">Peso Chileno (CLP)</option>
-                                    <option value="COP" data-i18n="set_curr_cop">Peso Colombiano (COP)</option>
-                                    <option value="ARS" data-i18n="set_curr_ars">Peso Argentino (ARS)</option>
-                                    <option value="PEN" data-i18n="set_curr_pen">Sol Peruano (PEN)</option>
-                                    <option value="UYU" data-i18n="set_curr_uyu">Peso Uruguayo (UYU)</option>
+                                <select id="company-currency" class="form-select"
+                                    style="padding: 8px; font-family: 'Outfit', 'Noto Color Emoji', sans-serif;">
+                                    <option value="EUR" data-i18n="set_curr_eur">🇪🇺 Euro (€)</option>
+                                    <option value="USD" data-i18n="set_curr_usd">🇺🇸 Dólar ($)</option>
+                                    <option value="GBP" data-i18n="set_curr_gbp">🇬🇧 Libra (£)</option>
+                                    <option value="MXN" data-i18n="set_curr_mxn">🇲🇽 Peso Mexicano (MXN)</option>
+                                    <option value="BRL" data-i18n="set_curr_brl">🇧🇷 Real Brasileño (R$)</option>
+                                    <option value="CLP" data-i18n="set_curr_clp">🇨🇱 Peso Chileno (CLP)</option>
+                                    <option value="COP" data-i18n="set_curr_cop">🇨🇴 Peso Colombiano (COP)</option>
+                                    <option value="ARS" data-i18n="set_curr_ars">🇦🇷 Peso Argentino (ARS)</option>
+                                    <option value="PEN" data-i18n="set_curr_pen">🇵🇪 Sol Peruano (PEN)</option>
+                                    <option value="UYU" data-i18n="set_curr_uyu">🇺🇾 Peso Uruguayo (UYU)</option>
                                 </select>
                                 <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;"
                                     data-i18n="set_field_currency_help">Selecciona la moneda para tus precios.
@@ -1919,21 +2190,59 @@
                                         <rect x="6" y="14" width="12" height="8"></rect>
                                         <polyline points="6 9 6 2 18 2 18 9"></polyline>
                                     </svg>
-                                    <h4 style="margin: 0; font-size: 1rem; color: var(--electric-cyan);">Impresora TPV y
-                                        Cajón</h4>
+                                    <h4 style="margin: 0; font-size: 1rem; color: var(--electric-cyan);"
+                                        data-i18n="set_printer_title">Impresora TPV y
+                                                                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                                    <div>
+                                        <label for="pos-connection-type" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Tipo de Conexión</label>
+                                        <select id="pos-connection-type" class="form-select" style="padding: 8px; width: 100%;" onchange="window.settingsUI.togglePrinterConnectionFields()">
+                                            <option value="system">Predeterminado Sistema (OS)</option>
+                                            <option value="wifi">Red / WiFi (TCP/IP)</option>
+                                            <option value="bluetooth">Bluetooth (Puerto COM)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="pos-printer-type" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Formato de Impresora</label>
+                                        <select id="pos-printer-type" class="form-select" style="padding: 8px; width: 100%;">
+                                            <option value="58mm">Térmica 58mm (Recibo)</option>
+                                            <option value="80mm">Térmica 80mm (Recibo grande)</option>
+                                            <option value="57mm">Mini (57mm)</option>
+                                            <option value="label">Etiquetas (Label)</option>
+                                            <option value="a4">Estándar (A4)</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.8rem;">
-                                    Nombre exacto de la impresora térmica en Windows para abrir el cajón
-                                    automáticamente.</p>
 
-                                <label for="pos-printer-name"
-                                    style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Nombre de
-                                    Impresora</label>
-                                <input type="text" id="pos-printer-name" class="form-input"
-                                    placeholder="Ej: POS-58, XP-80C" style="padding: 8px;">
-                                <small
-                                    style="display: block; margin-top: 4px; color: var(--text-tertiary); font-style: italic; font-size: 0.75rem;">Panel
-                                    de Control > Ver dispositivos e impresoras</small>
+                                <!-- Dynamic Connection Fields -->
+                                <div id="printer-field-system" class="printer-conn-field">
+                                    <label for="pos-printer-name" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Nombre de Impresora (Sistema)</label>
+                                    <input type="text" id="pos-printer-name" class="form-input" placeholder="Ej: POS-58, XP-80C" style="padding: 8px; width: 100%;">
+                                    <small style="display: block; margin-top: 4px; color: var(--text-tertiary); font-style: italic; font-size: 0.75rem;">Nombre exacto en Dispositivos e Impresoras de Windows</small>
+                                </div>
+
+                                <div id="printer-field-wifi" class="printer-conn-field" style="display: none; grid-template-columns: 3fr 1fr; gap: 15px;">
+                                    <div>
+                                        <label for="pos-printer-ip" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Dirección IP de Impresora</label>
+                                        <input type="text" id="pos-printer-ip" class="form-input" placeholder="Ej: 192.168.1.100" style="padding: 8px; width: 100%;">
+                                    </div>
+                                    <div>
+                                        <label for="pos-printer-port" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Puerto</label>
+                                        <input type="number" id="pos-printer-port" class="form-input" placeholder="9100" value="9100" style="padding: 8px; width: 100%;">
+                                    </div>
+                                </div>
+
+                                <div id="printer-field-bluetooth" class="printer-conn-field" style="display: none;">
+                                    <label for="pos-printer-com" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Puerto COM de Impresora (Bluetooth)</label>
+                                    <input type="text" id="pos-printer-com" class="form-input" placeholder="Ej: COM3, COM4" style="padding: 8px; width: 100%;">
+                                    <small style="display: block; margin-top: 4px; color: var(--text-tertiary); font-style: italic; font-size: 0.75rem;">Ver puerto asignado en Configuración de Bluetooth de Windows</small>
+                                </div>
+
+                                <!-- Label Printer Config -->
+                                <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                                    <label for="label-printer-name" style="font-size: 0.85rem; display: block; margin-bottom: 4px;">Nombre Impresora de Etiquetas (Stickers)</label>
+                                    <input type="text" id="label-printer-name" class="form-input" placeholder="Ej: Brother QL-800, Zebra" style="padding: 8px; width: 100%;">
+                                    <small style="display: block; margin-top: 4px; color: var(--text-tertiary); font-style: italic; font-size: 0.75rem;">Impresora dedicada a la cual se enviarán las etiquetas autoadhesivas de los equipos</small>
+                                </div>
                             </div>
 
                             <div style="text-align: center;">
@@ -2162,6 +2471,13 @@
                                     </svg>
                                     <span data-i18n="set_backup_import_zip">ZIP</span>
                                 </button>
+                                <input type="file" id="import-input-csv" accept=".csv" style="display: none;">
+                                <button class="btn btn-secondary btn-sm"
+                                    id="btn-trigger-import-csv"
+                                    title="Importador Universal CSV"
+                                    style="justify-content: center; background: rgba(0, 255, 204, 0.15); border: 1px solid rgba(0, 255, 204, 0.4); color: #00ffcc; font-weight: 600;">
+                                    <span>CSV (Importador Universal)</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2256,7 +2572,7 @@
                             <label class="form-label" data-i18n="set_tracking_url_label">URL de Seguimiento
                                 (Tracking)</label>
                             <input type="url" class="form-input" id="company-tracking-url"
-                                placeholder="https://david1932.github.io/reparapp/tracking.html"
+                                placeholder="https://reparapp.pages.dev/tracking"
                                 data-i18n-placeholder="set_tracking_url_placeholder">
                             <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;"
                                 data-i18n="set_tracking_url_help">
@@ -2910,21 +3226,19 @@
                     <input type="hidden" id="reparacion-id">
 
                     <!-- Sección: Cliente -->
-                    <h4
-                        style="color: var(--electric-blue); margin-bottom: var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                        Cliente</h4>
+                    <h4 style="color: var(--electric-blue); margin-bottom: var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_client">Cliente</h4>
 
                     <div class="form-group">
-                        <label class="form-label">Cliente *</label>
+                        <label class="form-label" data-i18n="rep_field_client">Cliente *</label>
                         <select class="form-select" id="reparacion-cliente" required>
-                            <option value="">Seleccionar cliente...</option>
+                            <option value="" data-i18n="rep_sel_client">Seleccionar cliente...</option>
                         </select>
                     </div>
 
                     <!-- Sección: Dispositivo -->
-                    <h4
-                        style="color: var(--electric-purple); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                        Dispositivo</h4>
+                    <h4 style="color: var(--electric-purple); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_device">Dispositivo</h4>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--spacing-md);">
                         <div class="form-group">
@@ -2957,9 +3271,8 @@
                     </div>
 
                     <!-- Sección: Reparación -->
-                    <h4
-                        style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                        Detalles de la Reparación</h4>
+                    <h4 style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_details">Detalles de la Reparación</h4>
 
                     <div class="form-group">
                         <label class="form-label" data-i18n="rep_field_problem">Problema *</label>
@@ -2976,9 +3289,8 @@
                     </div>
 
                     <!-- Sección: Repuestos Utilizados -->
-                    <h4
-                        style="color: var(--warning); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                        Repuestos y Materiales</h4>
+                    <h4 style="color: var(--warning); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_parts">Repuestos y Materiales</h4>
                     <div id="reparacion-parts-container"
                         style="background: rgba(255, 255, 255, 0.03); border-radius: 8px; padding: var(--spacing-md); border: 1px solid var(--border-color); margin-bottom: var(--spacing-lg);">
                         <div class="form-group" style="margin-bottom: var(--spacing-md);">
@@ -2990,11 +3302,13 @@
                             <table class="data-table" style="font-size: 0.85rem; background: transparent;">
                                 <thead style="background: rgba(255,255,255,0.05);">
                                     <tr>
-                                        <th style="padding: 8px;">Repuesto</th>
+                                        <th style="padding: 8px;" data-i18n="rep_parts_header_name">Repuesto</th>
                                         <th style="width: 80px; text-align: center; padding: 8px;"
                                             data-i18n="mod_parts_sn">S/N o Lote</th>
-                                        <th style="width: 60px; text-align: center; padding: 8px;">Cant.</th>
-                                        <th style="width: 80px; text-align: right; padding: 8px;">Precio</th>
+                                        <th style="width: 60px; text-align: center; padding: 8px;"
+                                            data-i18n="rep_parts_header_qty">Cant.</th>
+                                        <th style="width: 80px; text-align: right; padding: 8px;"
+                                            data-i18n="rep_parts_header_price">Precio</th>
                                         <th style="width: 40px; padding: 8px;"></th>
                                     </tr>
                                 </thead>
@@ -3019,9 +3333,65 @@
                             data-i18n-placeholder="rep_field_notes_placeholder"></textarea>
                     </div>
 
+                    <!-- Estado y Precio al final -->
+                    <h4 style="color: var(--status-pending); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_status">
+                        Estado y Precio</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="rep_field_status">Estado</label>
+                            <select class="form-select" id="reparacion-estado">
+                                <option value="recibido" data-i18n="st_recibido">Recibido</option>
+                                <option value="diagnostico" data-i18n="st_diagnostico">En Diagnóstico</option>
+                                <option value="en_proceso" data-i18n="st_en_proceso">En Proceso</option>
+                                <option value="en_reparacion" data-i18n="st_en_reparacion">En Reparación</option>
+                                <option value="listo" data-i18n="st_listo">Listo</option>
+                                <option value="entregado" data-i18n="st_entregado">Entregado</option>
+                                <option value="garantia" data-i18n="st_garantia">Garantía</option>
+                                <option value="cancelado" data-i18n="st_cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="rep_field_price">Mano de Obra (€)</label>
+                            <input type="text" inputmode="decimal" class="form-input" id="reparacion-precio"
+                                placeholder="0.00" data-i18n-placeholder="num_placeholder">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="rep_field_price_final">Precio Total (€)</label>
+                            <input type="text" class="form-input" id="reparacion-precio-final" readonly
+                                style="background: rgba(255,255,255,0.05); font-weight: bold; color: var(--status-completed);"
+                                placeholder="0.00" data-i18n-placeholder="num_placeholder">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="rep_field_tech">Asignar a Técnico</label>
+                            <select class="form-select" id="reparacion-tecnico">
+                                <option value="" data-i18n="rep_tech_none">Sin asignar</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="rep_field_due_date">Fecha de Entrega</label>
+                            <input type="date" class="form-input" id="reparacion-fecha-entrega">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Meses de Garantía</label>
+                            <select class="form-select" id="reparacion-garantia-meses">
+                                <option value="0">Sin garantía</option>
+                                <option value="1">1 mes</option>
+                                <option value="3" selected>3 meses</option>
+                                <option value="6">6 meses</option>
+                                <option value="12">12 meses</option>
+                                <option value="24">24 meses</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Sección: Checklist de Recepción -->
-                    <h4
-                        style="color: var(--status-completed); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                    <h4 style="color: var(--status-completed); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_checklist">
                         Checklist de Recepción</h4>
                     <div id="reparacion-checklist"
                         style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; margin-bottom: var(--spacing-lg);">
@@ -3105,8 +3475,8 @@
                                 onchange="repUI.handlePhotoUpload(this.files)">
                         </div>
 
-                        <p
-                            style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px; font-style: italic; opacity: 0.8;">
+                        <p style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 8px; font-style: italic; opacity: 0.8;"
+                            data-i18n="rep_photos_tip">
                             💡 Tip: Puedes pegar (Ctrl+V) una imagen directamente desde WhatsApp Desktop.
                         </p>
 
@@ -3117,18 +3487,18 @@
                     </div>
 
                     <!-- Sección: RGPD, Garantía y Firma del Cliente -->
-                    <h4
-                        style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
+                    <h4 style="color: var(--electric-cyan); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;"
+                        data-i18n="rep_section_legal">
                         📋 Condiciones, RGPD y Firma</h4>
 
                     <!-- Legal Text Container -->
                     <div id="rgpd-legal-container"
                         style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 12px; max-height: 200px; overflow-y: auto; font-size: 0.78rem; color: var(--text-secondary); line-height: 1.6;">
 
-                        <p
-                            style="color: var(--electric-cyan); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;">
+                        <p style="color: var(--electric-cyan); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;"
+                            data-i18n="leg_rgpd_title">
                             🔒 PROTECCIÓN DE DATOS (RGPD)</p>
-                        <p style="margin-bottom: 10px;">
+                        <p style="margin-bottom: 10px;" data-i18n="leg_rgpd_text">
                             De conformidad con el Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD),
                             le informamos de que los datos personales facilitados serán tratados por el responsable del
                             establecimiento con la finalidad de gestionar la reparación solicitada, facturación y
@@ -3139,40 +3509,40 @@
                             establecimiento. No se cederán datos a terceros salvo obligación legal.
                         </p>
 
-                        <p
-                            style="color: var(--status-pending); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;">
+                        <p style="color: var(--status-pending); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px;"
+                            data-i18n="leg_warranty_title">
                             🛡️ CONDICIONES DE GARANTÍA</p>
-                        <p style="margin-bottom: 6px;">
+                        <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p1">
                             1. La garantía de reparación cubre un período de <strong>3 meses</strong> sobre la mano de
                             obra y las piezas sustituidas, salvo indicación expresa diferente en el presupuesto.
                         </p>
-                        <p style="margin-bottom: 6px;">
+                        <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p2">
                             2. La garantía <strong>NO cubre</strong>: daños por golpes, líquidos, manipulación por
                             terceros, mal uso del dispositivo, averías distintas a la reparada, ni piezas no
                             sustituidas en esta reparación.
                         </p>
-                        <p style="margin-bottom: 6px;">
+                        <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p3">
                             3. El cliente dispone de un plazo máximo de <strong>30 días naturales</strong> para recoger
                             el dispositivo tras la notificación de finalización. Transcurrido dicho plazo, el
                             establecimiento no se responsabiliza del dispositivo.
                         </p>
-                        <p style="margin-bottom: 6px;">
+                        <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p4">
                             4. El presupuesto tiene una validez de <strong>15 días</strong>. Si el cliente rechaza el
                             presupuesto, podrá aplicarse un coste de diagnóstico según tarifa vigente.
                         </p>
-                        <p style="margin-bottom: 6px;">
+                        <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p5">
                             5. El establecimiento no se hace responsable de la pérdida de datos almacenados en el
                             dispositivo. Se recomienda realizar copia de seguridad antes de entregar el equipo.
                         </p>
-                        <p style="margin-bottom: 6px;">
+                        <p style="margin-bottom: 6px;" data-i18n="leg_warranty_p6">
                             6. Al firmar este documento, el cliente declara que el dispositivo entregado es de su
                             legítima propiedad o que está autorizado para solicitar su reparación.
                         </p>
 
-                        <p
-                            style="color: var(--electric-purple); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; margin-top: 12px;">
+                        <p style="color: var(--electric-purple); font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; margin-top: 12px;"
+                            data-i18n="leg_consent_title">
                             📄 CONSENTIMIENTO</p>
-                        <p>
+                        <p data-i18n="leg_consent_text">
                             Con su firma, el cliente declara haber leído, comprendido y aceptado las presentes
                             condiciones de reparación, la política de garantía y el tratamiento de sus datos personales
                             conforme al RGPD.
@@ -3182,13 +3552,45 @@
                     <!-- Acceptance Checkbox -->
                     <div
                         style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; padding: 10px; background: rgba(0, 255, 198, 0.05); border: 1px solid rgba(0, 255, 198, 0.2); border-radius: 8px;">
-                        <input type="checkbox" id="rgpd-accept-checkbox"
+                        <input type="checkbox" id="rgpd-accept-checkbox" autocomplete="off"
                             style="width: 20px; height: 20px; margin-top: 2px; accent-color: var(--electric-cyan); cursor: pointer; flex-shrink: 0;">
                         <label for="rgpd-accept-checkbox"
-                            style="font-size: 0.82rem; color: var(--text-primary); cursor: pointer; line-height: 1.5;">
+                            style="font-size: 0.82rem; color: var(--text-primary); cursor: pointer; line-height: 1.5;"
+                            data-i18n="leg_accept_checkbox">
                             He leído y acepto las condiciones de reparación, la política de garantía y el
                             tratamiento de mis datos personales conforme al RGPD.
                         </label>
+                    </div>
+
+                    <!-- Pattern Lock - Visual Device Unlock Pattern -->
+                    <div id="pattern-lock-section" style="margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-size: 0.82rem; color: var(--electric-purple); font-weight: 600;">
+                                🔐 Patrón Visual de Desbloqueo
+                            </span>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-secondary); cursor: pointer;">
+                                <input type="checkbox" id="pattern-lock-toggle"
+                                    style="accent-color: var(--electric-purple); cursor: pointer; width: 16px; height: 16px;">
+                                Activar
+                            </label>
+                        </div>
+                        <div id="pattern-lock-container"
+                            style="display: none; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; padding: 16px; text-align: center;">
+                            <p style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 12px; font-style: italic;">
+                                💡 Dibuja el patrón de desbloqueo del dispositivo conectando los puntos
+                            </p>
+                            <canvas id="pattern-lock-canvas" width="240" height="240"
+                                style="display: inline-block; cursor: pointer; touch-action: none; border-radius: 10px; background: rgba(0,0,0,0.35);"></canvas>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                                <button type="button" id="btn-clear-pattern" class="btn btn-sm"
+                                    style="color: var(--danger); background: rgba(255, 71, 87, 0.1); font-size: 0.78rem;">
+                                    🗑️ Limpiar
+                                </button>
+                                <span id="pattern-lock-status" style="font-size: 0.73rem; color: var(--text-tertiary);">
+                                    Sin patrón
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Signature Canvas (hidden until checkbox is checked for local signing) -->
@@ -3203,17 +3605,18 @@
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg); gap: 10px;">
                         <button type="button" id="btn-clear-signature" class="btn btn-sm"
-                            style="color: var(--danger); background: rgba(255, 71, 87, 0.1);">
+                            style="color: var(--danger); background: rgba(255, 71, 87, 0.1);" data-i18n="btn_clear">
                             🗑️ Limpiar
                         </button>
 
                         <button type="button" id="btn-local-signature" class="btn btn-sm"
                             style="color: var(--status-success); background: rgba(0, 255, 198, 0.1);"
-                            title="Firma sin Internet (Vía WiFi local)">
+                            title="Firma sin Internet (Vía WiFi local)" data-i18n-title="btn_local_sig_title"
+                            data-i18n="btn_local_sig">
                             📶 Local (Offline)
                         </button>
-                        <span
-                            style="font-size: 0.75rem; color: var(--text-secondary); flex-grow: 1; text-align: right;">✍️
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); flex-grow: 1; text-align: right;"
+                            data-i18n="label_signature">✍️
                             Firma</span>
                     </div>
 
@@ -3234,47 +3637,7 @@
                         </button>
                     </div>
 
-                    <!-- Estado y Precio al final -->
-                    <h4
-                        style="color: var(--status-pending); margin: var(--spacing-lg) 0 var(--spacing-md); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">
-                        Estado y Precio</h4>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
-                        <div class="form-group">
-                            <label class="form-label" data-i18n="rep_field_status">Estado</label>
-                            <select class="form-select" id="reparacion-estado">
-                                <option value="recibido" data-i18n="st_recibido">Recibido</option>
-                                <option value="diagnostico" data-i18n="st_diagnostico">En Diagnóstico</option>
-                                <option value="reparando" data-i18n="st_reparando">Reparando</option>
-                                <option value="listo" data-i18n="st_listo">Listo</option>
-                                <option value="entregado" data-i18n="st_entregado">Entregado</option>
-                                <option value="cancelado" data-i18n="st_cancelado">Cancelado</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" data-i18n="rep_field_price">Precio Estimado (€)</label>
-                            <input type="text" inputmode="decimal" class="form-input" id="reparacion-precio"
-                                placeholder="0.00" data-i18n-placeholder="num_placeholder">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" data-i18n="rep_field_price_final">Precio Final (€)</label>
-                            <input type="text" inputmode="decimal" class="form-input" id="reparacion-precio-final"
-                                placeholder="0.00" data-i18n-placeholder="num_placeholder">
-                        </div>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
-                        <div class="form-group">
-                            <label class="form-label" data-i18n="rep_field_tech">Asignar a Técnico</label>
-                            <select class="form-select" id="reparacion-tecnico">
-                                <option value="" data-i18n="rep_tech_none">Sin asignar</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" data-i18n="rep_field_due_date">Fecha de Entrega</label>
-                            <input type="date" class="form-input" id="reparacion-fecha-entrega">
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-close-modal="modal-reparacion"
@@ -3282,6 +3645,65 @@
                     <button type="submit" class="btn btn-primary" data-i18n="mod_save">Guardar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Photo Editor / Daños -->
+    <div class="modal-overlay" id="modal-photo-editor" style="z-index: 3500;">
+        <div class="modal" style="max-width: 800px; width: 95%; height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h2 class="modal-title" data-i18n="mod_photo_editor">Editar Imagen / Marcar Daños</h2>
+                <button class="modal-close" data-close-modal="modal-photo-editor">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 15px; gap: 15px;">
+                <!-- Canvas Container -->
+                <div id="photo-editor-canvas-container" style="flex: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #0c0f12; border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); min-height: 200px;">
+                    <canvas id="photo-editor-canvas" style="display: block; cursor: crosshair; touch-action: none; max-width: 100%; max-height: 100%;"></canvas>
+                </div>
+                
+                <!-- Controls Toolbar -->
+                <div class="photo-editor-controls" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color);">
+                    <!-- Colors Picker -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);" data-i18n="pe_color">Color:</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="pe-color-btn active" data-color="#ff4757" style="background: #ff4757; width: 26px; height: 26px; border-radius: 50%; border: 2px solid white; cursor: pointer; transition: all 0.2s; outline: none;"></button>
+                            <button type="button" class="pe-color-btn" data-color="#ffa502" style="background: #ffa502; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; outline: none;"></button>
+                            <button type="button" class="pe-color-btn" data-color="#2ed573" style="background: #2ed573; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; outline: none;"></button>
+                            <button type="button" class="pe-color-btn" data-color="#1e90ff" style="background: #1e90ff; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; outline: none;"></button>
+                            <button type="button" class="pe-color-btn" data-color="#000000" style="background: #000000; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; outline: none;"></button>
+                            <button type="button" class="pe-color-btn" data-color="eraser" style="background: #f1f2f6; color: #2f3542; width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; outline: none; display: flex; align-items: center; justify-content: center; font-size: 11px;" title="Borrador" data-i18n-title="pe_eraser">🧽</button>
+                        </div>
+                    </div>
+
+                    <!-- Size Picker -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);" data-i18n="pe_thickness">Grosor:</span>
+                        <input type="range" id="pe-brush-size" min="2" max="25" value="5" style="width: 100px; cursor: pointer; accent-color: var(--primary);">
+                        <span id="pe-brush-size-val" style="font-size: 0.8rem; color: var(--text-secondary); width: 24px; text-align: right;">5px</span>
+                    </div>
+
+                    <!-- Tools Actions -->
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="pe-btn-undo" class="btn btn-sm btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; display: flex; align-items: center; gap: 4px;" data-i18n="pe_undo">
+                            ↩️ Deshacer
+                        </button>
+                        <button type="button" id="pe-btn-clear" class="btn btn-sm btn-secondary" style="font-size: 0.8rem; padding: 6px 12px; display: flex; align-items: center; gap: 4px; color: var(--danger);" data-i18n="pe_clear">
+                            🗑️ Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 15px;">
+                <button type="button" class="btn btn-secondary" data-close-modal="modal-photo-editor" data-i18n="mod_cancel">Cancelar</button>
+                <button type="button" id="pe-btn-save" class="btn btn-primary" data-i18n="pe_save">Guardar Cambios</button>
+            </div>
         </div>
     </div>
 
@@ -3903,11 +4325,33 @@
         </div>
     </div>
 
+    <!-- Debug Terminal Console -->
+    <div id="debug-terminal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 15, 20, 0.96); z-index: 99999; font-family: 'Outfit', 'Courier New', monospace; flex-direction: column; padding: 20px; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 255, 198, 0.2); padding-bottom: 10px; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="color: var(--status-success); font-weight: bold; font-size: 1.1rem; text-shadow: 0 0 10px rgba(0, 255, 198, 0.5);">⚡ ReparApp Developer Terminal</span>
+                <span style="background: rgba(255,255,255,0.05); color: var(--text-secondary); font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color);">v1.1.2-debug</span>
+            </div>
+            <button onclick="document.getElementById('debug-terminal-overlay').style.display = 'none'" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-secondary)'">&times;</button>
+        </div>
+        
+        <div id="debug-terminal-output" style="flex: 1; overflow-y: auto; background: rgba(0, 0, 0, 0.45); border-radius: 8px; padding: 15px; border: 1px solid var(--border-color); color: #c5cdd8; font-size: 0.85rem; line-height: 1.5; font-family: monospace; display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);">
+            <div style="color: #64748b;">Escribe 'help' para ver una lista de comandos disponibles.</div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; background: rgba(255, 255, 255, 0.03); border-radius: 8px; border: 1px solid var(--border-color); padding: 5px 15px;">
+            <span style="color: var(--status-success); font-weight: bold; font-family: monospace;">reparapp:$</span>
+            <input type="text" id="debug-terminal-input" style="flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: monospace; font-size: 0.9rem; padding: 8px 0;" placeholder="Ingresa un comando..." autocomplete="off">
+            <span style="color: var(--text-muted); font-size: 0.7rem; font-style: italic;">[Enter para ejecutar]</span>
+        </div>
+    </div>
+
     <!-- Main Scripts -->
     <script src="js/locales/es.js"></script>
     <script src="js/locales/en.js"></script>
     <script src="js/locales/fr.js"></script>
     <script src="js/locales/pt.js"></script>
+    <script src="js/locales/de.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/license-manager.js"></script>
     <script src="js/ui/search-select.js"></script>
@@ -3916,7 +4360,7 @@
     <script src="js/sync_secure.js"></script>
     <script src="js/ui/navigation.js"></script>
     <script src="js/ui/clients.js"></script>
-    <script src="js/ui/repairs_v2.js?v=PRO_REPAIR_V2"></script> <!-- RENAMED -->
+    <script src="js/ui/repairs_v2.js?v=PRO_FINAL_SIGNATURE"></script> <!-- FINAL RELEASE -->
     <script src="js/ui/invoices.js"></script>
     <script src="js/ui/inventory.js"></script>
     <script src="js/ui/appointments.js"></script>
@@ -3929,6 +4373,9 @@
     <script src="js/ui/pos.js"></script>
     <script src="js/ui/stats.js"></script>
     <script src="js/utils/printer_v2.js"></script>
+    <script src="js/security_manager.js"></script>
+    <script src="js/ui/universal-import.js"></script>
+    <script src="js/ui/debug-console.js"></script>
     <script src="js/app.js?v=1.1.2"></script>
 </body>
 

@@ -265,55 +265,59 @@ class InvoicesUI {
 
         return `
             <div class="card" data-id="${factura.id}">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">${this.escapeHtml(factura.numero || 'Sin número')}</h3>
-                        <p class="card-subtitle">${this.formatDate(factura.fecha)}</p>
+                <!-- Left: Invoice data -->
+                <div style="flex: 1; min-width: 0; text-align: left;">
+                    <div style="display: flex; align-items: baseline; gap: 8px; justify-content: flex-start; margin-bottom: 2px;">
+                        <h3 class="card-title" style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                            ${this.escapeHtml(factura.numero || 'Sin número')}
+                        </h3>
+                        <span class="price" style="font-size: 0.95rem; font-weight: 800;">${this.formatPrice(factura.total)}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px; font-size: 0.9rem; color: var(--text-secondary);">
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 13px; height: 13px; color: var(--text-muted); flex-shrink: 0;">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                            <span>${this.escapeHtml(clienteName)}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem; color: var(--text-muted);">
+                            <span>Fecha: ${this.formatDate(factura.fecha)}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="card-info">
+                <!-- Right: Action buttons -->
+                <div style="display: flex; gap: 6px; flex-shrink: 0; align-items: center;">
+                    <button class="btn btn-icon btn-sm btn-pdf" data-action="pdf" data-id="${factura.id}" title="PDF">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
                         </svg>
-                        <span>${this.escapeHtml(clienteName)}</span>
-                    </div>
-                    <div class="price" style="margin-top: var(--spacing-md);">${this.formatPrice(factura.total)}</div>
+                    </button>
+                    <button class="btn btn-icon btn-sm btn-print" data-action="print" data-id="${factura.id}" title="${i18n.t('btn_print')}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect x="6" y="14" width="12" height="8"></rect>
+                        </svg>
+                    </button>
+                    <button class="btn btn-icon btn-sm btn-edit" data-action="edit" data-id="${factura.id}" title="${i18n.t('btn_edit')}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="btn btn-icon btn-sm btn-delete" data-action="delete" data-id="${factura.id}" title="${i18n.t('btn_delete')}" style="color: var(--danger);">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
                 </div>
-                <div class="card-footer">
-                <button class="btn btn-secondary btn-pdf" data-action="pdf" data-id="${factura.id}" title="PDF">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="12" y1="18" x2="12" y2="12"></line>
-                        <line x1="9" y1="15" x2="15" y2="15"></line>
-                    </svg>
-                    PDF
-                </button>
-                <button class="btn btn-secondary btn-icon btn-print" data-action="print" data-id="${factura.id}" title="${i18n.t('btn_print')}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                        <rect x="6" y="14" width="12" height="8"></rect>
-                    </svg>
-                </button>
-                <button class="btn btn-secondary btn-edit" data-action="edit" data-id="${factura.id}" title="${i18n.t('btn_edit')}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                    ${i18n.t('btn_edit')}
-                </button>
-                <button class="btn btn-icon btn-delete" data-action="delete" data-id="${factura.id}" title="${i18n.t('btn_delete')}">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </button>
             </div>
-        </div>
-    `;
+        `;
     }
 
     /**
@@ -363,7 +367,7 @@ class InvoicesUI {
                         if (window.printer) {
                             window.printer.printInvoiceTicket(factura, cliente);
                         } else {
-                            app.showToast('Error: Módulo de impresión no cargado', 'error');
+                            app.showToast(i18n.t('toast_err_print_module'), 'error');
                         }
                     }
                 } catch (error) {
@@ -435,14 +439,12 @@ class InvoicesUI {
         const companyEmail = (await db.getConfig('company_email')) || 'contacto@ejemplo.com';
         const logo = await db.getConfig('app_logo');
 
-        // Crear ventana de impresión
-        const printWindow = window.open('', '_blank');
-
         let lineasHtml = '';
-        factura.lineas.forEach(l => {
+        const lineas = factura.lineas || factura.items || [];
+        lineas.forEach(l => {
             lineasHtml += `
                 <tr>
-                    <td>${this.escapeHtml(l.concepto)}</td>
+                    <td>${this.escapeHtml(l.concepto || l.descripcion || '')}</td>
                     <td class="text-center">${l.cantidad}</td>
                     <td class="text-right">${this.formatPrice(l.precio)}</td>
                     <td class="text-right">${this.formatPrice(l.cantidad * l.precio)}</td>
@@ -602,8 +604,11 @@ class InvoicesUI {
             </html>
         `;
 
-        printWindow.document.write(html);
-        printWindow.document.close();
+        if (window.printer && window.printer.showDocumentPreview) {
+            window.printer.showDocumentPreview(html, 'Previsualizar Factura - ' + (factura.numero || 'Sin número'));
+        } else {
+            console.error('showDocumentPreview is not loaded');
+        }
     }
 
     /**
@@ -718,9 +723,10 @@ class InvoicesUI {
                         this.onClienteChange(factura.cliente_id);
 
                         // Cargar líneas
-                        if (factura.lineas && factura.lineas.length > 0) {
-                            factura.lineas.forEach(l => {
-                                this.addLinea(l.concepto, l.cantidad, l.precio);
+                        const editLineas = factura.lineas || factura.items || [];
+                        if (editLineas.length > 0) {
+                            editLineas.forEach(l => {
+                                this.addLinea(l.concepto || l.descripcion || '', l.cantidad, l.precio);
                             });
                         }
                     }
@@ -821,12 +827,12 @@ class InvoicesUI {
             };
 
             if (!factura.cliente_id) {
-                app.showToast('Selecciona un cliente', 'error');
+                app.showToast(i18n.t('toast_err_select_client'), 'error');
                 return;
             }
 
             if (lineas.length === 0) {
-                app.showToast('Añade al menos un concepto', 'error');
+                app.showToast(i18n.t('toast_err_no_lines'), 'error');
                 return;
             }
 

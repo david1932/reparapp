@@ -10,7 +10,7 @@ class I18n {
         // 3. Por defecto: Español
         const saved = localStorage.getItem('app_language');
         const browserLang = navigator.language.split('-')[0];
-        this.availableLocales = ['es', 'en', 'fr', 'pt'];
+        this.availableLocales = ['es', 'en', 'fr', 'pt', 'de'];
 
         if (saved && this.availableLocales.includes(saved)) {
             this.currentLocale = saved;
@@ -20,7 +20,7 @@ class I18n {
             this.currentLocale = 'es';
         }
 
-        this.translations = { es, en, fr, pt };
+        this.translations = { es, en, fr, pt, de };
     }
 
     /**

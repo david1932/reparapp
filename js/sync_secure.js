@@ -115,6 +115,9 @@ class SyncManager {
             if (window.licenseManager && window.licenseManager.licenseData) {
                 licenseKey = window.licenseManager.licenseData.licenseKey || '';
             }
+            if (licenseKey === 'DAVID-REPARAPP-OWNER-2026-TOKEN') {
+                licenseKey = 'DAVID-MASTER-PRO-2026';
+            }
 
             let sucursalId = await db.getConfig('sucursal_id');
             if (!sucursalId || sucursalId === 'default') {
