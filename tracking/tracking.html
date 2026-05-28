@@ -1,279 +1,220 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seguimiento de Reparación</title>
+    <title>Seguimiento de Reparación | ReparApp Premium</title>
     <style>
         :root {
-            --primary: #2563eb;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --warning: #f59e0b;
+            --bg: #030305;
+            --accent: #10b981;
+            --text: #ffffff;
+            --text-muted: #a1a1aa;
+            --glass: rgba(18,18,24,0.9);
+            --glass-border: rgba(255,255,255,0.1);
+            --error: #ef4444;
         }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background);
+            background: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Inter', -apple-system, sans-serif;
             min-height: 100vh;
-        }
-
-        .container {
-            background: var(--surface);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 480px;
-        }
-
-        h1 {
-            margin-top: 0;
-            color: var(--primary);
-            text-align: center;
-            font-size: 1.5rem;
-        }
-
-        .search-box {
             display: flex;
-            gap: 10px;
-            margin-bottom: 2rem;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 1rem;
+        .container {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
         }
-
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        #result {
-            display: none;
-        }
-
+        .logo { font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; }
+        .logo span { color: var(--accent); }
+        .icon { width: 64px; height: 64px; background: rgba(16,185,129,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2rem; }
         .status-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            background: var(--border);
-            color: var(--text);
-            margin-bottom: 1rem;
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
         }
-
-        .status-badge.terminado,
-        .status-badge.listo,
-        .status-badge.entregado {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-badge.reparando,
-        .status-badge.diagnostico {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .status-badge.pendiente {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-
-        .detail-row {
+        .status-RECIBIDO, .status-EN_DIAGNOSTICO, .status-EN_PROCESO, .status-REPARANDO { background: rgba(59,130,246,0.2); color: #3b82f6; }
+        .status-LISTO, .status-ENTREGADO { background: rgba(16,185,129,0.2); color: #10b981; }
+        .status-CANCELADO { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .status-GARANTIA { background: rgba(234,179,8,0.2); color: #eab308; }
+        .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid var(--background);
-            padding-bottom: 0.5rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--glass-border);
+            text-align: left;
         }
-
-        .label {
-            color: var(--text-light);
-            font-size: 0.9rem;
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-muted); font-size: 0.85rem; }
+        .info-value { font-weight: 600; text-align: right; }
+        .error { color: var(--error); margin-top: 1rem; }
+        .footer { margin-top: 2rem; font-size: 0.8rem; color: var(--text-muted); }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
         }
-
-        .value {
-            font-weight: 500;
-        }
-
-        .error {
-            color: #ef4444;
-            text-align: center;
-            margin-top: 1rem;
-            display: none;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-
 <body>
-
     <div class="container">
-        <h1>Estado de Reparación</h1>
-
-        <div class="search-box">
-            <input type="text" id="repairId" placeholder="ID de Reparación" />
-            <button onclick="checkStatus()">Buscar</button>
+        <div class="logo">ReparApp<span>Premium</span></div>
+        <div id="content">
+            <div class="spinner"></div>
+            <p style="color: var(--text-muted)">Consultando reparación...</p>
         </div>
-
-        <div id="loading" style="display: none; text-align: center;">Buscando...</div>
-        <div id="error" class="error"></div>
-
-        <div id="result">
-            <div style="text-align: center;">
-                <span id="statusBadge" class="status-badge">Estado</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="label">Dispositivo</span>
-                <span class="value" id="deviceModel">-</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="label">Problema</span>
-                <span class="value" id="problemDesc">-</span>
-            </div>
-
-            <div class="detail-row">
-                <span class="label">Fecha Entrada</span>
-                <span class="value" id="dateIn">-</span>
-            </div>
-
-            <div class="detail-row" id="costRow" style="display: none;">
-                <span class="label">Total</span>
-                <span class="value" id="totalCost">-</span>
-            </div>
-        </div>
+        <div class="footer">Seguimiento en tiempo real</div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Configuración de Supabase (Pública / Anon)
-        const SUPABASE_URL = 'https://yihgvgsajrncsamkwjlq.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA';
+        const SUPABASE_URL = "https://yihgvgsajrncsamkwjlq.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaGd2Z3NhanJuY3NhbWt3amxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwOTc0MzQsImV4cCI6MjA4NDY3MzQzNH0.BPeBsv2QRU_aWeO5jNWvcbh-66PpVNZ4OgVczEELMJA";
 
-        // Elementos UI
-        const inputId = document.getElementById('repairId');
-        const loading = document.getElementById('loading');
-        const errorDiv = document.getElementById('error');
-        const resultDiv = document.getElementById('result');
-
-        // Verificar si hay ID en la URL al cargar
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
-            if (id) {
-                inputId.value = id;
-                checkStatus();
-            }
+        const STATUS_LABELS = {
+            RECIBIDO: "Recibido",
+            EN_DIAGNOSTICO: "En Diagnóstico",
+            EN_PROCESO: "En Proceso",
+            REPARANDO: "Reparando",
+            LISTO: "Listo para recoger",
+            ENTREGADO: "Entregado",
+            GARANTIA: "En Garantía",
+            CANCELADO: "Cancelado"
         };
 
-        async function checkStatus() {
-            const id = inputId.value.trim();
-            if (!id) return;
+        async function loadRepair() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get("t");
+            const dynamicUrl = params.get("u");
+            const dynamicKey = params.get("k");
+            const repairId = params.get("id") || (token ? decodeTokenId(token) : null);
+            const content = document.getElementById("content");
 
-            // Reset UI
-            loading.style.display = 'block';
-            errorDiv.style.display = 'none';
-            resultDiv.style.display = 'none';
+            if (!repairId) {
+                content.innerHTML = '<div class="icon">🔍</div><p class="error">No se proporcionó un ID de reparación.</p>';
+                return;
+            }
+
+            function decodeSafe(str) {
+                if (!str) return null;
+                try {
+                    if (str.includes('.') || str.startsWith('http')) return str;
+                    return atob(decodeURIComponent(str));
+                } catch (e) { return str; }
+            }
+
+            function decodeTokenId(t) {
+                try {
+                    let base64 = t.replace(/-/g, '+').replace(/_/g, '/');
+                    while (base64.length % 4) base64 += '=';
+                    const decoded = atob(base64);
+                    const parts = decoded.split('|');
+                    return parts[0];
+                } catch (e) { return null; }
+            }
+
+            let finalUrl = SUPABASE_URL;
+            let finalKey = SUPABASE_KEY;
+
+            if (token) {
+                try {
+                    let base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+                    while (base64.length % 4) base64 += '=';
+                    const decoded = atob(base64);
+                    const parts = decoded.split('|');
+                    if (parts.length === 3) {
+                        finalUrl = parts[1];
+                        finalKey = parts[2];
+                    }
+                } catch (e) { console.error('Token Error:', e); }
+            } else if (dynamicUrl && dynamicKey) {
+                finalUrl = decodeSafe(dynamicUrl);
+                finalKey = decodeSafe(dynamicKey);
+            }
 
             try {
-                // Verificar Supabase
-                if (typeof window.supabase === 'undefined') {
-                    throw new Error('Supabase no cargó. Revisa tu conexión.');
-                }
-
-                // Inicializar cliente (SIN SESIÓN PERSISTENTE)
-                const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    auth: { persistSession: false }
+                const res = await fetch(`${finalUrl}/rest/v1/reparaciones?id=eq.${encodeURIComponent(repairId)}&select=*`, {
+                    headers: { apikey: finalKey, Authorization: `Bearer ${finalKey}` }
                 });
 
-                // Consultar Supabase
-                // Usamos select('*') porque debug.html confirmó que funciona
-                const { data, error } = await client
-                    .from('reparaciones')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
+                if (!res.ok) throw new Error("Error de conexión");
 
-                if (error) {
-                    console.error(error);
-                    // Mostrar el error real en pantalla para depurar
-                    throw new Error('Supabase Error: ' + (error.message || JSON.stringify(error)));
+                const data = await res.json();
+                if (!data || data.length === 0) {
+                    content.innerHTML = '<div class="icon">❌</div><h3 style="margin-bottom:0.5rem">No encontrada</h3><p class="error">No se encontró ninguna reparación con ese ID. Verifica que el enlace sea correcto.</p>';
+                    return;
                 }
 
-                if (data) {
-                    renderResult(data);
-                } else {
-                    throw new Error('Reparación no encontrada');
+                const repair = data[0];
+                const rawStatus = (repair.estado || "RECIBIDO").toUpperCase();
+                
+                // Normalizar estados
+                let status = rawStatus;
+                if (status === 'PENDIENTE') status = 'RECIBIDO';
+                if (status === 'DIAGNOSTICO' || status === 'EN DIAGNOSTICO') status = 'EN_DIAGNOSTICO';
+                if (status === 'EN PROCESO') status = 'EN_PROCESO';
+                if (status === 'EN_REPARACION' || status === 'EN REPARACION') status = 'REPARANDO';
+                if (status === 'REPARADO' || status === 'TERMINADO') status = 'LISTO';
+
+                const statusLabel = STATUS_LABELS[status] || rawStatus;
+                const device = [repair.marca, repair.modelo].filter(Boolean).join(" ") || "No especificado";
+                const imei = repair.imei_serial || repair.imeiSerial || repair.imei || "No registrado";
+                const problem = repair.problema || "No especificado";
+                
+                const fechaIn = repair.fecha_entrada || repair.fechaEntrada || repair.fecha_creacion || repair.fechaCreacion;
+                const entrada = fechaIn ? new Date(Number(fechaIn) || fechaIn).toLocaleDateString("es-ES") : "—";
+                
+                const fechaEst = repair.fecha_estimada || repair.fechaEntregaEstimada;
+                const estimada = fechaEst ? new Date(Number(fechaEst) || fechaEst).toLocaleDateString("es-ES") : "—";
+                
+                const fechaOut = repair.fecha_entrega || repair.fechaEntrega;
+                const entregada = fechaOut ? new Date(Number(fechaOut) || fechaOut).toLocaleDateString("es-ES") : "Pendiente";
+
+                const statusClass = status === "LISTO" ? "LISTO" : 
+                    ["ENTREGADO"].includes(status) ? "LISTO" : 
+                    status === "CANCELADO" ? "CANCELADO" :
+                    status === "GARANTIA" ? "GARANTIA" : "RECIBIDO";
+
+                const statusIcon = status === "LISTO" ? "✅" : status === "ENTREGADO" ? "📦" : status === "CANCELADO" ? "❌" : "🔧";
+
+                let html = `
+                    <div class="icon">${statusIcon}</div>
+                    <span class="status-badge status-${statusClass}">${statusLabel}</span>
+                    <div class="info-row"><span class="info-label">Dispositivo</span><span class="info-value">${device}</span></div>
+                    <div class="info-row"><span class="info-label">IMEI / Serie</span><span class="info-value">${imei}</span></div>
+                    <div class="info-row"><span class="info-label">Avería</span><span class="info-value">${problem}</span></div>
+                    <div class="info-row"><span class="info-label">Recibido</span><span class="info-value">${entrada}</span></div>
+                    <div class="info-row"><span class="info-label">Entrega estimada</span><span class="info-value">${estimada}</span></div>
+                    <div class="info-row"><span class="info-label">Entregado</span><span class="info-value">${entregada}</span></div>
+                `;
+
+                if (repair.solucion) {
+                    html += `<div class="info-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                        <span class="info-label" style="color:var(--accent);">Informe Técnico / Solución</span>
+                        <span class="info-value" style="font-weight:400;text-align:left;font-size:0.9rem;margin-top:2px;">${repair.solucion}</span>
+                    </div>`;
                 }
 
+                content.innerHTML = html;
             } catch (err) {
-                errorDiv.textContent = err.message || 'Error desconocido';
-                errorDiv.style.display = 'block';
-            } finally {
-                loading.style.display = 'none';
+                content.innerHTML = `<div class="icon">⚠️</div><p class="error">Error al consultar: ${err.message}</p>`;
             }
         }
-
-        function renderResult(data) {
-            resultDiv.style.display = 'block';
-
-            // Estado con color
-            const badge = document.getElementById('statusBadge');
-            badge.textContent = (data.estado || 'Desconocido').toUpperCase();
-            badge.className = 'status-badge ' + (data.estado || '').toLowerCase();
-
-            // Datos
-            document.getElementById('deviceModel').textContent = data.modelo || 'Desconocido';
-            document.getElementById('problemDesc').textContent = data.descripcion || '-';
-
-            // Fecha formateada
-            if (data.fecha_creacion) {
-                const date = new Date(data.fecha_creacion); // Timestamps (ms) work directly
-                if (!isNaN(date.getTime())) {
-                    document.getElementById('dateIn').textContent = date.toLocaleDateString();
-                } else {
-                    document.getElementById('dateIn').textContent = '-';
-                }
-            }
-
-            // Costo (Solo si hay precio)
-            const costRow = document.getElementById('costRow');
-            if (data.precio_final && data.precio_final > 0) {
-                costRow.style.display = 'flex';
-                document.getElementById('totalCost').textContent = parseFloat(data.precio_final).toFixed(2) + ' €';
-            } else {
-                costRow.style.display = 'none';
-            }
-        }
+        loadRepair();
     </script>
 </body>
-
 </html>
