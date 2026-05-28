@@ -8,6 +8,16 @@ class ManagerUI {
         this.currentQuarter = this.getQuarter(new Date());
     }
 
+    escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     async init() {
         this.renderFilters();
         this.setupListeners();
@@ -482,8 +492,8 @@ class ManagerUI {
         if (document.getElementById('gasto-categoria')) document.getElementById('gasto-categoria').selectedIndex = 0;
 
         // Reset calculated display fields explicitly
-        document.getElementById('gasto-calc-base').textContent = `0.00 ${window.app_currency || '€'}`;
-        document.getElementById('gasto-calc-iva').textContent = `0.00 ${window.app_currency || '€'}`;
+        document.getElementById('gasto-calc-base').textContent = this.formatPrice(0);
+        document.getElementById('gasto-calc-iva').textContent = this.formatPrice(0);
 
         // Focus first field
         document.getElementById('gasto-fecha').focus();
@@ -1135,13 +1145,13 @@ class ManagerUI {
         if (!this.stream) {
             // Apagado -> Encender
             await this.startCamera();
-            if (txt) txt.textContent = "Capturar Foto";
+            if (txt) txt.textContent = i18n.t('mod_expense_btn_capture_photo');
             if (btn) btn.style.background = "#ef4444"; // Red for capture action
         } else {
             // Encendido -> Capturar
             this.captureAndScan();
             this.stopCamera();
-            if (txt) txt.textContent = "Tomar Foto";
+            if (txt) txt.textContent = i18n.t('mod_expense_btn_take_photo');
             if (btn) btn.style.background = ""; // Reset to primary
         }
     }
