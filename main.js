@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 const os = require('os');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const licenseHandler = require('./src/main/license-handler');
 
 let mainWindow;
@@ -226,6 +226,118 @@ $escPos | Out-Printer -Name "${safeName}"
     } catch (err) {
         console.error('Unexpected error opening drawer:', err);
         return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('security:check-os', async () => {
+    let isVM = false;
+    let details = '';
+    
+    try {
+        if (process.platform === 'win32') {
+            const manufacturer = execSync('powershell -Command "Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Manufacturer"', { timeout: 3000 }).toString().toLowerCase();
+            const model = execSync('powershell -Command "Get-CimInstance Win32_ComputerSystem | Select-Object -ExpandProperty Model"', { timeout: 3000 }).toString().toLowerCase();
+            
+            details = `${manufacturer.trim()} / ${model.trim()}`;
+            
+            if (manufacturer.includes('vmware') || 
+                manufacturer.includes('virtualbox') || 
+                manufacturer.includes('xen') || 
+                manufacturer.includes('qemu') || 
+                (manufacturer.includes('microsoft corporation') && model.includes('virtual')) ||
+                model.includes('virtualbox') ||
+                model.includes('vmware') ||
+                model.includes('hvm') ||
+                model.includes('kvm')) {
+                isVM = true;
+            }
+        }
+    } catch (e) {
+        console.warn('Security BIOS Check failed:', e.message);
+    }
+    
+    const windows = BrowserWindow.getAllWindows();
+    const isDevToolsOpen = windows.some(w => w.webContents.isDevToolsOpened());
+    
+    return {
+        isVM,
+        isDevToolsOpen,
+        details
+    };
+});
+
+ipcMain.handle('printer:print-raw', async (event, printerName, rawText) => {
+    if (!printerName) return { success: false, error: 'No printer name provided' };
+    
+    const safeName = printerName.replace(/[^a-zA-Z0-9\s\-_().]/g, '');
+    const tempFile = path.join(app.getPath('temp'), `print_raw_${Date.now()}.txt`);
+    const tempScript = path.join(app.getPath('temp'), `print_raw_${Date.now()}.ps1`);
+    
+    try {
+        fs.writeFileSync(tempFile, rawText, 'utf8');
+        const scriptContent = `Get-Content "${tempFile}" -Raw | Out-Printer -Name "${safeName}"`;
+        fs.writeFileSync(tempScript, scriptContent, 'utf8');
+        
+        return new Promise((resolve) => {
+            exec(`powershell -ExecutionPolicy Bypass -File "${tempScript}"`, (error) => {
+                try {
+                    if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+                    if (fs.existsSync(tempScript)) fs.unlinkSync(tempScript);
+                } catch (e) {}
+                
+                if (error) {
+                    resolve({ success: false, error: error.message });
+                } else {
+                    resolve({ success: true });
+                }
+            });
+        });
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+
+ipcMain.handle('printer:print-wifi', async (event, ip, port, rawText) => {
+    const net = require('net');
+    return new Promise((resolve) => {
+        const client = new net.Socket();
+        client.setTimeout(5000);
+        
+        client.connect(port || 9100, ip, () => {
+            client.write(Buffer.from(rawText, 'utf8'), () => {
+                client.destroy();
+                resolve({ success: true });
+            });
+        });
+        
+        client.on('error', (err) => {
+            client.destroy();
+            resolve({ success: false, error: err.message });
+        });
+        
+        client.on('timeout', () => {
+            client.destroy();
+            resolve({ success: false, error: 'Connection timeout' });
+        });
+    });
+});
+
+ipcMain.handle('printer:print-com', async (event, comPort, rawText) => {
+    const tempFile = path.join(app.getPath('temp'), `print_com_${Date.now()}.txt`);
+    try {
+        fs.writeFileSync(tempFile, rawText, 'utf8');
+        return new Promise((resolve) => {
+            exec(`cmd.exe /c "copy /b \\"${tempFile}\\" \\"${comPort}\\""`, (error) => {
+                try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch (e) {}
+                if (error) {
+                    resolve({ success: false, error: error.message });
+                } else {
+                    resolve({ success: true });
+                }
+            });
+        });
+    } catch (e) {
+        return { success: false, error: e.message };
     }
 });
 
