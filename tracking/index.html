@@ -203,6 +203,7 @@
         .badge.reparando { background: rgba(129, 140, 248, 0.1); color: #818cf8; }
         .badge.listo { background: rgba(16, 185, 129, 0.1); color: #10b981; }
         .badge.entregado { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .badge.garantia { background: rgba(234, 179, 8, 0.1); color: #eab308; }
         .badge.cancelado { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
         .detail-group {
@@ -500,34 +501,47 @@
 
             let labelText = 'Recibido';
             let emoji = '📦';
+            let badgeClass = 'recibido';
 
-            if (['pendiente', 'recibido'].includes(st)) {
+            // Normalize state to be highly robust and avoid showing 'Listo' by mistake
+            const norm = st.replace(/_/g, ' ').trim();
+
+            if (norm.includes('pendiente') || norm.includes('recibido')) {
                 labelText = 'Recibido';
                 emoji = '📦';
-                badge.classList.add('recibido');
-            } else if (st === 'en_diagnostico' || st.includes('diagnostico')) {
+                badgeClass = 'recibido';
+            } else if (norm.includes('diagnostico') || norm.includes('diagnóstico')) {
                 labelText = 'En Diagnóstico';
                 emoji = '🔍';
-                badge.classList.add('diagnostico');
-            } else if (['reparando', 'taller', 'proceso'].some(s => st.includes(s))) {
+                badgeClass = 'diagnostico';
+            } else if (norm.includes('reparando') || norm.includes('reparacion') || norm.includes('reparación') || norm.includes('taller') || norm.includes('proceso')) {
                 labelText = 'Reparando';
                 emoji = '🔧';
-                badge.classList.add('reparando');
-            } else if (['cancelado', 'cancelled'].includes(st)) {
+                badgeClass = 'reparando';
+            } else if (norm.includes('cancelado') || norm.includes('cancelled')) {
                 labelText = 'Cancelado';
                 emoji = '❌';
-                badge.classList.add('cancelado');
-            } else if (st === 'entregado') {
+                badgeClass = 'cancelado';
+            } else if (norm.includes('entregado') || norm.includes('entrega')) {
                 labelText = 'Entregado';
                 emoji = '📦';
-                badge.classList.add('entregado');
-            } else {
-                // listo, terminado
-                labelText = 'Listo';
+                badgeClass = 'entregado';
+            } else if (norm.includes('garantia') || norm.includes('garantía')) {
+                labelText = 'En Garantía';
+                emoji = '🛡️';
+                badgeClass = 'garantia';
+            } else if (norm.includes('listo') || norm.includes('terminado') || norm.includes('reparado')) {
+                labelText = 'Listo para recoger';
                 emoji = '✅';
-                badge.classList.add('listo');
+                badgeClass = 'listo';
+            } else {
+                // Default fallback to raw status value
+                labelText = rep.estado ? rep.estado.charAt(0).toUpperCase() + rep.estado.slice(1) : 'Recibido';
+                emoji = '📦';
+                badgeClass = 'recibido';
             }
 
+            badge.classList.add(badgeClass);
             badge.innerHTML = `${labelText} ${emoji}`;
 
             if (rep.solucion) {
