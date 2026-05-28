@@ -282,8 +282,10 @@ class AuthUI {
             i18n.t('auth_logout_confirm_msg'),
             async () => {
                 try {
-                    // Mantenemos la sesión de Supabase (Cloud) activa para que la sincronización en segundo plano siga funcionando.
-                    // Solo se cierra la sesión local del empleado.
+                    // Limpiar sesión Cloud si existe para que puedan cambiar de cuenta/correo
+                    if (window.supabaseClient) {
+                        try { await window.supabaseClient.signOut(); } catch (e) {}
+                    }
 
                     // Limpiar storage local
                     localStorage.removeItem('employee_session');
