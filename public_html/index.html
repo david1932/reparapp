@@ -446,12 +446,30 @@
             btnSearch.disabled = true;
 
             try {
-                const { data, error } = await _supabase.from('reparaciones').select('*').eq('id', finalId).single();
-                if (error || !data) throw new Error('Reparación no encontrada.');
+                // Query only needed fields that exist in Supabase
+                // Columns verified from SupabaseDTOs.kt: id, estado, marca, modelo, problema, fecha_creacion, precio_final, solucion, checklist, parts
+                const { data, error } = await _supabase
+                    .from('reparaciones')
+                    .select('id, estado, marca, modelo, problema, fecha_creacion, precio_final, solucion, checklist')
+                    .eq('id', finalId)
+                    .maybeSingle();
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    if (error.code === '22P02') {
+                        throw new Error('El formato del ID no es válido.');
+                    }
+                    throw new Error('Error al consultar. Inténtalo de nuevo.');
+                }
+
+                if (!data) {
+                    throw new Error('Reparación no encontrada. Si es reciente, puede que aún no se haya sincronizado.');
+                }
+
                 renderResult(data);
             } catch (e) {
                 errorMsg.style.display = 'block';
-                errorMsg.innerHTML = `⚠️ No encontrado<br><small>Verifica el ID o contacta con el taller.</small>`;
+                errorMsg.innerHTML = `⚠️ ${e.message}<br><small>Pulsa "Sincronizar" en la App si es nueva.</small>`;
             } finally {
                 btnSearch.textContent = 'Buscar';
                 btnSearch.disabled = false;
@@ -459,8 +477,7 @@
         }
 
         function renderResult(rep) {
-            const deviceMap = { 'movil': 'Smartphone', 'tablet': 'Tablet', 'portatil': 'Portátil', 'consola': 'Consola', 'pc': 'PC', 'otros': 'Equipo' };
-            document.getElementById('dev-name').textContent = (deviceMap[rep.dispositivo] || 'Equipo').toUpperCase();
+            document.getElementById('dev-name').textContent = (rep.marca || 'Equipo').toUpperCase();
             document.getElementById('dev-model').textContent = `${rep.marca || ''} ${rep.modelo || ''} - ${rep.problema || ''}`;
             document.getElementById('date-received').textContent = new Date(rep.fecha_creacion).toLocaleDateString();
 
