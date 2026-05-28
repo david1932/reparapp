@@ -4,7 +4,74 @@
  */
 
 const DB_NAME = 'GestionAppDB';
-const DB_VERSION = 9;
+const DB_VERSION = 11;
+
+/**
+ * Bidirectional status mapper: Local (lowercase) <-> Cloud/Android (UPPERCASE)
+ */
+function cloudToLocalStatus(status) {
+    if (!status) return 'recibido';
+    const s = status.toUpperCase().trim();
+    switch (s) {
+        case 'RECIBIDO':
+        case 'PENDIENTE':
+            return 'recibido';
+        case 'EN_DIAGNOSTICO':
+        case 'DIAGNOSTICO':
+            return 'diagnostico';
+        case 'EN_PROCESO':
+            return 'en_proceso';
+        case 'REPARANDO':
+        case 'EN_REPARACION':
+            return 'en_reparacion';
+        case 'LISTO':
+        case 'REPARADO':
+            return 'listo';
+        case 'ENTREGADO':
+            return 'entregado';
+        case 'GARANTIA':
+            return 'garantia';
+        case 'CANCELADO':
+            return 'cancelado';
+        default:
+            return s.toLowerCase();
+    }
+}
+
+function localToCloudStatus(status) {
+    if (!status) return 'RECIBIDO';
+    const s = status.toLowerCase().trim();
+    switch (s) {
+        case 'recibido':
+        case 'pendiente':
+            return 'RECIBIDO';
+        case 'diagnostico':
+        case 'presupuesto':
+            return 'EN_DIAGNOSTICO';
+        case 'en_proceso':
+        case 'en proceso':
+            return 'EN_PROCESO';
+        case 'en_reparacion':
+        case 'en reparacion':
+        case 'reparando':
+        case 'esperando_pieza':
+            return 'REPARANDO';
+        case 'listo':
+        case 'reparado':
+        case 'completada':
+            return 'LISTO';
+        case 'entregado':
+        case 'entregada':
+            return 'ENTREGADO';
+        case 'garantia':
+        case 'garantía':
+            return 'GARANTIA';
+        case 'cancelado':
+            return 'CANCELADO';
+        default:
+            return s.toUpperCase().replace(/[-\s]/g, '_');
+    }
+}
 
 class Database {
     constructor() {
@@ -24,10 +91,15 @@ class Database {
                 reject(request.error);
             };
 
-            request.onsuccess = () => {
+            request.onsuccess = async () => {
                 this.db = request.result;
                 this.isReady = true;
+
+                // Asegurar que todos los registros tienen el campo deleted: 0 para ser indexados
+                await this.repairMissingDeletedMarkers();
+
                 this.ensureDefaultClient(); // Create default client if missing
+                this.ensureDefaultConfig(); // Create default configs if missing
                 resolve(this.db);
             };
 
@@ -109,7 +181,6 @@ class Database {
                     citasStore.createIndex('ultima_modificacion', 'ultima_modificacion', { unique: false });
                 }
 
-                // Crear store de CAJA / TPV (NEW)
                 if (!db.objectStoreNames.contains('caja')) {
                     const cajaStore = db.createObjectStore('caja', { keyPath: 'id' });
                     cajaStore.createIndex('fecha', 'fecha', { unique: false });
@@ -117,8 +188,88 @@ class Database {
                     cajaStore.createIndex('ultima_modificacion', 'ultima_modificacion', { unique: false });
                 }
 
+                // ESTRUCTURAL: Asegurar índices de 'deleted' en todos los stores críticos para velocidad
+                const storesToOptimize = ['clientes', 'reparaciones', 'facturas', 'products', 'citas'];
+                storesToOptimize.forEach(storeName => {
+                    if (db.objectStoreNames.contains(storeName)) {
+                        const store = event.target.transaction.objectStore(storeName);
+                        if (!store.indexNames.contains('deleted')) {
+                            store.createIndex('deleted', 'deleted', { unique: false });
+                        }
+                    }
+                });
             };
         });
+    }
+
+    /**
+     * MIGRACIÓN: Asegurar que registros antiguos tengan deleted = 0 para ser indexados
+     * Esto se ejecuta DESPUÉS de que la DB se abre.
+     * FIX: Ahora es más agresivo recuperando datos con deleted nulo, string o false.
+     */
+    async repairMissingDeletedMarkers() {
+        if (!this.db) return;
+
+        const storesToOptimize = ['clientes', 'reparaciones', 'facturas', 'products', 'citas'];
+
+        for (const storeName of storesToOptimize) {
+            if (this.db.objectStoreNames.contains(storeName)) {
+                try {
+                    const transaction = this.db.transaction([storeName], 'readwrite');
+                    const store = transaction.objectStore(storeName);
+                    const request = store.openCursor();
+                    let fixedCount = 0;
+
+                    await new Promise((resolve, reject) => {
+                        request.onsuccess = (e) => {
+                            const cursor = e.target.result;
+                            if (cursor) {
+                                const record = cursor.value;
+                                let needsUpdate = false;
+
+                                // Check for missing or invalid 'deleted' flag
+                                // We want strict number 0 or 1.
+                                // If it is anything else (null, undefined, false, "0", "1", true), we fix it.
+                                if (record.deleted === undefined || record.deleted === null) {
+                                    record.deleted = 0; // Default to active
+                                    needsUpdate = true;
+                                } else if (typeof record.deleted !== 'number') {
+                                    // Handle strings "0", "1" or booleans
+                                    if (record.deleted == 1 || record.deleted === true || record.deleted === 'true') {
+                                        record.deleted = 1;
+                                    } else {
+                                        record.deleted = 0;
+                                    }
+                                    needsUpdate = true;
+                                }
+
+                                if (needsUpdate) {
+                                    cursor.update(record);
+                                    fixedCount++;
+                                }
+                                cursor.continue();
+                            } else {
+                                resolve();
+                            }
+                        };
+                        request.onerror = (e) => {
+                            console.error(`Error repairing deleted markers in ${storeName}:`, e.target.error);
+                            reject(e.target.error);
+                        };
+                        transaction.oncomplete = () => {
+                            if (fixedCount > 0) console.log(`Fixed ${fixedCount} records in ${storeName}`);
+                            resolve();
+                        };
+                        transaction.onerror = (e) => {
+                            console.error(`Transaction error during repair in ${storeName}:`, e.target.error);
+                            reject(e.target.error);
+                        };
+                    });
+                } catch (e) {
+                    console.error(`Failed to repair deleted markers for store ${storeName}:`, e);
+                }
+            }
+        }
     }
 
     /**
@@ -171,18 +322,7 @@ class Database {
      * Obtiene todos los clientes
      */
     async getAllClientes() {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['clientes'], 'readonly');
-            const store = transaction.objectStore('clientes');
-            const request = store.getAll();
-
-            request.onsuccess = () => {
-                // Filter out soft-deleted records
-                const active = request.result.filter(r => !r.deleted);
-                resolve(active);
-            };
-            request.onerror = () => reject(request.error);
-        });
+        return this.getAllActive('clientes');
     }
 
     /**
@@ -194,7 +334,15 @@ class Database {
             const store = transaction.objectStore('clientes');
             const request = store.get(id);
 
-            request.onsuccess = () => resolve(request.result);
+            request.onsuccess = () => {
+                const cliente = request.result;
+                // Limpiar DNI concatenado por error durante la sincronización antigua
+                if (cliente && cliente.nombre && cliente.dni) {
+                    const dniRegex = new RegExp(`\\s*\\(DNI:${cliente.dni}\\)`, 'gi');
+                    cliente.nombre = cliente.nombre.replace(dniRegex, '').trim();
+                }
+                resolve(cliente);
+            };
             request.onerror = () => reject(request.error);
         });
     }
@@ -230,6 +378,11 @@ class Database {
 
             request.onsuccess = () => {
                 if (typeof fileSync !== 'undefined') fileSync.syncTable('clientes');
+
+                // Active Sync Trigger
+                if (window.syncManager) {
+                    setTimeout(() => window.syncManager.sync(true, true), 1000);
+                }
                 resolve(cliente);
             };
             request.onerror = () => reject(request.error);
@@ -262,6 +415,11 @@ class Database {
                     const putReq = store.put(record);
                     putReq.onsuccess = () => {
                         if (typeof fileSync !== 'undefined') fileSync.syncTable('clientes');
+
+                        // Active Sync Trigger
+                        if (window.syncManager) {
+                            setTimeout(() => window.syncManager.sync(true, true), 1000);
+                        }
                         resolve(true);
                     };
                     putReq.onerror = () => reject(putReq.error);
@@ -277,30 +435,90 @@ class Database {
      * Busca clientes por nombre o teléfono
      */
     async searchClientes(query) {
+        if (!query) return this.getAllClientes();
         const clientes = await this.getAllClientes();
         const lowerQuery = query.toLowerCase();
 
-        // Filter: Strict startsWith for text, includes for phone
         const results = clientes.filter(cliente => {
-            const nameMatch = cliente.nombre && cliente.nombre.toLowerCase().startsWith(lowerQuery);
-            const emailMatch = cliente.email && cliente.email.toLowerCase().startsWith(lowerQuery);
-            const phoneMatch = cliente.telefono && cliente.telefono.includes(query); // Phone usually needs includes
+            const nameMatch = cliente.nombre && cliente.nombre.toLowerCase().includes(lowerQuery);
+            const emailMatch = cliente.email && cliente.email.toLowerCase().includes(lowerQuery);
+            const phoneMatch = cliente.telefono && cliente.telefono.includes(query);
+            const dniMatch = cliente.dni && cliente.dni.toLowerCase().includes(lowerQuery);
 
-            return nameMatch || emailMatch || phoneMatch;
+            return nameMatch || emailMatch || phoneMatch || dniMatch;
         });
 
-        // Sort: Alphabetical (since all match startsWith essentially)
         return results.sort((a, b) => a.nombre.localeCompare(b.nombre));
     }
 
+    /**
+     * Obtiene solo los registros activos (no eliminados)
+     * FIX: Bypass index completely to ensure visibility. Filter manually in memory.
+     */
+    async getAllActive(storeName) {
+        return new Promise((resolve, reject) => {
+            if (!this.db) { resolve([]); return; }
+            const transaction = this.db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+
+            // We fetch ALL and filter manually. This is safer if the index is out of sync or data types are mixed.
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const results = request.result || [];
+                // Filter safely: Exclude only if explicitly deleted
+                const active = results.filter(r =>
+                    r.deleted !== 1 &&
+                    r.deleted !== true &&
+                    r.deleted !== '1'
+                );
+
+                // Limpiar DNI concatenado por error en los clientes
+                if (storeName === 'clientes') {
+                    active.forEach(c => {
+                        if (c.nombre && c.dni) {
+                            const dniRegex = new RegExp(`\\s*\\(DNI:${c.dni}\\)`, 'gi');
+                            c.nombre = c.nombre.replace(dniRegex, '').trim();
+                        }
+                    });
+                }
+
+                resolve(active);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     async ensureDefaultClient() {
+        if (!this.db) return;
         try {
-            const defaultId = 'CLIENTE_GENERAL';
-            const exists = await this.getCliente(defaultId);
-            if (!exists) {
+            // Check if ANY "Cliente General" exists (by name OR by fixed ID)
+            const allClientes = await this.getAllClientes();
+            const generals = allClientes.filter(c =>
+                c.id === 'CLIENTE_GENERAL' ||
+                (c.nombre && c.nombre.toLowerCase().includes('cliente') &&
+                    (c.apellido || '').toLowerCase().includes('general'))
+            );
+
+            if (generals.length > 1) {
+                // Duplicates! Keep the first, soft-delete the rest
+                console.log(`Found ${generals.length} "Cliente General" entries, cleaning duplicates...`);
+                for (let i = 1; i < generals.length; i++) {
+                    const tx = this.db.transaction(['clientes'], 'readwrite');
+                    const store = tx.objectStore('clientes');
+                    generals[i].deleted = 1;
+                    generals[i].ultima_modificacion = this.getTimestamp();
+                    store.put(generals[i]);
+                    await new Promise(r => tx.oncomplete = r);
+                }
+                console.log(`Cleaned ${generals.length - 1} duplicate "Cliente General" entries`);
+            } else if (generals.length === 0) {
+                // None exists, create one — use direct put to avoid triggering sync
                 console.log('Creating default Walk-in Client...');
-                await this.saveCliente({
-                    id: defaultId,
+                const tx = this.db.transaction(['clientes'], 'readwrite');
+                const store = tx.objectStore('clientes');
+                store.put({
+                    id: 'CLIENTE_GENERAL',
                     nombre: 'Cliente',
                     apellido: 'General',
                     telefono: '000000000',
@@ -309,11 +527,30 @@ class Database {
                     direccion: 'Venta en Mostrador',
                     notas: 'Cliente por defecto para ventas rápidas',
                     fecha_creacion: this.getTimestamp(),
-                    ultima_modificacion: this.getTimestamp()
+                    ultima_modificacion: this.getTimestamp(),
+                    deleted: 0
                 });
+                await new Promise(r => tx.oncomplete = r);
             }
+            // If exactly 1 exists, do nothing
         } catch (e) {
             console.error('Error ensuring default client:', e);
+        }
+    }
+
+    /**
+     * Asegura que existan configuraciones básicas
+     */
+    async ensureDefaultConfig() {
+        if (!this.db) return;
+        try {
+            const printer = await this.getConfig('pos_printer_name');
+            if (!printer) {
+                console.log('DB: Setting default printer config...');
+                await this.saveConfig('pos_printer_name', 'POS-58');
+            }
+        } catch (e) {
+            console.error('Error ensuring default config:', e);
         }
     }
 
@@ -323,17 +560,7 @@ class Database {
      * Obtiene todas las reparaciones
      */
     async getAllReparaciones() {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['reparaciones'], 'readonly');
-            const store = transaction.objectStore('reparaciones');
-            const request = store.getAll();
-
-            request.onsuccess = () => {
-                const active = request.result.filter(r => !r.deleted);
-                resolve(active);
-            };
-            request.onerror = () => reject(request.error);
-        });
+        return this.getAllActive('reparaciones');
     }
 
     /**
@@ -354,6 +581,9 @@ class Database {
      * Crea o actualiza una reparación
      */
     async saveReparacion(reparacion) {
+        if (reparacion.estado) {
+            reparacion.estado = cloudToLocalStatus(reparacion.estado);
+        }
         const now = this.getTimestamp();
 
         if (!reparacion.id) {
@@ -362,13 +592,17 @@ class Database {
             reparacion.estado = 'pendiente'; // Default
         }
 
-        // Asignar user_id si hay sesión activa
+        // Asignar user_id si hay sesión activa (con timeout para evitar bloqueos)
         if (!reparacion.user_id && typeof supabaseClient !== 'undefined') {
             try {
-                const user = await supabaseClient.getUser();
+                // Race condition protection: timeout after 2 seconds
+                const userPromise = supabaseClient.getUser();
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000));
+
+                const user = await Promise.race([userPromise, timeoutPromise]);
                 if (user) reparacion.user_id = user.id;
             } catch (e) {
-                console.warn('Could not set user_id', e);
+                console.warn('Could not set user_id (non-blocking):', e);
             }
         }
 
@@ -377,13 +611,48 @@ class Database {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['reparaciones'], 'readwrite');
             const store = transaction.objectStore('reparaciones');
+
+            // Timeout para transacciones colgadas
+            const txTimeout = setTimeout(() => {
+                console.error('Transaction timed out!');
+                reject(new Error('Database Transaction Timeout'));
+            }, 5000);
+
             const request = store.put(reparacion);
 
             request.onsuccess = () => {
-                if (typeof fileSync !== 'undefined') fileSync.syncTable('reparaciones');
+                clearTimeout(txTimeout);
+                // Ejecutar sync de forma asíncrona sin bloquear la UI
+                if (typeof fileSync !== 'undefined') {
+                    setTimeout(() => {
+                        try {
+                            fileSync.syncTable('reparaciones');
+                        } catch (err) {
+                            console.error('Sync error (ignored):', err);
+                        }
+                    }, 0);
+                }
+
+                // TRIGGER EXTENDED: Cloud Sync (Supabase) - Force true to bypass cooldown on edit
+                if (window.syncManager) {
+                    setTimeout(() => {
+                        console.log('☁️ Auto-triggering Cloud Sync (Active Mode)...');
+                        window.syncManager.sync(true, true).catch(e => console.warn('Auto-sync failed:', e));
+                    }, 500);
+                }
+
                 resolve(reparacion);
             };
-            request.onerror = () => reject(request.error);
+            request.onerror = (e) => {
+                clearTimeout(txTimeout);
+                console.error('DB Request Error:', e);
+                reject(request.error);
+            };
+            transaction.onerror = (e) => {
+                clearTimeout(txTimeout);
+                console.error('DB Transaction Error:', e);
+                reject(transaction.error);
+            };
         });
     }
 
@@ -423,6 +692,11 @@ class Database {
                     const putReq = store.put(record);
                     putReq.onsuccess = () => {
                         if (typeof fileSync !== 'undefined') fileSync.syncTable('reparaciones');
+
+                        // Active Sync Trigger
+                        if (window.syncManager) {
+                            setTimeout(() => window.syncManager.sync(true, true), 1000);
+                        }
                         resolve(true);
                     };
                     putReq.onerror = () => reject(putReq.error);
@@ -438,6 +712,7 @@ class Database {
      * Busca reparaciones
      */
     async searchReparaciones(query, estado = null) {
+        // PERF: Usar getAllActive que ya usa el índice 'deleted'
         let reparaciones = await this.getAllReparaciones();
 
         if (estado) {
@@ -447,25 +722,32 @@ class Database {
         if (query) {
             const lowerQuery = query.toLowerCase();
 
-            // To filter by client name, we need to fetch clients first
-            const clients = await this.getAllClientes();
-            const clientMap = new Map(clients.map(c => [c.id, c.nombre.toLowerCase()]));
+            // PERF: Cachear clientes SOLO UNA VEZ. 
+            // Si ya los tenemos en memoria (vía RepairsUI), los usamos.
+            let clients = [];
+            if (window.repairsUI && window.repairsUI.clientes && window.repairsUI.clientes.length > 0) {
+                clients = window.repairsUI.clientes;
+            } else {
+                clients = await this.getAllActive('clientes');
+            }
 
-            // Strict StartsWith Filter
+            const clientMap = new Map();
+            clients.forEach(c => {
+                if (c.id) clientMap.set(c.id, c.nombre.toLowerCase());
+            });
+
             reparaciones = reparaciones.filter(r => {
-                const descMatch = r.descripcion.toLowerCase().startsWith(lowerQuery);
-                const brandMatch = r.marca && r.marca.toLowerCase().startsWith(lowerQuery);
-                const modelMatch = r.modelo && r.modelo.toLowerCase().startsWith(lowerQuery);
-                const imeiMatch = r.imei && r.imei.toLowerCase().startsWith(lowerQuery);
+                // StartsWith es más rápido que includes
+                const descMatch = r.descripcion && r.descripcion.toLowerCase().includes(lowerQuery);
+                const brandMatch = r.marca && r.marca.toLowerCase().includes(lowerQuery);
+                const modelMatch = r.modelo && r.modelo.toLowerCase().includes(lowerQuery);
+                const imeiMatch = r.imei && r.imei.toLowerCase().includes(lowerQuery);
 
-                // Check Client Name
                 const clientName = clientMap.get(r.cliente_id);
-                const clientMatch = clientName && clientName.startsWith(lowerQuery);
+                const clientMatch = clientName && clientName.includes(lowerQuery);
 
                 return descMatch || brandMatch || modelMatch || imeiMatch || clientMatch;
             });
-
-            // Sort by date (default) since filtering is strict
         }
 
         return reparaciones;
@@ -697,7 +979,19 @@ class Database {
             for (const item of items) {
                 const local = localMap.get(item.id);
                 if (!local || item.ultima_modificacion > local.ultima_modificacion) {
-                    store.put(item);
+                    const mergedItem = { ...item };
+                    if (storeName === 'reparaciones' && mergedItem.estado) {
+                        mergedItem.estado = cloudToLocalStatus(mergedItem.estado);
+                    }
+                    // Preservar datos de firma, fotos y RGPD que Supabase no almacena por privacidad/espacio
+                    if (local) {
+                        if (local.signature) mergedItem.signature = local.signature;
+                        if (local.signatureStrokes) mergedItem.signatureStrokes = local.signatureStrokes;
+                        if (local.photos) mergedItem.photos = local.photos;
+                        if (local.rgpd_accepted) mergedItem.rgpd_accepted = local.rgpd_accepted;
+                        if (local.rgpd_accepted_date) mergedItem.rgpd_accepted_date = local.rgpd_accepted_date;
+                    }
+                    store.put(mergedItem);
                 }
             }
 
@@ -729,7 +1023,7 @@ class Database {
             recibido: reparaciones.filter(r => r.estado === 'recibido').length,
             diagnostico: reparaciones.filter(r => r.estado === 'diagnostico').length,
             reparando: reparaciones.filter(r => r.estado === 'reparando').length,
-            completadas: reparaciones.filter(r => r.estado === 'listo').length,
+            completadas: reparaciones.filter(r => r.estado === 'listo' || r.estado === 'entregado').length,
             canceladas: reparaciones.filter(r => r.estado === 'cancelado').length
         };
     }
@@ -800,6 +1094,11 @@ class Database {
 
             request.onsuccess = () => {
                 if (typeof fileSync !== 'undefined') fileSync.syncTable('facturas');
+
+                // Active Sync Trigger
+                if (window.syncManager) {
+                    setTimeout(() => window.syncManager.sync(true, true), 1000);
+                }
                 resolve(factura);
             };
             request.onerror = () => reject(request.error);
@@ -824,6 +1123,11 @@ class Database {
                     const putReq = store.put(record);
                     putReq.onsuccess = () => {
                         if (typeof fileSync !== 'undefined') fileSync.syncTable('facturas');
+
+                        // Active Sync Trigger
+                        if (window.syncManager) {
+                            setTimeout(() => window.syncManager.sync(true, true), 1000);
+                        }
                         resolve(true);
                     };
                     putReq.onerror = () => reject(putReq.error);
@@ -869,7 +1173,7 @@ class Database {
 
         // 1. Map Clientes
         const clientesLegacy = clientes.map(c => ({
-            id: isNaN(Number(c.id)) ? c.id : Number(c.id), // Try sending Int if possible
+            id: c.legacy_id || (isNaN(Number(c.id)) ? c.id : Number(c.id)), // Use Legacy ID if available
             nombre: c.nombre || '',
             apellido: c.apellido || '',
             telefono: c.telefono || '',
@@ -888,8 +1192,10 @@ class Database {
             else if (r.estado === 'cancelado') estadoLegacy = 'CANCELADO';
 
             return {
-                id: isNaN(Number(r.id)) ? r.id : Number(r.id),
-                clienteId: isNaN(Number(r.cliente_id)) ? r.cliente_id : Number(r.cliente_id),
+                id: r.legacy_id || (isNaN(Number(r.id)) ? r.id : Number(r.id)), // Use Legacy ID
+                clienteId: (r.legacy_id && r.cliente_id) ?
+                    (clientes.find(c => c.id === r.cliente_id)?.legacy_id || r.cliente_id) :
+                    (isNaN(Number(r.cliente_id)) ? r.cliente_id : Number(r.cliente_id)),
                 tipoDispositivo: (r.dispositivo || 'OTROS').toUpperCase(),
                 marca: r.marca || '',
                 modelo: r.modelo || '',
@@ -915,8 +1221,10 @@ class Database {
             }));
 
             return {
-                id: isNaN(Number(f.id)) ? f.id : Number(f.id),
-                clienteId: isNaN(Number(f.cliente_id)) ? f.cliente_id : Number(f.cliente_id),
+                id: f.legacy_id || (isNaN(Number(f.id)) ? f.id : Number(f.id)), // Use Legacy ID
+                clienteId: (f.legacy_id && f.cliente_id) ?
+                    (clientes.find(c => c.id === f.cliente_id)?.legacy_id || f.cliente_id) :
+                    (isNaN(Number(f.cliente_id)) ? f.cliente_id : Number(f.cliente_id)),
                 numero: f.numero || '',
                 fecha: f.fecha || Date.now(),
                 total: Number(f.total || 0),
@@ -1057,13 +1365,20 @@ class Database {
             if (r.descripcionProblema && !r.descripcion) r.descripcion = r.descripcionProblema;
             if (r.descripcionSolucion) r.solucion = r.descripcionSolucion;
             if (r.codigoPin) r.pin = r.codigoPin;
+            if (r.contrasena) r.pin = r.contrasena;
             if (r.costoFinal) r.precio = r.costoFinal;
+            if (r.imei_serial) r.imei = r.imei_serial;
 
             if (r.estado) {
                 const s = r.estado.toUpperCase();
-                if (s === 'LISTO' || s === 'ENTREGADO' || s === 'TERMINADO' || s === 'COMPLETADA') r.estado = 'completada';
-                else if (s === 'EN PROCESO' || s === 'REPARANDO' || s === 'EN_PROCESO') r.estado = 'en_proceso';
-                else r.estado = 'pendiente';
+                if (s === 'LISTO' || s === 'TERMINADO' || s === 'COMPLETADA') r.estado = 'listo';
+                else if (s === 'ENTREGADO') r.estado = 'entregado';
+                else if (s === 'EN PROCESO' || s === 'EN_PROCESO') r.estado = 'en_proceso';
+                else if (s === 'REPARANDO' || s === 'EN_REPARACION') r.estado = 'en_reparacion';
+                else if (s === 'RECIBIDO' || s === 'PENDIENTE') r.estado = 'recibido';
+                else if (s === 'CANCELADO') r.estado = 'cancelado';
+                else if (s === 'DIAGNOSTICO') r.estado = 'diagnostico';
+                else if (s === 'GARANTIA') r.estado = 'garantia';
             }
             return r;
         };
@@ -1176,9 +1491,14 @@ class Database {
     async wipeDatabase() {
         if (!this.db) await this.init();
 
+        try {
+            await this.setConfig('last_sync', 0);
+        } catch (e) {
+            console.error('Failed to reset sync timestamp during wipe:', e);
+        }
+
         return new Promise((resolve, reject) => {
-            // Stores to clear
-            const allPossibleStores = ['clientes', 'reparaciones', 'facturas', 'products'];
+            const allPossibleStores = ['clientes', 'reparaciones', 'facturas', 'products', 'citas', 'gastos', 'ingresos_extra', 'caja'];
             const storesToClear = allPossibleStores.filter(name => this.db.objectStoreNames.contains(name));
 
             if (storesToClear.length === 0) {
@@ -1213,19 +1533,7 @@ class Database {
      * Obtiene todos los productos (excluyendo eliminados)
      */
     async getAllProducts() {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['products'], 'readonly');
-            const store = transaction.objectStore('products');
-            const request = store.getAll();
-
-            request.onsuccess = () => {
-                const results = request.result || [];
-                // Filtrar soft-deleted
-                const active = results.filter(p => !p.deleted);
-                resolve(active);
-            };
-            request.onerror = () => reject(request.error);
-        });
+        return this.getAllActive('products');
     }
 
     /**
@@ -1475,23 +1783,6 @@ class Database {
 
     // ==================== PRODUCTOS (INVENTARIO) ====================
 
-    /**
-     * Obtiene todos los productos
-     */
-    async getAllProducts() {
-        if (!this.db) await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['products'], 'readonly');
-            const store = transaction.objectStore('products');
-            const request = store.getAll();
-
-            request.onsuccess = () => {
-                const active = request.result.filter(p => !p.deleted);
-                resolve(active);
-            };
-            request.onerror = () => reject(request.error);
-        });
-    }
 
     /**
      * Obtiene un producto por ID

@@ -3,6 +3,73 @@
  * Windows ↔ Cloud ↔ Android
  */
 
+/**
+ * Bidirectional status mapper: Local (lowercase) <-> Cloud/Android (UPPERCASE)
+ */
+function cloudToLocalStatus(status) {
+    if (!status) return 'recibido';
+    const s = status.toUpperCase().trim();
+    switch (s) {
+        case 'RECIBIDO':
+        case 'PENDIENTE':
+            return 'recibido';
+        case 'EN_DIAGNOSTICO':
+        case 'DIAGNOSTICO':
+            return 'diagnostico';
+        case 'EN_PROCESO':
+            return 'en_proceso';
+        case 'REPARANDO':
+        case 'EN_REPARACION':
+            return 'en_reparacion';
+        case 'LISTO':
+        case 'REPARADO':
+            return 'listo';
+        case 'ENTREGADO':
+            return 'entregado';
+        case 'GARANTIA':
+            return 'garantia';
+        case 'CANCELADO':
+            return 'cancelado';
+        default:
+            return s.toLowerCase();
+    }
+}
+
+function localToCloudStatus(status) {
+    if (!status) return 'RECIBIDO';
+    const s = status.toLowerCase().trim();
+    switch (s) {
+        case 'recibido':
+        case 'pendiente':
+            return 'RECIBIDO';
+        case 'diagnostico':
+        case 'presupuesto':
+            return 'EN_DIAGNOSTICO';
+        case 'en_proceso':
+        case 'en proceso':
+            return 'EN_PROCESO';
+        case 'en_reparacion':
+        case 'en reparacion':
+        case 'reparando':
+        case 'esperando_pieza':
+            return 'REPARANDO';
+        case 'listo':
+        case 'reparado':
+        case 'completada':
+            return 'LISTO';
+        case 'entregado':
+        case 'entregada':
+            return 'ENTREGADO';
+        case 'garantia':
+        case 'garantía':
+            return 'GARANTIA';
+        case 'cancelado':
+            return 'CANCELADO';
+        default:
+            return s.toUpperCase().replace(/[-\s]/g, '_');
+    }
+}
+
 class SyncManager {
     constructor() {
         this.isSyncing = false;
@@ -223,7 +290,7 @@ class SyncManager {
                         id: reparacion.id,
                         cliente_id: reparacion.cliente_id || reparacion.clientId,
                         descripcion: reparacion.descripcion || reparacion.problema || 'Sin descripción',
-                        estado: reparacion.estado || 'pendiente',
+                        estado: localToCloudStatus(reparacion.estado || 'pendiente'),
                         precio: reparacion.precio || reparacion.coste || 0,
                         precio_final: reparacion.precio_final || null,
                         fecha_creacion: new Date(reparacion.fecha_creacion || reparacion.fechaCreacion || Date.now()).getTime(),
@@ -377,6 +444,13 @@ class SyncManager {
                     modified = true;
                 }
 
+                // Corregir estado (mayúsculas o legacy a minúsculas estándar local)
+                const localState = cloudToLocalStatus(r.estado);
+                if (r.estado !== localState) {
+                    r.estado = localState;
+                    modified = true;
+                }
+
                 if (modified) {
                     // Actualizar timestamp para forzar subida
                     r.ultima_modificacion = Date.now();
@@ -417,7 +491,8 @@ class SyncManager {
                 // Criterio: Entregada Y (Fecha Entrega o Creación > 10 días)
                 // Priorizamos fecha_creacion porque ultima_modificacion cambia al sincronizar
                 const dateVal = r.fecha_creacion || r.ultima_modificacion;
-                if (r.estado === 'entregada' && dateVal < cutoffDate) {
+                const localState = cloudToLocalStatus(r.estado);
+                if ((localState === 'entregada' || localState === 'entregado') && dateVal < cutoffDate) {
                     idsToDelete.push(r.id);
                 }
             }
