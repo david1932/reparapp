@@ -1,5 +1,5 @@
 URL DE SEGUIMIENTO (Clientes):
-https://david1932.github.io/reparapp/tracking.html
+https://reparapp-premium.pages.dev/tracking
 
 Instrucciones:
 1. Copia la dirección de arriba.

@@ -20,6 +20,12 @@ class SettingsUI {
         const companyEmail = document.getElementById('company-email').value;
         const trackingUrl = document.getElementById('company-tracking-url').value;
         const posPrinterName = document.getElementById('pos-printer-name')?.value || '';
+        const posPrinterType = document.getElementById('pos-printer-type')?.value || '58mm';
+        const labelPrinterName = document.getElementById('label-printer-name')?.value || '';
+        const posConnectionType = document.getElementById('pos-connection-type')?.value || 'system';
+        const posPrinterIp = document.getElementById('pos-printer-ip')?.value || '';
+        const posPrinterPort = parseInt(document.getElementById('pos-printer-port')?.value || '9100');
+        const posPrinterCom = document.getElementById('pos-printer-com')?.value || '';
 
         // Tax values
         const taxIva = document.getElementById('company-tax-iva').value;
@@ -41,6 +47,12 @@ class SettingsUI {
             await db.saveConfig('company_email', companyEmail);
             await db.saveConfig('tracking_url', trackingUrl);
             await db.saveConfig('pos_printer_name', posPrinterName);
+            await db.saveConfig('pos_printer_type', posPrinterType);
+            await db.saveConfig('label_printer_name', labelPrinterName);
+            await db.saveConfig('pos_connection_type', posConnectionType);
+            await db.saveConfig('pos_printer_ip', posPrinterIp);
+            await db.saveConfig('pos_printer_port', posPrinterPort);
+            await db.saveConfig('pos_printer_com', posPrinterCom);
 
             // Save Tax Config
             const taxEntity = document.getElementById('company-tax-entity').value;
@@ -336,12 +348,12 @@ class SettingsUI {
 
         // Cargar Tracking URL
         let trackingUrl = await db.getConfig('tracking_url');
-        if (!trackingUrl || trackingUrl.includes('reparapp.pages.dev')) {
-            trackingUrl = 'https://david1932.github.io/reparapp/tracking.html';
+        if (!trackingUrl || trackingUrl.includes('david1932.github.io') || trackingUrl.includes('reparapp.pages.dev') || trackingUrl.includes('reparappremium.es')) {
+            trackingUrl = 'https://reparapp-premium.pages.dev/tracking';
             await db.saveConfig('tracking_url', trackingUrl);
         }
-        // AUTO-FIX: Si la URL no incluye /tracking.html ni /tracking/, añadirlo
-        if (trackingUrl && !trackingUrl.includes('tracking.html') && !trackingUrl.includes('tracking/') && !trackingUrl.endsWith('/')) {
+        // AUTO-FIX: Si la URL no incluye /tracking.html ni /track.html y no es la URL estándar de reparapp.pages.dev/tracking, añadirlo
+        if (trackingUrl && !trackingUrl.includes('tracking.html') && !trackingUrl.includes('track.html') && !trackingUrl.includes('tracking/') && !trackingUrl.includes('track/') && !trackingUrl.endsWith('/tracking')) {
             trackingUrl = trackingUrl.replace(/\/+$/, '') + '/tracking.html';
             await db.saveConfig('tracking_url', trackingUrl);
         }
@@ -353,6 +365,32 @@ class SettingsUI {
         const posPrinterName = await db.getConfig('pos_printer_name');
         const elPosPrinter = document.getElementById('pos-printer-name');
         if (elPosPrinter) elPosPrinter.value = posPrinterName || '';
+
+        const posPrinterType = await db.getConfig('pos_printer_type') || '58mm';
+        const elPosPrinterType = document.getElementById('pos-printer-type');
+        if (elPosPrinterType) elPosPrinterType.value = posPrinterType;
+
+        const labelPrinterName = await db.getConfig('label_printer_name');
+        const elLabelPrinterName = document.getElementById('label-printer-name');
+        if (elLabelPrinterName) elLabelPrinterName.value = labelPrinterName || '';
+
+        const posConnectionType = await db.getConfig('pos_connection_type') || 'system';
+        const elPosConnectionType = document.getElementById('pos-connection-type');
+        if (elPosConnectionType) elPosConnectionType.value = posConnectionType;
+
+        const posPrinterIp = await db.getConfig('pos_printer_ip') || '';
+        const elPosPrinterIp = document.getElementById('pos-printer-ip');
+        if (elPosPrinterIp) elPosPrinterIp.value = posPrinterIp;
+
+        const posPrinterPort = await db.getConfig('pos_printer_port') || 9100;
+        const elPosPrinterPort = document.getElementById('pos-printer-port');
+        if (elPosPrinterPort) elPosPrinterPort.value = posPrinterPort;
+
+        const posPrinterCom = await db.getConfig('pos_printer_com') || '';
+        const elPosPrinterCom = document.getElementById('pos-printer-com');
+        if (elPosPrinterCom) elPosPrinterCom.value = posPrinterCom;
+
+        this.togglePrinterConnectionFields();
 
         // Cargar estado Bloqueo App
         const appLockEnabled = localStorage.getItem('app_locked_enabled') === 'true';
@@ -430,7 +468,7 @@ class SettingsUI {
             }
         } catch (err) {
             console.error('Error unlocking app:', err);
-            app.showToast('Error al verificar PIN', 'error');
+            app.showToast(i18n.t('set_sec_pin_verify_error'), 'error');
         }
     }
 
@@ -441,7 +479,7 @@ class SettingsUI {
         if (!window.googleDriveManager) return;
 
         window.googleDriveManager.authenticate((token) => {
-            app.showToast('Conectado a Google Drive correctamente', 'success');
+            app.showToast(i18n.t('set_drive_connected'), 'success');
 
             // Actualizar UI
             const btnConnect = document.getElementById('btn-connect-drive');
@@ -655,7 +693,7 @@ class SettingsUI {
         const pin = input.value.trim();
 
         if (pin && !/^\d{4}$/.test(pin)) {
-            app.showToast('El PIN debe ser de 4 dígitos', 'error');
+            app.showToast(i18n.t('set_sec_pin_format_error'), 'error');
             return;
         }
 
@@ -663,16 +701,16 @@ class SettingsUI {
             if (pin) {
                 await db.setConfig('security_pin', pin);
                 this.pin = pin;
-                app.showToast('PIN de seguridad activado', 'success');
+                app.showToast(i18n.t('set_sec_pin_activated'), 'success');
             } else {
                 await db.setConfig('security_pin', null);
                 this.pin = null;
-                app.showToast('PIN de seguridad desactivado', 'info');
+                app.showToast(i18n.t('set_sec_pin_deactivated'), 'info');
             }
             input.value = '';
         } catch (error) {
             console.error('Error saving PIN:', error);
-            app.showToast('Error al guardar configuración', 'error');
+            app.showToast(i18n.t('set_sec_pin_save_error'), 'error');
         }
     }
 
@@ -686,7 +724,7 @@ class SettingsUI {
         // 5MB limit (increased from 500KB)
         const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
-            app.showToast('La imagen es demasiado grande (máx 5MB)', 'error');
+            app.showToast(i18n.t('set_logo_too_large'), 'error');
             return;
         }
 
@@ -698,21 +736,21 @@ class SettingsUI {
             const img = new Image();
             img.onload = async () => {
                 if (img.width < 50 || img.height < 50) {
-                    app.showToast('La imagen es demasiado pequeña (mín 50x50)', 'error');
+                    app.showToast(i18n.t('set_logo_too_small'), 'error');
                     return;
                 }
                 if (img.width > 4096 || img.height > 4096) {
-                    app.showToast('La imagen es demasiado grande en dimensiones (máx 4096px)', 'error');
+                    app.showToast(i18n.t('set_logo_too_big_dim'), 'error');
                     return;
                 }
 
                 try {
                     await db.setConfig('app_logo', base64);
                     this.showLogo(base64);
-                    app.showToast('Logo actualizado', 'success');
+                    app.showToast(i18n.t('set_logo_updated'), 'success');
                 } catch (error) {
                     console.error('Error saving logo:', error);
-                    app.showToast('Error al guardar logo', 'error');
+                    app.showToast(i18n.t('set_logo_save_error'), 'error');
                 }
             };
             img.onerror = () => {
@@ -796,6 +834,22 @@ class SettingsUI {
         // Implementation for Sync status (existing or placeholder)
     }
 
+    togglePrinterConnectionFields() {
+        const type = document.getElementById('pos-connection-type')?.value || 'system';
+        document.querySelectorAll('.printer-conn-field').forEach(el => {
+            el.style.display = 'none';
+        });
+        
+        const target = document.getElementById(`printer-field-${type}`);
+        if (target) {
+            if (type === 'wifi') {
+                target.style.display = 'grid';
+            } else {
+                target.style.display = 'block';
+            }
+        }
+    }
+
     /* AUTOMATED BACKUP (File System Access API) */
 
     async updateAutoBackupStatus() {
@@ -808,21 +862,21 @@ class SettingsUI {
                 container.style.color = 'var(--status-completed)';
                 container.innerHTML = `
                     <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
-                    Conectado: <strong>${handle.name}</strong>
+                    ${i18n.t('set_backup_connected')}: <strong>${handle.name}</strong>
                 `;
-                document.getElementById('btn-setup-autobackup').textContent = "Cambiar Carpeta";
+                document.getElementById('btn-setup-autobackup').textContent = i18n.t('set_backup_change_folder');
             } else {
                 container.style.color = 'var(--status-rejected)';
                 container.innerHTML = `
                     <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor;"></span>
-                    Sin configurar
+                    ${i18n.t('set_backup_status_none')}
                 `;
                 const btn = document.getElementById('btn-setup-autobackup');
                 btn.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: black !important;">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
-                Guardar Copia
+                ${i18n.t('set_backup_btn_save')}
             `;
                 // Forzar estilos
                 btn.style.setProperty('background-color', '#00ffcc', 'important');
@@ -2286,43 +2340,48 @@ class SettingsUI {
                 try {
                     // Borrado en Nube
                     if (window.supabaseClient && window.supabaseClient.isConfigured) {
-                        app.progress.update(10, i18n.t('set_nuclear_wipe_cloud_analyzing'));
+                        try {
+                            app.progress.update(10, i18n.t('set_nuclear_wipe_cloud_analyzing'));
 
-                        const deleteInBatches = async (items, deleteFn, label) => {
-                            const total = items.length;
-                            const batchSize = 10;
-                            for (let i = 0; i < total; i += batchSize) {
-                                const batch = items.slice(i, i + batchSize);
-                                await Promise.all(batch.map(item => deleteFn(item.id)));
-                                app.progress.update(
-                                    currentProgress + ((i + batch.length) / total) * 20,
-                                    i18n.t('set_nuclear_wipe_cloud_deleting')
-                                        .replace('{label}', label)
-                                        .replace('{current}', Math.min(i + batch.length, total))
-                                        .replace('{total}', total)
-                                );
+                            const deleteInBatches = async (items, deleteFn, label) => {
+                                const total = items.length;
+                                const batchSize = 10;
+                                for (let i = 0; i < total; i += batchSize) {
+                                    const batch = items.slice(i, i + batchSize);
+                                    await Promise.all(batch.map(item => deleteFn(item.id).catch(e => console.warn(`Failed to delete individual cloud ${label}:`, e))));
+                                    app.progress.update(
+                                        currentProgress + ((i + batch.length) / total) * 20,
+                                        i18n.t('set_nuclear_wipe_cloud_deleting')
+                                            .replace('{label}', label)
+                                            .replace('{current}', Math.min(i + batch.length, total))
+                                            .replace('{total}', total)
+                                    );
+                                }
+                            };
+
+                            let currentProgress = 10;
+                            // Facturas
+                            const f = await supabaseClient.getFacturas();
+                            if (f && f.length > 0) {
+                                await deleteInBatches(f, (id) => supabaseClient.deleteFactura(id), 'facturas');
                             }
-                        };
 
-                        let currentProgress = 10;
-                        // Facturas
-                        const f = await supabaseClient.getFacturas();
-                        if (f && f.length > 0) {
-                            await deleteInBatches(f, (id) => supabaseClient.deleteFactura(id), 'facturas');
-                        }
+                            currentProgress = 30;
+                            // Reparaciones
+                            const r = await supabaseClient.getReparaciones();
+                            if (r && r.length > 0) {
+                                await deleteInBatches(r, (id) => supabaseClient.deleteReparacion(id), 'reparaciones');
+                            }
 
-                        currentProgress = 30;
-                        // Reparaciones
-                        const r = await supabaseClient.getReparaciones();
-                        if (r && r.length > 0) {
-                            await deleteInBatches(r, (id) => supabaseClient.deleteReparacion(id), 'reparaciones');
-                        }
-
-                        currentProgress = 50;
-                        // Clientes
-                        const c = await supabaseClient.getClientes();
-                        if (c && c.length > 0) {
-                            await deleteInBatches(c, (id) => supabaseClient.deleteCliente(id), 'clientes');
+                            currentProgress = 50;
+                            // Clientes
+                            const c = await supabaseClient.getClientes();
+                            if (c && c.length > 0) {
+                                await deleteInBatches(c, (id) => supabaseClient.deleteCliente(id), 'clientes');
+                            }
+                        } catch (cloudErr) {
+                            console.error('Error deleting data from Cloud, proceeding with local wipe:', cloudErr);
+                            app.showToast('Error borrando en nube, procediendo con local...', 'warning');
                         }
                     } else {
                         app.progress.update(50, i18n.t('set_nuclear_wipe_cloud_skipping', 'Saltando nube (no configurada)...'));
